@@ -7,28 +7,33 @@ import { generateContextualMicroQuiz, shuffleQuizOptions } from "@/lib/quiz/gene
 import { extractFactTable } from "@/lib/scraper/examFilter";
 
 export async function getPublishedArticles() {
-  const articles = await prisma.article.findMany({
-    include: {
-      category: true,
-      vocabulary: true,
-      quizQuestions: true,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  try {
+    const articles = await prisma.article.findMany({
+      include: {
+        category: true,
+        vocabulary: true,
+        quizQuestions: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
 
-  return articles.map((a) => ({
-    ...a,
-    createdAtIso: a.createdAt instanceof Date ? a.createdAt.toISOString() : new Date(a.createdAt).toISOString(),
-    keyTakeaways: a.keyTakeaways ? JSON.parse(a.keyTakeaways) : [],
-    factTable: (a as any).factTable ? JSON.parse((a as any).factTable) : [],
-    examTagsList: a.examTags ? a.examTags.split(",").map((t) => t.trim()) : [],
-    quizQuestions: a.quizQuestions.map((q) => ({
-      ...q,
-      options: typeof q.options === "string" ? JSON.parse(q.options) : q.options,
-    })),
-  }));
+    return articles.map((a) => ({
+      ...a,
+      createdAtIso: a.createdAt instanceof Date ? a.createdAt.toISOString() : new Date(a.createdAt).toISOString(),
+      keyTakeaways: a.keyTakeaways ? JSON.parse(a.keyTakeaways) : [],
+      factTable: (a as any).factTable ? JSON.parse((a as any).factTable) : [],
+      examTagsList: a.examTags ? a.examTags.split(",").map((t) => t.trim()) : [],
+      quizQuestions: a.quizQuestions.map((q) => ({
+        ...q,
+        options: typeof q.options === "string" ? JSON.parse(q.options) : q.options,
+      })),
+    }));
+  } catch (error) {
+    console.error("[ARTICLES] Error loading articles:", error);
+    return [];
+  }
 }
 
 export async function getArticleBySlug(rawSlug: string) {

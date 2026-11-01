@@ -1,8 +1,11 @@
 [build]
-  command = "prisma generate && npm run build"
+  command = "node -e \"require('fs').copyFileSync('prisma/dev.db', 'dev.db')\" && prisma generate && npm run build"
   publish = ".next"
 
 [build.environment]
   NODE_VERSION = "20"
   SECRETS_SCAN_OMIT_PATHS = ".env.example,README.md,src/actions/auth.ts,scripts/qa_master_test_suite.ts"
   SECRETS_SCAN_OMIT_KEYS = "DATABASE_URL,ADMIN_PASSCODE"
+
+[functions]
+  included_files = ["prisma/**", "dev.db", "node_modules/.prisma/**"]

@@ -12,11 +12,28 @@ import { getDailyChallengeQuiz } from "@/lib/quiz/generator";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const session = await getCurrentSession();
-  const articles = await getPublishedArticles();
-  const categories = await prisma.category.findMany({
-    orderBy: { createdAt: "asc" },
-  });
+  let session = { role: null, student: null } as any;
+  try {
+    session = await getCurrentSession();
+  } catch (e) {
+    console.error("[HOME] Session error:", e);
+  }
+
+  let articles: any[] = [];
+  try {
+    articles = await getPublishedArticles();
+  } catch (e) {
+    console.error("[HOME] Articles error:", e);
+  }
+
+  let categories: any[] = [];
+  try {
+    categories = await prisma.category.findMany({
+      orderBy: { createdAt: "asc" },
+    });
+  } catch (e) {
+    console.error("[HOME] Categories error:", e);
+  }
 
   const capsuleArticles = articles.filter((a) => a.isCapsule);
   const dailyBnQuiz = getDailyChallengeQuiz({ mode: "bn", articles });
