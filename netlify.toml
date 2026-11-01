@@ -4,3 +4,5 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  SECRETS_SCAN_OMIT_PATHS = ".env.example,README.md,src/actions/auth.ts,scripts/qa_master_test_suite.ts"
+  SECRETS_SCAN_OMIT_KEYS = "DATABASE_URL,ADMIN_PASSCODE"

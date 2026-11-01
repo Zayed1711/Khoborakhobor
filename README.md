@@ -75,8 +75,8 @@ cp .env.example .env
 ```
 `.env` ফাইলে নিচের মানগুলো নিশ্চিত করুন:
 ```env
-DATABASE_URL="file:./dev.db"
-ADMIN_PASSCODE="072429"
+DATABASE_URL="file:./prisma/database_placeholder.db"
+ADMIN_PASSCODE="your_admin_secret_passcode"
 ```
 
 ### ৪. প্রিজমা ডেটাবেস জেনারেট ও সিঙ্ক করুন
