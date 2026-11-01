@@ -15,11 +15,14 @@ export interface VocabularyTerm {
 
 export interface QuizQuestion {
   id: string;
-  articleId: string;
+  articleId?: string;
   question: string;
-  options: string[];
-  correctOption: number;
+  options: string[] | string;
+  correctOption?: number;
   explanation?: string | null;
+  topicTag?: string | null;
+  contextQuote?: string | null;
+  paragraphRef?: string | null;
 }
 
 export interface FactTableRow {

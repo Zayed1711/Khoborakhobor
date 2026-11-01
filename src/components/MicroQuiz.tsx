@@ -108,6 +108,25 @@ export default function MicroQuiz({ questions, studentId, isEnglishMode = false 
 
           return (
             <div key={q.id} className="p-4 bg-[#fbf9f5] rounded-xl border border-[#eee9df]">
+              {/* Context Citation Quote Anchor */}
+              {q.contextQuote && (
+                <div className="mb-3 p-3 bg-white border border-[#e8e2d5] rounded-lg text-xs shadow-2xs">
+                  <div className="flex items-center justify-between text-[11px] text-[#64748b] font-medium mb-1.5 pb-1 border-b border-[#f1ece2]">
+                    <span className="font-semibold text-[#1c1d21]">প্রতিবেদনের প্রাসঙ্গিক তথ্যসূত্র:</span>
+                    {q.paragraphRef && (
+                      <span className={`font-mono text-[10px] px-2 py-0.5 rounded font-semibold ${
+                        isEnglishMode ? "bg-blue-50 text-blue-800 border border-blue-200" : "bg-[#f5ebeb] text-[#842323] border border-[#eccaca]"
+                      }`}>
+                        {q.paragraphRef}
+                      </span>
+                    )}
+                  </div>
+                  <p className="italic text-[#334155] leading-relaxed">
+                    "{q.contextQuote}"
+                  </p>
+                </div>
+              )}
+
               <div className="flex items-start justify-between gap-2 mb-3">
                 <h5 className="text-xs sm:text-sm font-bold text-[#1c1d21] leading-snug">
                   {idx + 1}. {q.question}

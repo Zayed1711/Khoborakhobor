@@ -19,6 +19,7 @@ import { createStudyNoteAction, saveMarkerHighlightAction } from "@/actions/stud
 import { applyHighlightsToHtml } from "@/lib/highlighter";
 import { extractVocabularyTableRows } from "@/lib/vocabulary-table-engine";
 import { generateScaffoldedEnglishQuiz } from "@/lib/quiz/scaffolded-english-quiz";
+import { generateContextualMicroQuiz } from "@/lib/quiz/generator";
 import Link from "next/link";
 import { Clock, ArrowLeft, Lightbulb, Highlighter, Check, Edit3, X, Globe, ExternalLink, BookOpen } from "lucide-react";
 import { useAppMode } from "@/context/LanguageContext";
@@ -67,12 +68,68 @@ export default function ArticleReaderView({
   }, [isEnglishMode, isEnglish]);
 
   // Determine if we should present the English Learning experience
-  const useEnglishLearningExperience = isEnglishMode || (isEnglish && !readerTranslation);
+  // Determine if we should present the English Learning experience:
+  // Strictly requires an English article, and user is in English mode or untranslated view
+  const useEnglishLearningExperience = isEnglish && (!readerTranslation || isEnglishMode);
 
   // Generate 3-column vocabulary rows
   const vocabRows = useMemo(() => {
     return extractVocabularyTableRows(article.title, article.content, article.vocabulary);
   }, [article.title, article.content, article.vocabulary]);
+
+  // Generate Job Prep GK Micro-Quiz for Bengali news / Job mode
+  const jobPrepQuizzes = useMemo(() => {
+    if (article.quizQuestions && article.quizQuestions.length > 0) {
+      return article.quizQuestions.map((q) => {
+        let quote = (q as any).contextQuote;
+        let pRef = (q as any).paragraphRef;
+        if (!quote) {
+          const cleanText = (article.content || article.summary || "").replace(/<[^>]+>/g, " ");
+          const sentences = cleanText.split(/(?<=[.?!।])\s+/).filter((s) => s.trim().length > 15);
+          quote = sentences[0] ? (sentences[0].length > 200 ? sentences[0].slice(0, 197) + "..." : sentences[0]) : article.title;
+          pRef = "অনুচ্ছেদ ১ • মূল প্রেক্ষাপট";
+        }
+        return {
+          ...q,
+          contextQuote: quote,
+          paragraphRef: pRef,
+        };
+      });
+    }
+
+    let takeaways: string[] = [];
+    if (article.keyTakeaways) {
+      if (Array.isArray(article.keyTakeaways)) {
+        takeaways = article.keyTakeaways;
+      } else if (typeof article.keyTakeaways === "string") {
+        try {
+          takeaways = JSON.parse(article.keyTakeaways);
+        } catch {
+          takeaways = [];
+        }
+      }
+    }
+
+    const microQuiz = generateContextualMicroQuiz(
+      article.title,
+      article.content || article.summary || "",
+      article.category?.name || "জাতীয় পরিক্রমা",
+      takeaways
+    );
+
+    return [
+      {
+        id: `dynamic-${article.id}`,
+        question: microQuiz.question,
+        options: microQuiz.options,
+        correctOption: microQuiz.correctOption,
+        explanation: microQuiz.explanation,
+        topicTag: microQuiz.topicTag,
+        contextQuote: microQuiz.contextQuote || article.title,
+        paragraphRef: microQuiz.paragraphRef || "অনুচ্ছেদ ১ • মূল প্রেক্ষাপট",
+      },
+    ];
+  }, [article]);
 
   // Generate Scaffolded English Micro-Quiz
   const englishQuizzes = useMemo(() => {
@@ -600,8 +657,8 @@ export default function ArticleReaderView({
                 isEnglishMode
               />
             ) : (
-              article.quizQuestions && article.quizQuestions.length > 0 && (
-                <MicroQuiz questions={article.quizQuestions} studentId={student?.id || ""} />
+              jobPrepQuizzes.length > 0 && (
+                <MicroQuiz questions={jobPrepQuizzes} studentId={student?.id || ""} />
               )
             )}
 
