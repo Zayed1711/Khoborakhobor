@@ -4,12 +4,12 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { 
   Search, Globe, Bookmark, Calendar, UserCheck, 
-  ChevronDown, Menu, X, Zap
+  ChevronDown, Menu, X, Zap, GraduationCap, BookOpen
 } from "lucide-react";
 import SearchModal from "./SearchModal";
 import ThemeSwitcher from "./ThemeSwitcher";
 import { getCurrentSession, UserSession } from "@/actions/auth";
-import { useLanguage } from "@/context/LanguageContext";
+import { useAppMode } from "@/context/LanguageContext";
 
 interface HeaderProps {
   categories?: { id: string; name: string; slug: string }[];
@@ -29,14 +29,26 @@ const DEFAULT_CATEGORIES = [
   { id: "10", name: "বিসিএস ও সাধারণ জ্ঞান", slug: "exam-prep" },
 ];
 
+const ENGLISH_CATEGORY_NAMES: Record<string, string> = {
+  national: "National & Policy",
+  world: "Global Affairs",
+  economy: "Business & Economy",
+  tech: "Tech & Science",
+  entertainment: "Culture & Arts",
+  sports: "Sports & Fitness",
+  politics: "Governance & Law",
+  opinion: "Editorials & Opinions",
+  lifestyle: "Lifestyle & Learning",
+  "exam-prep": "Vocabulary & Exams",
+};
+
 export default function Header({ categories = DEFAULT_CATEGORIES, session }: HeaderProps) {
   const [sessionState, setSessionState] = useState<UserSession | null>(session || null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isLangOpen, setIsLangOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { language, setLanguage } = useLanguage();
-  const selectedLang = language === "en" ? "English" : "বাংলা";
+  
+  const { mode, setMode, isEnglishMode } = useAppMode();
 
   useEffect(() => {
     if (session !== undefined) {
@@ -49,15 +61,10 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
   }, [session]);
 
   const isLoggedIn = Boolean(sessionState?.role || sessionState?.student);
-
-  const langRef = useRef<HTMLDivElement>(null);
   const moreRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (langRef.current && !langRef.current.contains(event.target as Node)) {
-        setIsLangOpen(false);
-      }
       if (moreRef.current && !moreRef.current.contains(event.target as Node)) {
         setIsMoreMenuOpen(false);
       }
@@ -71,17 +78,27 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
   useEffect(() => {
     try {
       const now = new Date();
-      const formatted = now.toLocaleDateString("bn-BD", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-      setCurrentDate(formatted);
+      if (isEnglishMode) {
+        const formatted = now.toLocaleDateString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+        setCurrentDate(formatted);
+      } else {
+        const formatted = now.toLocaleDateString("bn-BD", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+        setCurrentDate(formatted);
+      }
     } catch {
       // Keep initial
     }
-  }, []);
+  }, [isEnglishMode]);
 
   // Fit 5 primary buttons + "অন্যান্য বিভাগ" dropdown so it fits cleanly in one line with zero scrolling
   const primaryCategories = categories.slice(0, 5);
@@ -90,7 +107,7 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
   return (
     <>
       <header className="border-b border-[#e5e0d6] bg-[#ffffff] sticky top-0 z-40 shadow-[0_2px_8px_rgba(0,0,0,0.03)]">
-        {/* Top Micro-Bar (Pre-Header Utilities) */}
+        {/* Top Micro-Bar (Pre-Header Utilities & Dual Mode Switcher) */}
         <div className="border-b border-[#ece7dc] text-[11px] text-[#555d6b] py-1.5 px-4 sm:px-8 bg-[#faf8f3]">
           <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -100,61 +117,67 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
               </span>
               <span className="hidden md:inline-block text-[#d5d0c4]">|</span>
               <span className="hidden md:inline-block text-[#606775]">
-                ঢাকা: ২৮° সেলসিয়াস, পরিচ্ছন্ন আবহাওয়া
+                {isEnglishMode ? "Dhaka: 28°C, Clear Sky" : "ঢাকা: ২৮° সেলসিয়াস, পরিচ্ছন্ন আবহাওয়া"}
               </span>
               <span className="hidden lg:inline-block text-[#d5d0c4]">|</span>
               <Link
                 href="/capsule"
-                className="hidden lg:inline-flex items-center gap-1 text-[#842323] font-semibold hover:underline"
+                className={`hidden lg:inline-flex items-center gap-1 font-semibold hover:underline ${
+                  isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"
+                }`}
               >
                 <Zap className="w-3.5 h-3.5 text-[#f5c66b]" />
-                <span>দৈনিক ৫-মিনিট ক্যাপসুল</span>
+                <span>{isEnglishMode ? "Daily 5-Min Capsule" : "দৈনিক ৫-মিনিট ক্যাপসুল"}</span>
               </Link>
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
+              {/* PRIMARY PLATFORM MODE SWITCHER PILL */}
+              <div
+                id="platform-mode-switcher"
+                className="inline-flex rounded-lg border border-[#ded8cc] bg-white p-0.5 shadow-2xs text-[11px] font-semibold"
+              >
+                <button
+                  type="button"
+                  onClick={() => setMode("job_prep")}
+                  className={`px-2.5 py-0.5 rounded-md transition flex items-center gap-1 ${
+                    !isEnglishMode
+                      ? "bg-[#842323] text-white shadow-xs font-bold"
+                      : "text-[#525a68] hover:text-[#1c1d21] hover:bg-[#ede7da]"
+                  }`}
+                  title="বিসিএস, ব্যাংক ও সরকারি চাকরি প্রস্তুতি মোড"
+                >
+                  <GraduationCap className="w-3 h-3" />
+                  <span>চাকরি ও বিসিএস</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode("english_learning")}
+                  className={`px-2.5 py-0.5 rounded-md transition flex items-center gap-1 ${
+                    isEnglishMode
+                      ? "bg-[#1e40af] text-white shadow-xs font-bold"
+                      : "text-[#525a68] hover:text-[#1c1d21] hover:bg-[#ede7da]"
+                  }`}
+                  title="ইংরেজি সম্পাদকীয় পাঠ ও ভোকাবুলারি শিক্ষা মোড"
+                >
+                  <BookOpen className="w-3 h-3" />
+                  <span>English Learning</span>
+                </button>
+              </div>
+
               {/* Eye-Care Reading Theme Switcher */}
               <ThemeSwitcher compact />
-
-              {/* Language Selector Dropdown */}
-              <div className="relative" ref={langRef}>
-                <button
-                  onClick={() => setIsLangOpen(!isLangOpen)}
-                  className="flex items-center gap-1 px-2 py-0.5 rounded hover:bg-[#ede8dc] text-[#404652] font-medium transition"
-                >
-                  <Globe className="w-3.5 h-3.5 text-[#737b88]" />
-                  <span>{selectedLang}</span>
-                  <ChevronDown className="w-3 h-3 text-[#88909d]" />
-                </button>
-
-                {isLangOpen && (
-                  <div className="absolute right-0 mt-1 w-28 bg-white border border-[#ded8cc] rounded-md shadow-lg py-1 z-50 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => { setLanguage("bn"); setIsLangOpen(false); }}
-                      className="w-full text-left px-3 py-1.5 hover:bg-[#f6f2e9] text-[#1c1d21] font-medium flex items-center justify-between transition"
-                    >
-                      বাংলা {language === "bn" && <span className="text-[#842323] text-xs font-bold">✓</span>}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setLanguage("en"); setIsLangOpen(false); }}
-                      className="w-full text-left px-3 py-1.5 hover:bg-[#f6f2e9] text-[#1c1d21] font-medium flex items-center justify-between transition"
-                    >
-                      English {language === "en" && <span className="text-[#842323] text-xs font-bold">✓</span>}
-                    </button>
-                  </div>
-                )}
-              </div>
 
               {/* Saved Notebook Link */}
               <Link
                 href="/saved"
                 className="flex items-center gap-1.5 px-2 py-0.5 rounded hover:bg-[#ede8dc] text-[#404652] transition font-medium"
-                title="ব্যক্তিগত নোটবুক, ফ্ল্যাশকার্ড ও কুইজ স্কোরকার্ড"
+                title={isEnglishMode ? "Personal Word Bank & Notebook" : "ব্যক্তিগত নোটবুক ও স্টাডি হাব"}
               >
-                <Bookmark className="w-3.5 h-3.5 text-[#842323]" />
-                <span className="hidden sm:inline">স্টাডি হাব ও নোটবুক</span>
+                <Bookmark className={`w-3.5 h-3.5 ${isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"}`} />
+                <span className="hidden sm:inline">
+                  {isEnglishMode ? "Word Bank & Hub" : "স্টাডি হাব"}
+                </span>
               </Link>
 
               {/* Admin Console Link (ONLY visible if logged in as Admin) */}
@@ -163,8 +186,7 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
                   href="/admin"
                   className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold border border-amber-200 transition text-[11px]"
                 >
-                  <UserCheck className="w-3.5 h-3.5" />
-                  <span>অ্যাডমিন কনসোল</span>
+                  অ্যাডমিন
                 </Link>
               )}
             </div>
@@ -173,33 +195,39 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
 
         {/* Masthead / Brand Centerpiece with Symmetrical Spacing */}
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-5 grid grid-cols-1 md:grid-cols-3 items-center gap-4 lg:gap-6">
-          {/* Left Column: Academic Motto / Tagline (Symmetrically Bounded) */}
+          {/* Left Column: Academic Motto / Tagline */}
           <div className="hidden md:flex flex-col justify-center text-left w-full max-w-[260px] sm:max-w-[280px]">
             <span className="text-xs tracking-wider text-[#68707f] font-serif uppercase font-semibold block">
-              সত্য, বিশ্লেষণ ও শিক্ষণীয় তথ্যের আধার
+              {isEnglishMode
+                ? "Editorial English & Active Recall"
+                : "সত্য, বিশ্লেষণ ও শিক্ষণীয় তথ্যের আধার"}
             </span>
             <span className="text-[11px] text-[#939ba8] mt-0.5 block">
-              শিক্ষার্থী ও গবেষক কেন্দ্রিক ডিজিটাল পত্রিকা
+              {isEnglishMode
+                ? "Curated Journalism for English Fluency"
+                : "শিক্ষার্থী ও গবেষক কেন্দ্রিক ডিজিটাল পত্রিকা"}
             </span>
           </div>
 
-          {/* Center Column: KhoboraKhobor Digital Brand Logo (Mathematically Dead-Center) */}
+          {/* Center Column: KhoboraKhobor Digital Brand Logo */}
           <div className="text-center justify-self-center">
             <Link href="/" className="inline-block group">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#17191d] font-serif">
                 খবরাখবর
               </h1>
               <div className="flex items-center justify-center gap-2 mt-1">
-                <span className="h-[1px] w-8 bg-[#842323]/40" />
-                <span className="text-[10px] tracking-[0.28em] text-[#842323] font-bold uppercase">
-                  KHOBORAKHOBOR DIGITAL
+                <span className={`h-[1px] w-8 ${isEnglishMode ? "bg-[#1e40af]/40" : "bg-[#842323]/40"}`} />
+                <span className={`text-[10px] tracking-[0.24em] font-bold uppercase ${
+                  isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"
+                }`}>
+                  {isEnglishMode ? "ENGLISH LEARNING TRACK" : "KHOBORAKHOBOR DIGITAL"}
                 </span>
-                <span className="h-[1px] w-8 bg-[#842323]/40" />
+                <span className={`h-[1px] w-8 ${isEnglishMode ? "bg-[#1e40af]/40" : "bg-[#842323]/40"}`} />
               </div>
             </Link>
           </div>
 
-          {/* Right Column: Search Box & Login Link (Symmetrically Bounded to Mirror Left Column) */}
+          {/* Right Column: Search Box & Login Link */}
           <div className="flex justify-end items-center gap-2 sm:gap-3 justify-self-end w-full">
             <button
               onClick={() => setIsSearchOpen(true)}
@@ -211,8 +239,12 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
               }`}
             >
               <div className="flex items-center gap-2 truncate">
-                <Search className="w-4 h-4 text-[#842323] group-hover:scale-110 transition-transform shrink-0" />
-                <span className="truncate">অনুসন্ধান করুন...</span>
+                <Search className={`w-4 h-4 group-hover:scale-110 transition-transform shrink-0 ${
+                  isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"
+                }`} />
+                <span className="truncate">
+                  {isEnglishMode ? "Search articles & words..." : "অনুসন্ধান করুন..."}
+                </span>
               </div>
               <kbd className="hidden sm:inline-flex items-center bg-[#eae4d6] text-[#6b7280] text-[10px] font-mono px-1.5 py-0.5 rounded border border-[#dfd8ca] shrink-0">
                 Ctrl K
@@ -226,7 +258,7 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
                 className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2.5 rounded-lg border border-[#ded8cb] bg-[#faf8f4] hover:bg-[#ede7da] text-xs font-semibold text-[#1c1d21] transition shadow-2xs shrink-0"
                 title="লগইন বা শিক্ষার্থী সাইন আপ"
               >
-                <UserCheck className="w-3.5 h-3.5 text-[#842323]" />
+                <UserCheck className={`w-3.5 h-3.5 ${isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"}`} />
                 <span>লগইন</span>
               </Link>
             )}
@@ -241,49 +273,65 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
           </div>
         </div>
 
-        {/* Single Unified Category Bar with Zero Horizontal Scrolling */}
+        {/* Single Unified Category Bar */}
         <nav className="border-t border-[#ece7dc] bg-[#faf8f4] hidden md:block">
           <div className="max-w-7xl mx-auto px-4 sm:px-8 py-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Link
                 href="/"
-                className="px-4 py-1.5 rounded-full text-xs font-bold bg-[#842323] text-white whitespace-nowrap shadow-2xs transition"
+                className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap shadow-2xs transition ${
+                  isEnglishMode ? "bg-[#1e40af] text-white" : "bg-[#842323] text-white"
+                }`}
               >
-                প্রচ্ছদ
+                {isEnglishMode ? "All News Feed" : "প্রচ্ছদ"}
               </Link>
-              {primaryCategories.map((cat) => (
-                <Link
-                  key={cat.id}
-                  href={`/category/${cat.slug}`}
-                  className="px-3.5 py-1.5 rounded-full text-xs font-medium bg-[#ffffff] hover:bg-[#ede7da] text-[#343a46] border border-[#ded8cb] whitespace-nowrap transition"
-                >
-                  {cat.name}
-                </Link>
-              ))}
+              {primaryCategories.map((cat) => {
+                const displayName = isEnglishMode
+                  ? ENGLISH_CATEGORY_NAMES[cat.slug] || cat.name
+                  : cat.name;
+
+                return (
+                  <Link
+                    key={cat.id}
+                    href={`/category/${cat.slug}`}
+                    className="px-3.5 py-1.5 rounded-full text-xs font-medium bg-[#ffffff] hover:bg-[#ede7da] text-[#343a46] border border-[#ded8cb] whitespace-nowrap transition"
+                  >
+                    {displayName}
+                  </Link>
+                );
+              })}
 
               {/* Others Dropdown for overflow categories */}
               {extraCategories.length > 0 && (
                 <div className="relative" ref={moreRef}>
                   <button
                     onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#ffffff] hover:bg-[#ede7da] text-[#842323] border border-[#ded8cb] transition"
+                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#ffffff] hover:bg-[#ede7da] border border-[#ded8cb] transition ${
+                      isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"
+                    }`}
                   >
-                    <span>অন্যান্য বিভাগ</span>
+                    <span>{isEnglishMode ? "More Tracks" : "অন্যান্য বিভাগ"}</span>
                     <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isMoreMenuOpen ? "rotate-180" : ""}`} />
                   </button>
 
                   {isMoreMenuOpen && (
                     <div className="absolute left-0 mt-2 w-52 bg-white border border-[#ded8cc] rounded-lg shadow-xl py-2 z-50 text-xs animate-fade-in">
-                      {extraCategories.map((cat) => (
-                        <Link
-                          key={cat.id}
-                          href={`/category/${cat.slug}`}
-                          onClick={() => setIsMoreMenuOpen(false)}
-                          className="block px-4 py-2 hover:bg-[#f6f2e9] text-[#2d333f] font-medium transition"
-                        >
-                          {cat.name}
-                        </Link>
-                      ))}
+                      {extraCategories.map((cat) => {
+                        const displayName = isEnglishMode
+                          ? ENGLISH_CATEGORY_NAMES[cat.slug] || cat.name
+                          : cat.name;
+
+                        return (
+                          <Link
+                            key={cat.id}
+                            href={`/category/${cat.slug}`}
+                            onClick={() => setIsMoreMenuOpen(false)}
+                            className="block px-4 py-2 hover:bg-[#f6f2e9] text-[#2d333f] font-medium transition"
+                          >
+                            {displayName}
+                          </Link>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -293,10 +341,12 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
             <div className="hidden lg:flex items-center gap-3 text-xs text-[#717887]">
               <Link
                 href="/capsule"
-                className="hover:text-[#842323] font-semibold flex items-center gap-1 transition"
+                className={`font-semibold flex items-center gap-1 transition ${
+                  isEnglishMode ? "hover:text-[#1e40af]" : "hover:text-[#842323]"
+                }`}
               >
-                <Zap className="w-3.5 h-3.5 text-[#842323]" />
-                <span>আজকের ক্যাপসুল</span>
+                <Zap className={`w-3.5 h-3.5 ${isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"}`} />
+                <span>{isEnglishMode ? "5-Min English Capsule" : "আজকের ক্যাপসুল"}</span>
               </Link>
             </div>
           </div>
@@ -306,22 +356,22 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
         {isMobileMenuOpen && (
           <div className="md:hidden border-t border-[#ece7dc] bg-[#faf8f4] px-4 py-3 space-y-2">
             <div className="flex items-center justify-between pb-2 border-b border-[#ece7dc]">
-              <span className="text-xs font-semibold text-[#525964]">ভাষা (Language):</span>
-              <div className="inline-flex rounded-md border border-[#ded8cc] bg-white p-0.5 text-xs">
+              <span className="text-xs font-semibold text-[#525964]">প্ল্যাটফর্ম মোড (Mode):</span>
+              <div className="inline-flex rounded-lg border border-[#ded8cc] bg-white p-0.5 text-xs font-semibold">
                 <button
                   type="button"
-                  onClick={() => setLanguage("bn")}
-                  className={`px-2.5 py-1 rounded font-medium transition ${
-                    language === "bn" ? "bg-[#842323] text-white" : "text-[#404652] hover:bg-[#f6f2e9]"
+                  onClick={() => setMode("job_prep")}
+                  className={`px-2.5 py-1 rounded-md transition ${
+                    !isEnglishMode ? "bg-[#842323] text-white shadow-xs" : "text-[#404652] hover:bg-[#f6f2e9]"
                   }`}
                 >
-                  বাংলা
+                  চাকরি প্রস্তুতি
                 </button>
                 <button
                   type="button"
-                  onClick={() => setLanguage("en")}
-                  className={`px-2.5 py-1 rounded font-medium transition ${
-                    language === "en" ? "bg-[#842323] text-white" : "text-[#404652] hover:bg-[#f6f2e9]"
+                  onClick={() => setMode("english_learning")}
+                  className={`px-2.5 py-1 rounded-md transition ${
+                    isEnglishMode ? "bg-[#1e40af] text-white shadow-xs" : "text-[#404652] hover:bg-[#f6f2e9]"
                   }`}
                 >
                   English
@@ -335,25 +385,33 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
             <Link
               href="/"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded text-[#842323] font-bold bg-[#ede7da]"
+              className={`block px-3 py-2 rounded font-bold ${
+                isEnglishMode ? "text-[#1e40af] bg-blue-50" : "text-[#842323] bg-[#ede7da]"
+              }`}
             >
-              প্রচ্ছদ
+              {isEnglishMode ? "All News Feed" : "প্রচ্ছদ"}
             </Link>
-            {categories.map((cat) => (
-              <Link
-                key={cat.id}
-                href={`/category/${cat.slug}`}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block px-3 py-2 text-sm text-[#3b414d] hover:bg-[#f0ebe0] rounded font-medium"
-              >
-                {cat.name}
-              </Link>
-            ))}
+            {categories.map((cat) => {
+              const displayName = isEnglishMode
+                ? ENGLISH_CATEGORY_NAMES[cat.slug] || cat.name
+                : cat.name;
+
+              return (
+                <Link
+                  key={cat.id}
+                  href={`/category/${cat.slug}`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block px-3 py-2 text-sm text-[#3b414d] hover:bg-[#f0ebe0] rounded font-medium"
+                >
+                  {displayName}
+                </Link>
+              );
+            })}
           </div>
         )}
       </header>
 
-      {/* Global Search Modal */}
+      {/* Global Search Dialog Modal */}
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </>
   );

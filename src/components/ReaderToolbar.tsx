@@ -2,7 +2,7 @@
 
 import { 
   Eye, EyeOff, Share2, 
-  Type, Edit3, Check
+  Type, Edit3, Check, Volume2, Sparkles, BookOpen, Search
 } from "lucide-react";
 import ThemeSwitcher from "./ThemeSwitcher";
 
@@ -18,6 +18,11 @@ interface ReaderToolbarProps {
   copied: boolean;
   onCopyLink: () => void;
   onOpenShare?: () => void;
+  // English Scaffolding props
+  isEnglishArticle?: boolean;
+  showPhonics?: boolean;
+  onTogglePhonics?: () => void;
+  onOpenDictionary?: (initialWord?: string) => void;
 }
 
 export default function ReaderToolbar({
@@ -31,10 +36,14 @@ export default function ReaderToolbar({
   copied,
   onCopyLink,
   onOpenShare,
+  isEnglishArticle = false,
+  showPhonics = true,
+  onTogglePhonics,
+  onOpenDictionary,
 }: ReaderToolbarProps) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 p-3 px-4 mb-8 bg-[#ffffff] border border-[#e2dcd0] rounded-lg shadow-2xs text-xs text-[#525964]">
-      {/* Font Size & Paper Reading Tone Group */}
+      {/* Font Size & Reading Tone Group */}
       <div className="flex flex-wrap items-center gap-3">
         {/* Font Size Adjusters */}
         <div className="flex items-center gap-1.5">
@@ -76,7 +85,37 @@ export default function ReaderToolbar({
           </div>
         </div>
 
-        {/* Paper Theme Switcher (Parchment & Sepia only) */}
+        {/* Bangla Pronunciation Subtext Toggle for English Articles */}
+        {isEnglishArticle && onTogglePhonics && (
+          <button
+            type="button"
+            onClick={onTogglePhonics}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md transition text-xs border font-medium ${
+              showPhonics
+                ? "bg-amber-100 text-amber-950 border-amber-300 font-bold shadow-2xs"
+                : "bg-[#faf8f4] text-[#475569] border-[#ded8cb] hover:bg-[#ede7da]"
+            }`}
+            title="প্রতিটি ইংরেজি শব্দের নিচে বাংলা উচ্চারণ নির্দেশিকা প্রদর্শন বা লুকান"
+          >
+            <Volume2 className={`w-3.5 h-3.5 ${showPhonics ? "text-amber-800" : "text-[#737b88]"}`} />
+            <span>{showPhonics ? "উচ্চারণ গাইড: চালু" : "উচ্চারণ গাইড: বন্ধ"}</span>
+          </button>
+        )}
+
+        {/* Quick Dictionary Button */}
+        {onOpenDictionary && (
+          <button
+            type="button"
+            onClick={() => onOpenDictionary()}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50/70 hover:bg-blue-100 text-blue-900 border border-blue-200 transition text-xs font-semibold shadow-2xs"
+            title="শব্দ অনুসন্ধান ও উচ্চারণ অভিধান খুলুন"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-[#1e40af]" />
+            <span>অভিধান</span>
+          </button>
+        )}
+
+        {/* Paper Theme Switcher */}
         <div className="flex items-center gap-1.5 border-l border-[#ece7dc] pl-3">
           <ThemeSwitcher compact />
         </div>

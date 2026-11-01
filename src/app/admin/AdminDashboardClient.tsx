@@ -46,8 +46,13 @@ import {
   Code,
   X,
   Users,
+  Volume2,
+  BookOpen,
+  HelpCircle,
+  GraduationCap,
 } from "lucide-react";
 import UserManagementTab from "./UserManagementTab";
+import { getEnToBnPhonetics } from "@/lib/phonetics/en-to-bn";
 
 const CATEGORIES = [
   { name: "সকল বিভাগ (All Categories)", slug: "all" },
@@ -98,6 +103,10 @@ export default function AdminDashboardClient() {
   // Moderation Articles
   const [articles, setArticles] = useState<any[]>([]);
   const [loadingArticles, setLoadingArticles] = useState(false);
+  const [articleFilterMode, setArticleFilterMode] = useState<"all" | "job_prep" | "english">("all");
+  const [previewArticle, setPreviewArticle] = useState<any | null>(null);
+  const [previewTab, setPreviewTab] = useState<"vocab" | "quiz">("vocab");
+  const [speakingTerm, setSpeakingTerm] = useState<string | null>(null);
 
   // Spider Run Form State
   const [targetDate, setTargetDate] = useState(todayStr);
@@ -124,6 +133,28 @@ export default function AdminDashboardClient() {
   const [addingSource, setAddingSource] = useState(false);
 
   const [, startTransition] = useTransition();
+
+  const handleSpeakWord = (word: string) => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(word);
+    utterance.lang = "en-US";
+    utterance.rate = 0.85;
+    setSpeakingTerm(word);
+    utterance.onend = () => setSpeakingTerm(null);
+    utterance.onerror = () => setSpeakingTerm(null);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const isBengaliText = (text: string) => /[\u0980-\u09FF]/.test(text || "");
+  const bnArticlesCount = articles.filter((a) => isBengaliText(a.title)).length;
+  const enArticlesCount = articles.filter((a) => !isBengaliText(a.title)).length;
+
+  const displayedArticles = articles.filter((art) => {
+    if (articleFilterMode === "job_prep") return isBengaliText(art.title);
+    if (articleFilterMode === "english") return !isBengaliText(art.title);
+    return true;
+  });
 
   // Load initial data
   const refreshAllData = async () => {
@@ -665,9 +696,9 @@ export default function AdminDashboardClient() {
                       onChange={(e) => setLanguage(e.target.value as any)}
                       className="w-full text-xs p-2.5 bg-[#0f141c] border border-[#2b3545] rounded-lg text-white outline-none focus:border-[#f5c66b]"
                     >
-                      <option value="all">উভয় মাধ্যম (বাংলা ও ইংরেজি সংবাদপত্র)</option>
-                      <option value="bn">শুধুমাত্র বাংলা সংবাদপত্র (newspapers_bn.csv)</option>
-                      <option value="en">শুধুমাত্র ইংরেজি সংবাদপত্র (newspapers_en.csv)</option>
+                      <option value="all">উভয় মাধ্যম (চাকরি প্রস্তুতি বাংলা ও ইংরেজি লার্নিং)</option>
+                      <option value="bn">শুধুমাত্র বাংলা (চাকরি ও পরীক্ষা প্রস্তুতি - newspapers_bn.csv)</option>
+                      <option value="en">শুধুমাত্র ইংরেজি (English Learning Mode - newspapers_en.csv)</option>
                     </select>
                   </div>
 
@@ -1016,7 +1047,7 @@ export default function AdminDashboardClient() {
                                 : "bg-[#0369a1]/30 text-[#7dd3fc] border border-[#0369a1]/50"
                             }`}
                           >
-                            {s.language === "bn" ? "বাংলা (BN)" : "English (EN)"}
+                            {s.language === "bn" ? "চাকরি প্রস্তুতি (BN)" : "English Learning (EN)"}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-[#cbd5e1]">{s.categorySlug}</td>
@@ -1435,7 +1466,7 @@ export default function AdminDashboardClient() {
                   সংগৃহীত সংবাদ ও কন্টেন্ট মডারেশন (Article Content Moderation)
                 </h2>
                 <p className="text-xs text-[#8e9aa8]">
-                  স্পাইডার দ্বারা তৈরিকৃত প্রতিবেদন রিভিউ, লিড/ক্যাপসুল টগল এবং অপসারণ
+                  উভয় মোডের (চাকরি ও বিসিএস প্রস্তুতি বনাম English Learning) প্রতিবেদন রিভিউ ও লার্নিং টুলস পরিদর্শন
                 </p>
               </div>
               <button
@@ -1445,6 +1476,58 @@ export default function AdminDashboardClient() {
                 <RefreshCw className="w-3.5 h-3.5" />
                 <span>রিফ্রেশ তালিকা</span>
               </button>
+            </div>
+
+            {/* Mode Filtering Filter Bar */}
+            <div className="bg-[#141b24] border border-[#212936] rounded-xl p-3 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs text-[#8e9aa8] flex items-center gap-1.5 mr-1 font-medium">
+                  <Filter className="w-3.5 h-3.5" /> মোড অনুযায়ী ফিল্টার:
+                </span>
+                <button
+                  onClick={() => setArticleFilterMode("all")}
+                  className={`px-3 py-1.5 text-xs rounded-lg font-semibold transition flex items-center gap-1.5 ${
+                    articleFilterMode === "all"
+                      ? "bg-[#334155] text-white shadow-sm ring-1 ring-[#475569]"
+                      : "bg-[#1e293b] text-[#94a3b8] hover:text-white hover:bg-[#283548]"
+                  }`}
+                >
+                  <span>সকল প্রতিবেদন</span>
+                  <span className="px-1.5 py-0.5 bg-[#0f141c] rounded-full text-[10px] text-[#cbd5e1]">
+                    {articles.length}
+                  </span>
+                </button>
+                <button
+                  onClick={() => setArticleFilterMode("job_prep")}
+                  className={`px-3 py-1.5 text-xs rounded-lg font-semibold transition flex items-center gap-1.5 ${
+                    articleFilterMode === "job_prep"
+                      ? "bg-[#842323] text-white shadow-sm ring-1 ring-[#b91c1c]"
+                      : "bg-[#1e293b] text-[#fca5a5] hover:bg-[#842323]/20"
+                  }`}
+                >
+                  <span>চাকরি ও বিসিএস</span>
+                  <span className="px-1.5 py-0.5 bg-[#0f141c] rounded-full text-[10px] text-[#fca5a5]">
+                    {bnArticlesCount}
+                  </span>
+                </button>
+                <button
+                  onClick={() => setArticleFilterMode("english")}
+                  className={`px-3 py-1.5 text-xs rounded-lg font-semibold transition flex items-center gap-1.5 ${
+                    articleFilterMode === "english"
+                      ? "bg-[#0284c7] text-white shadow-sm ring-1 ring-[#38bdf8]"
+                      : "bg-[#1e293b] text-[#7dd3fc] hover:bg-[#0284c7]/20"
+                  }`}
+                >
+                  <span>English Learning</span>
+                  <span className="px-1.5 py-0.5 bg-[#0f141c] rounded-full text-[10px] text-[#7dd3fc]">
+                    {enArticlesCount}
+                  </span>
+                </button>
+              </div>
+
+              <div className="text-xs text-[#8e9aa8] font-mono">
+                প্রদর্শিত: <span className="text-white font-bold">{displayedArticles.length}</span> টি
+              </div>
             </div>
 
             <div className="bg-[#141b24] border border-[#212936] rounded-xl overflow-hidden shadow-sm">
@@ -1461,74 +1544,100 @@ export default function AdminDashboardClient() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#212936]">
-                    {articles.map((art) => (
-                      <tr key={art.id} className="hover:bg-[#18212e]/50 transition">
-                        <td className="px-4 py-3 max-w-sm">
-                          <Link
-                            href={`/article/${art.slug}`}
-                            target="_blank"
-                            className="font-semibold text-white hover:text-[#f5c66b] line-clamp-2"
-                          >
-                            {art.title}
-                          </Link>
-                          <span className="text-[10px] text-[#38bdf8] mt-0.5 block">
-                            বিভাগ: {art.category?.name || "সাধারণ"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-[#94a3b8] text-[11px] whitespace-nowrap">
-                          <div>{art.imageCaption || "উৎস: অনলাইন"}</div>
-                          <div className="text-[10px] text-[#64748b]">{art.publishedAt}</div>
-                        </td>
-                        <td className="px-4 py-3 text-center whitespace-nowrap">
-                          <span className="text-[11px] bg-[#1e293b] text-[#cbd5e1] px-2 py-0.5 rounded border border-[#334155]">
-                            {art._count?.quizQuestions || 0} কুইজ • {art._count?.vocabulary || 0} শব্দ
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <button
-                            onClick={() => handleToggleFlag(art.id, "isCapsule")}
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold border transition ${
-                              art.isCapsule
-                                ? "bg-[#065f46] text-[#a7f3d0] border-[#059669]"
-                                : "bg-[#1e293b] text-[#64748b] border-[#334155]"
-                            }`}
-                          >
-                            {art.isCapsule ? "সক্রিয়" : "বন্ধ"}
-                          </button>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <button
-                            onClick={() => handleToggleFlag(art.id, "isLead")}
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold border transition ${
-                              art.isLead
-                                ? "bg-[#842323] text-[#fca5a5] border-[#842323]"
-                                : "bg-[#1e293b] text-[#64748b] border-[#334155]"
-                            }`}
-                          >
-                            {art.isLead ? "লিড" : "সাধারণ"}
-                          </button>
-                        </td>
-                        <td className="px-4 py-3 text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-2">
+                    {displayedArticles.map((art) => {
+                      const isEnglish = !isBengaliText(art.title);
+                      return (
+                        <tr key={art.id} className="hover:bg-[#18212e]/50 transition">
+                          <td className="px-4 py-3 max-w-sm">
+                            <div className="flex items-center gap-1.5 mb-1">
+                              {isEnglish ? (
+                                <span className="inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded font-bold bg-[#0369a1]/25 text-[#7dd3fc] border border-[#0284c7]/40">
+                                  English Mode
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded font-bold bg-[#842323]/25 text-[#fca5a5] border border-[#842323]/40">
+                                  চাকরি প্রস্তুতি
+                                </span>
+                              )}
+                              <span className="text-[10px] text-[#38bdf8]">
+                                বিভাগ: {art.category?.name || "সাধারণ"}
+                              </span>
+                            </div>
                             <Link
                               href={`/article/${art.slug}`}
                               target="_blank"
-                              className="p-1 text-[#38bdf8] hover:text-white hover:bg-[#0369a1] rounded transition"
-                              title="সাইটে দেখুন"
+                              className="font-semibold text-white hover:text-[#f5c66b] line-clamp-2"
                             >
-                              <ExternalLink className="w-3.5 h-3.5" />
+                              {art.title}
                             </Link>
+                          </td>
+                          <td className="px-4 py-3 text-[#94a3b8] text-[11px] whitespace-nowrap">
+                            <div>{art.imageCaption || "উৎস: অনলাইন"}</div>
+                            <div className="text-[10px] text-[#64748b]">{art.publishedAt}</div>
+                          </td>
+                          <td className="px-4 py-3 text-center whitespace-nowrap">
+                            <div className="flex flex-col items-center gap-1">
+                              <span className="text-[11px] bg-[#1e293b] text-[#cbd5e1] px-2 py-0.5 rounded border border-[#334155]">
+                                {art._count?.quizQuestions || (art.quizQuestions?.length ?? 0)} কুইজ • {art._count?.vocabulary || (art.vocabulary?.length ?? 0)} শব্দ
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPreviewArticle(art);
+                                  setPreviewTab("vocab");
+                                }}
+                                className="text-[10px] text-[#f5c66b] hover:text-[#fbbf24] underline flex items-center gap-1 transition font-medium"
+                              >
+                                <Eye className="w-3 h-3" /> টুলস প্রিভিউ
+                              </button>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-center">
                             <button
-                              onClick={() => handleDeleteArticle(art.id, art.title)}
-                              className="p-1 text-[#f87171] hover:text-white hover:bg-[#7f1d1d] rounded transition"
-                              title="প্রতিবেদন মুছুন"
+                              onClick={() => handleToggleFlag(art.id, "isCapsule")}
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold border transition ${
+                                art.isCapsule
+                                  ? "bg-[#065f46] text-[#a7f3d0] border-[#059669]"
+                                  : "bg-[#1e293b] text-[#64748b] border-[#334155]"
+                              }`}
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              {art.isCapsule ? "সক্রিয়" : "বন্ধ"}
                             </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <button
+                              onClick={() => handleToggleFlag(art.id, "isLead")}
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold border transition ${
+                                art.isLead
+                                  ? "bg-[#842323] text-[#fca5a5] border-[#842323]"
+                                  : "bg-[#1e293b] text-[#64748b] border-[#334155]"
+                              }`}
+                            >
+                              {art.isLead ? "লিড" : "সাধারণ"}
+                            </button>
+                          </td>
+                          <td className="px-4 py-3 text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-2">
+                              <Link
+                                href={`/article/${art.slug}`}
+                                target="_blank"
+                                className="p-1 text-[#38bdf8] hover:text-white hover:bg-[#0369a1] rounded transition"
+                                title="সাইটে দেখুন"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </Link>
+                              <button
+                                onClick={() => handleDeleteArticle(art.id, art.title)}
+                                className="p-1 text-[#f87171] hover:text-white hover:bg-[#7f1d1d] rounded transition"
+                                title="প্রতিবেদন মুছুন"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -1899,6 +2008,242 @@ export default function AdminDashboardClient() {
           </div>
         </div>
       )}
+    
+      {/* Learning Tools Preview Modal */}
+      {previewArticle && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-[#141b24] border border-[#2b3545] rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl animate-in fade-in duration-200">
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 border-b border-[#212936] flex items-start justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  {!isBengaliText(previewArticle.title) ? (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#0369a1]/30 text-[#7dd3fc] border border-[#0284c7]/50 inline-flex items-center gap-1">
+                      English Learning Mode
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#842323]/30 text-[#fca5a5] border border-[#842323]/50 inline-flex items-center gap-1">
+                      চাকরি ও বিসিএস প্রস্তুতি
+                    </span>
+                  )}
+                  <span className="text-xs text-[#94a3b8]">
+                    {previewArticle.category?.name || "সাধারণ"} • {previewArticle.publishedAt}
+                  </span>
+                </div>
+                <h3 className="text-base sm:text-lg font-bold text-white font-serif line-clamp-2">
+                  {previewArticle.title}
+                </h3>
+              </div>
+              <button
+                onClick={() => setPreviewArticle(null)}
+                className="p-1.5 text-[#94a3b8] hover:text-white hover:bg-[#1e293b] rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Subheader Tabs */}
+            <div className="px-5 pt-3 border-b border-[#212936] flex items-center gap-4 bg-[#101620]">
+              <button
+                onClick={() => setPreviewTab("vocab")}
+                className={`pb-3 text-xs font-bold transition flex items-center gap-2 border-b-2 ${
+                  previewTab === "vocab"
+                    ? "border-[#f5c66b] text-[#f5c66b]"
+                    : "border-transparent text-[#8e9aa8] hover:text-[#cbd5e1]"
+                }`}
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>
+                  শব্দভাণ্ডার ম্যাট্রিক্স ({previewArticle.vocabulary?.length || 0})
+                </span>
+              </button>
+              <button
+                onClick={() => setPreviewTab("quiz")}
+                className={`pb-3 text-xs font-bold transition flex items-center gap-2 border-b-2 ${
+                  previewTab === "quiz"
+                    ? "border-[#f5c66b] text-[#f5c66b]"
+                    : "border-transparent text-[#8e9aa8] hover:text-[#cbd5e1]"
+                }`}
+              >
+                <HelpCircle className="w-3.5 h-3.5" />
+                <span>
+                  অ্যাক্টিভ রিকল কুইজ ({previewArticle.quizQuestions?.length || 0})
+                </span>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 overflow-y-auto space-y-4 flex-1">
+              {previewTab === "vocab" && (
+                <div>
+                  {!previewArticle.vocabulary || previewArticle.vocabulary.length === 0 ? (
+                    <div className="text-center py-10 text-xs text-[#64748b]">
+                      এই প্রতিবেদনের জন্য কোনো শব্দভাণ্ডার পাওয়া যায়নি।
+                    </div>
+                  ) : !isBengaliText(previewArticle.title) ? (
+                    /* 3-Column Vocabulary Table for English Mode */
+                    <div className="border border-[#2b3545] rounded-xl overflow-hidden shadow-sm">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-[#18202c] border-b border-[#2b3545] text-[#94a3b8] font-mono text-[11px]">
+                          <tr>
+                            <th className="px-3.5 py-2.5 w-[30%]">শব্দ ও সিলেবল উচ্চারণ</th>
+                            <th className="px-3.5 py-2.5 w-[35%]">অর্থ ও সংজ্ঞা</th>
+                            <th className="px-3.5 py-2.5 w-[35%]">বাস্তব প্রয়োগের উদাহরণ</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#212936]">
+                          {previewArticle.vocabulary.map((v: any, idx: number) => {
+                            const phonetics = getEnToBnPhonetics(v.term);
+                            return (
+                              <tr key={idx} className="hover:bg-[#18212e]/50">
+                                <td className="px-3.5 py-3 align-top">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-white text-sm">
+                                      {v.term}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSpeakWord(v.term)}
+                                      className={`p-1 rounded transition ${
+                                        speakingTerm === v.term
+                                          ? "bg-[#38bdf8] text-[#0f172a]"
+                                          : "text-[#38bdf8] hover:bg-[#0369a1]/30"
+                                      }`}
+                                      title="উচ্চারণ শুনুন"
+                                    >
+                                      <Volume2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                  <div className="text-[11px] text-[#fbbf24] font-medium mt-0.5">
+                                    [{phonetics}]
+                                  </div>
+                                </td>
+                                <td className="px-3.5 py-3 align-top text-[#cbd5e1] space-y-1">
+                                  <div className="font-semibold text-white">
+                                    {v.definition}
+                                  </div>
+                                </td>
+                                <td className="px-3.5 py-3 align-top text-[#94a3b8] text-[11px] leading-relaxed">
+                                  {v.context ? (
+                                    <div className="bg-[#0f141c] p-2 rounded border border-[#1e293b] italic">
+                                      {v.context}
+                                    </div>
+                                  ) : (
+                                    <span className="text-[#64748b]">—</span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    /* Job Prep Mode Vocabulary List */
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {previewArticle.vocabulary.map((v: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className="bg-[#0f141c] border border-[#212936] p-3 rounded-lg space-y-1"
+                        >
+                          <div className="font-bold text-[#f5c66b] text-sm">{v.term}</div>
+                          <div className="text-xs text-[#e2e8f0]">{v.definition}</div>
+                          {v.context && (
+                            <div className="text-[11px] text-[#8e9aa8] italic pt-1 border-t border-[#1e293b]">
+                              প্রসঙ্গ: {v.context}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {previewTab === "quiz" && (
+                <div className="space-y-4">
+                  {!previewArticle.quizQuestions || previewArticle.quizQuestions.length === 0 ? (
+                    <div className="text-center py-10 text-xs text-[#64748b]">
+                      এই প্রতিবেদনের জন্য কোনো কুইজ প্রশ্ন পাওয়া যায়নি।
+                    </div>
+                  ) : (
+                    previewArticle.quizQuestions.map((q: any, idx: number) => {
+                      let options: string[] = [];
+                      try {
+                        options = typeof q.options === "string" ? JSON.parse(q.options) : q.options;
+                      } catch {
+                        options = [];
+                      }
+                      return (
+                        <div
+                          key={idx}
+                          className="bg-[#0f141c] border border-[#212936] rounded-xl p-4 space-y-3"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <h4 className="text-sm font-semibold text-white">
+                              <span className="text-[#f5c66b] mr-2">প্রশ্ন {idx + 1}:</span>
+                              {q.question}
+                            </h4>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                            {options.map((opt: string, optIdx: number) => {
+                              const isCorrect = optIdx === q.correctOption;
+                              return (
+                                <div
+                                  key={optIdx}
+                                  className={`p-2.5 rounded-lg border text-xs flex items-center justify-between gap-2 ${
+                                    isCorrect
+                                      ? "bg-[#065f46]/20 border-[#059669] text-[#a7f3d0] font-medium"
+                                      : "bg-[#141b24] border-[#212936] text-[#cbd5e1]"
+                                  }`}
+                                >
+                                  <span>{opt}</span>
+                                  {isCorrect && (
+                                    <span className="shrink-0 px-1.5 py-0.5 bg-[#059669] text-white rounded text-[10px] font-bold">
+                                      সঠিক
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {q.explanation && (
+                            <div className="text-[11px] text-[#94a3b8] bg-[#141b24] p-2.5 rounded-lg border border-[#1e293b]">
+                              <span className="text-[#fbbf24] font-semibold mr-1">ব্যাখ্যা:</span>
+                              {q.explanation}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-[#212936] bg-[#101620] flex items-center justify-between gap-3">
+              <Link
+                href={`/article/${previewArticle.slug}`}
+                target="_blank"
+                className="text-xs text-[#38bdf8] hover:underline flex items-center gap-1 font-medium"
+              >
+                <span>মূল প্রতিবেদনে দেখুন</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </Link>
+              <button
+                onClick={() => setPreviewArticle(null)}
+                className="px-4 py-1.5 bg-[#1e293b] hover:bg-[#283548] text-white text-xs font-semibold rounded-lg transition"
+              >
+                বন্ধ করুন
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

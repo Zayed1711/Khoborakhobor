@@ -4,8 +4,8 @@ import { useState, useMemo } from "react";
 import SocialFeedCard from "./SocialFeedCard";
 import CapsuleStoryPills from "./CapsuleStoryPills";
 import DateArchiveStrip from "./DateArchiveStrip";
-import { Sparkles, Filter, BookOpen, Globe, Languages, RotateCcw } from "lucide-react";
-import { useLanguage } from "@/context/LanguageContext";
+import { Sparkles, Filter, BookOpen, Globe, Languages, GraduationCap } from "lucide-react";
+import { useAppMode } from "@/context/LanguageContext";
 import { isBengaliText } from "@/lib/bilingual";
 
 interface SocialFeedStreamProps {
@@ -15,20 +15,44 @@ interface SocialFeedStreamProps {
   studentId?: string;
 }
 
+const ENGLISH_CATEGORY_NAMES: Record<string, string> = {
+  national: "National & Policy",
+  world: "Global Affairs",
+  economy: "Business & Economy",
+  tech: "Tech & Science",
+  entertainment: "Culture & Arts",
+  sports: "Sports & Fitness",
+  politics: "Governance & Law",
+  opinion: "Editorials & Opinions",
+  lifestyle: "Lifestyle & Learning",
+  "exam-prep": "Vocabulary & Exams",
+};
+
 export default function SocialFeedStream({
   articles,
   capsuleArticles,
   categories,
   studentId,
 }: SocialFeedStreamProps) {
-  const { language, setLanguage } = useLanguage();
+  const { mode, setMode, isEnglishMode } = useAppMode();
   const [selectedCat, setSelectedCat] = useState("all");
   const [selectedDate, setSelectedDate] = useState("all");
 
-  const FILTER_PILLS = [
-    { name: "সব খবর (All Feed)", slug: "all" },
-    ...categories.map((c) => ({ name: c.name.split("(")[0].trim(), slug: c.slug })),
-  ];
+  const filterPills = useMemo(() => {
+    if (isEnglishMode) {
+      return [
+        { name: "All English Feed", slug: "all" },
+        ...categories.map((c) => ({
+          name: ENGLISH_CATEGORY_NAMES[c.slug] || c.name.split("(")[0].trim(),
+          slug: c.slug,
+        })),
+      ];
+    }
+    return [
+      { name: "সব খবর (All Feed)", slug: "all" },
+      ...categories.map((c) => ({ name: c.name.split("(")[0].trim(), slug: c.slug })),
+    ];
+  }, [categories, isEnglishMode]);
 
   // Count articles by language for feedback
   const { bnCount, enCount } = useMemo(() => {
@@ -41,7 +65,7 @@ export default function SocialFeedStream({
     return { bnCount: bn, enCount: en };
   }, [articles]);
 
-  // Filter by category, language mode, and selected archive date
+  // Filter by category, platform mode, and selected archive date
   const filteredArticles = useMemo(() => {
     let list = articles;
 
@@ -62,28 +86,28 @@ export default function SocialFeedStream({
       list = list.filter((a) => a.category?.slug === selectedCat);
     }
 
-    // 3. Language filter:
-    // If language is "bn", display Bengali articles
-    // If language is "en", display English articles
-    if (language === "bn") {
-      const bnOnly = list.filter((a) => isBengaliText(a.title));
-      return bnOnly.length > 0 ? bnOnly : (selectedDate === "all" && selectedCat === "all" ? bnOnly : list);
-    } else {
+    // 3. Mode filter:
+    // If English mode, strictly display English articles
+    // If Job Prep mode, display Bengali articles (or fall back to list if empty)
+    if (isEnglishMode) {
       const enOnly = list.filter((a) => !isBengaliText(a.title));
       return enOnly.length > 0 ? enOnly : (selectedDate === "all" && selectedCat === "all" ? enOnly : list);
-    }
-  }, [articles, selectedCat, language, selectedDate]);
-
-  // Filter capsule stories by language mode so Bengali readers see Bengali capsules
-  const filteredCapsules = useMemo(() => {
-    if (language === "bn") {
-      const bnCaps = capsuleArticles.filter((a) => isBengaliText(a.title));
-      return bnCaps.length > 0 ? bnCaps : capsuleArticles;
     } else {
+      const bnOnly = list.filter((a) => isBengaliText(a.title));
+      return bnOnly.length > 0 ? bnOnly : (selectedDate === "all" && selectedCat === "all" ? bnOnly : list);
+    }
+  }, [articles, selectedCat, isEnglishMode, selectedDate]);
+
+  // Filter capsule stories by mode so English learners see English capsules
+  const filteredCapsules = useMemo(() => {
+    if (isEnglishMode) {
       const enCaps = capsuleArticles.filter((a) => !isBengaliText(a.title));
       return enCaps.length > 0 ? enCaps : capsuleArticles;
+    } else {
+      const bnCaps = capsuleArticles.filter((a) => isBengaliText(a.title));
+      return bnCaps.length > 0 ? bnCaps : capsuleArticles;
     }
-  }, [capsuleArticles, language]);
+  }, [capsuleArticles, isEnglishMode]);
 
   return (
     <div className="space-y-4">
@@ -97,41 +121,50 @@ export default function SocialFeedStream({
         onSelectDate={setSelectedDate}
       />
 
-      {/* 3. Language Mode Toggle Banner & Category Filters */}
+      {/* 3. Platform Mode Toggle Banner & Category Filters */}
       <div
         id="tutorial-feed-language"
         className="bg-white border border-[#ded8cb] rounded-2xl p-2.5 shadow-2xs space-y-2 transition-all"
       >
-        {/* Language Stream Switcher */}
+        {/* Mode Stream Switcher */}
         <div className="flex items-center justify-between pb-2 border-b border-[#f4efe4] px-1">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-[#404652]">
-            <Globe className="w-3.5 h-3.5 text-[#842323]" />
-            <span>ফিড ভাষা (Feed Language):</span>
+            {isEnglishMode ? (
+              <>
+                <BookOpen className="w-3.5 h-3.5 text-[#1e40af]" />
+                <span>Active Track: <strong className="text-[#1e40af]">English Learning</strong></span>
+              </>
+            ) : (
+              <>
+                <GraduationCap className="w-3.5 h-3.5 text-[#842323]" />
+                <span>সক্রিয় মোড: <strong className="text-[#842323]">চাকরি ও বিসিএস প্রস্তুতি</strong></span>
+              </>
+            )}
           </div>
 
           <div className="inline-flex rounded-lg border border-[#ded8cc] bg-[#faf8f4] p-0.5 text-xs">
             <button
               type="button"
-              onClick={() => setLanguage("bn")}
+              onClick={() => setMode("job_prep")}
               className={`px-3 py-1 rounded-md font-semibold transition flex items-center gap-1.5 ${
-                language === "bn"
+                !isEnglishMode
                   ? "bg-[#842323] text-white shadow-2xs"
                   : "text-[#525a68] hover:text-[#1c1d21] hover:bg-[#ede7da]"
               }`}
             >
-              <span>বাংলা সংবাদ</span>
+              <span>চাকরি ও বিসিএস</span>
               <span className="text-[10px] opacity-80 font-mono">({bnCount})</span>
             </button>
             <button
               type="button"
-              onClick={() => setLanguage("en")}
+              onClick={() => setMode("english_learning")}
               className={`px-3 py-1 rounded-md font-semibold transition flex items-center gap-1.5 ${
-                language === "en"
-                  ? "bg-[#842323] text-white shadow-2xs"
+                isEnglishMode
+                  ? "bg-[#1e40af] text-white shadow-2xs"
                   : "text-[#525a68] hover:text-[#1c1d21] hover:bg-[#ede7da]"
               }`}
             >
-              <span>English Studies</span>
+              <span>🇬🇧 English Feed</span>
               <span className="text-[10px] opacity-80 font-mono">({enCount})</span>
             </button>
           </div>
@@ -139,7 +172,7 @@ export default function SocialFeedStream({
 
         {/* Category Pills Bar */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
-          {FILTER_PILLS.map((pill) => {
+          {filterPills.map((pill) => {
             const isSelected = selectedCat === pill.slug;
 
             return (
@@ -149,7 +182,9 @@ export default function SocialFeedStream({
                 onClick={() => setSelectedCat(pill.slug)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition shrink-0 ${
                   isSelected
-                    ? "bg-[#842323] text-white shadow-2xs font-bold"
+                    ? isEnglishMode
+                      ? "bg-[#1e40af] text-white shadow-2xs font-bold"
+                      : "bg-[#842323] text-white shadow-2xs font-bold"
                     : "bg-[#faf8f4] hover:bg-[#ece7da] text-[#404652] border border-[#ded8cb]"
                 }`}
               >
@@ -180,38 +215,46 @@ export default function SocialFeedStream({
             <h4 className="text-sm font-bold text-[#1c1d21]">
               {selectedDate !== "all"
                 ? `${selectedDate} তারিখে নির্বাচিত ক্যাটাগরিতে কোনো প্রতিবেদন পাওয়া যায়নি`
-                : language === "bn"
-                ? "এই ফিল্টারে বর্তমানে কোনো বাংলা প্রতিবেদন পাওয়া যায়নি"
-                : "No English study articles found in this category"}
+                : isEnglishMode
+                ? "No English learning articles found in this category"
+                : "এই ফিল্টারে বর্তমানে কোনো বাংলা প্রতিবেদন পাওয়া যায়নি"}
             </h4>
             <p className="text-xs text-[#717887]">
-              অন্যান্য বিভাগে চোখ রাখুন অথবা &apos;সব খবর&apos; ও সব তারিখে ফিরে যান।
+              {isEnglishMode
+                ? "Try exploring all categories or reset date filters."
+                : "অন্যান্য বিভাগে চোখ রাখুন অথবা 'সব খবর' ও সব তারিখে ফিরে যান।"}
             </p>
             <div className="flex items-center justify-center flex-wrap gap-2 pt-2">
               {selectedDate !== "all" && (
                 <button
                   type="button"
                   onClick={() => setSelectedDate("all")}
-                  className="px-4 py-2 bg-[#842323] text-white rounded-lg text-xs font-bold"
+                  className={`px-4 py-2 text-white rounded-lg text-xs font-bold ${
+                    isEnglishMode ? "bg-[#1e40af]" : "bg-[#842323]"
+                  }`}
                 >
-                  সব তারিখের খবর দেখুন
+                  {isEnglishMode ? "View All Dates" : "সব তারিখের খবর দেখুন"}
                 </button>
               )}
               {selectedCat !== "all" && (
                 <button
                   type="button"
                   onClick={() => setSelectedCat("all")}
-                  className="px-4 py-2 bg-[#842323] text-white rounded-lg text-xs font-bold"
+                  className={`px-4 py-2 text-white rounded-lg text-xs font-bold ${
+                    isEnglishMode ? "bg-[#1e40af]" : "bg-[#842323]"
+                  }`}
                 >
-                  সকল বিভাগে ফিরুন
+                  {isEnglishMode ? "All Categories" : "সকল বিভাগে ফিরুন"}
                 </button>
               )}
               <button
                 type="button"
-                onClick={() => setLanguage(language === "bn" ? "en" : "bn")}
-                className="px-4 py-2 bg-[#f4efe4] text-[#842323] border border-[#ded8cc] rounded-lg text-xs font-bold"
+                onClick={() => setMode(isEnglishMode ? "job_prep" : "english_learning")}
+                className={`px-4 py-2 bg-[#f4efe4] border border-[#ded8cc] rounded-lg text-xs font-bold ${
+                  isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"
+                }`}
               >
-                {language === "bn" ? "English ফিড দেখুন" : "বাংলা ফিড দেখুন"}
+                {isEnglishMode ? "চাকরি ও বিসিএস ফিডে ফিরুন" : "Switch to English Feed"}
               </button>
             </div>
           </div>
@@ -220,4 +263,3 @@ export default function SocialFeedStream({
     </div>
   );
 }
-

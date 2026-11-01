@@ -27,6 +27,8 @@ export default function RootLayout({
               if(t==='sepia'){document.documentElement.setAttribute('data-theme',t);}
               var l=localStorage.getItem('khobor_lang');
               if(l){document.documentElement.setAttribute('lang',l);}
+              var m=localStorage.getItem('khobor_mode');
+              if(m){document.documentElement.setAttribute('data-mode',m);}
             }catch(e){}})();`,
           }}
         />

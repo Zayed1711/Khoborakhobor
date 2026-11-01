@@ -1,6 +1,6 @@
 "use client";
 
-import { Highlighter, Edit3, X } from "lucide-react";
+import { Highlighter, Edit3, X, BookOpen } from "lucide-react";
 
 interface HighlighterTooltipProps {
   position: { top: number; left: number } | null;
@@ -8,6 +8,7 @@ interface HighlighterTooltipProps {
   onApplyHighlight: (colorName: "হলুদ মার্কার" | "সবুজ মার্কার" | "বেগুনি মার্কার") => void;
   onOpenMemo: () => void;
   onDismiss: () => void;
+  onLookupDictionary?: (text: string) => void;
 }
 
 export default function HighlighterTooltip({
@@ -16,6 +17,7 @@ export default function HighlighterTooltip({
   onApplyHighlight,
   onOpenMemo,
   onDismiss,
+  onLookupDictionary,
 }: HighlighterTooltipProps) {
   if (!position || !selectedText) return null;
 
@@ -29,7 +31,22 @@ export default function HighlighterTooltip({
       }}
       className="animate-in fade-in zoom-in-95 duration-150 flex items-center gap-1.5 bg-[#17191d] text-white p-1.5 px-2 rounded-full shadow-2xl border border-[#3b4252] select-none"
     >
-      <span className="text-[10px] text-[#9ca3af] font-medium pl-1 flex items-center gap-1">
+      {/* 1-Click Dictionary Lookup Button */}
+      {onLookupDictionary && (
+        <>
+          <button
+            onClick={() => onLookupDictionary(selectedText)}
+            className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold text-amber-300 hover:text-white hover:bg-white/10 transition border border-amber-300/40"
+            title="শব্দের অর্থ, উচ্চারণ ও সংজ্ঞা দেখুন (Dictionary Lookup)"
+          >
+            <BookOpen className="w-3 h-3 text-amber-400" />
+            <span>অভিধান</span>
+          </button>
+          <div className="w-[1px] h-3.5 bg-white/20 mx-0.5" />
+        </>
+      )}
+
+      <span className="text-[10px] text-[#9ca3af] font-medium pl-0.5 flex items-center gap-1">
         <Highlighter className="w-3 h-3 text-[#f5c66b]" />
         <span>মার্কার:</span>
       </span>
@@ -78,4 +95,3 @@ export default function HighlighterTooltip({
     </div>
   );
 }
-

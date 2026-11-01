@@ -124,13 +124,15 @@ export async function getAdminStatsAction() {
   }
 }
 
-export async function getAdminRecentArticlesAction(limit = 20) {
+export async function getAdminRecentArticlesAction(limit = 50) {
   try {
     const articles = await prisma.article.findMany({
       take: limit,
       orderBy: { createdAt: "desc" },
       include: {
         category: true,
+        vocabulary: true,
+        quizQuestions: true,
         _count: {
           select: {
             quizQuestions: true,

@@ -10,6 +10,8 @@ import {
 } from "@/actions/student";
 import { logoutAction } from "@/actions/auth";
 import { useRouter } from "next/navigation";
+import { useAppMode } from "@/context/LanguageContext";
+import { getBanglaPronunciation } from "@/lib/phonetics/en-to-bn";
 import {
   Bookmark,
   Highlighter,
@@ -36,6 +38,7 @@ import {
   BookOpen,
   Award,
   UserCheck,
+  Volume2,
 } from "lucide-react";
 
 interface StudentHubViewProps {
@@ -58,15 +61,46 @@ export default function StudentHubView({
   quizAnalytics,
 }: StudentHubViewProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"notes" | "flashcards" | "analytics" | "profile">("notes");
+  const { mode, isEnglishMode } = useAppMode();
+  const [activeTab, setActiveTab] = useState<"notes" | "flashcards" | "analytics" | "profile">(() => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tabParam = urlParams.get("tab");
+      if (tabParam === "flashcards" || tabParam === "notes" || tabParam === "analytics" || tabParam === "profile") {
+        return tabParam;
+      }
+    }
+    return isEnglishMode ? "flashcards" : "notes";
+  });
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [copied, setCopied] = useState(false);
 
-  // Flashcard State
+  // Flashcard & Word Bank State
   const [isFlashcardMode, setIsFlashcardMode] = useState(false);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isCardFlipped, setIsCardFlipped] = useState(false);
   const [localWords, setLocalWords] = useState(savedWords);
+  const [wordFilter, setWordFilter] = useState<"all" | "learning" | "mastered">("all");
+  const [speakingWord, setSpeakingWord] = useState<string | null>(null);
+
+  const handleSpeak = (word: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(word);
+    utterance.lang = "en-US";
+    utterance.rate = 0.85;
+    setSpeakingWord(word);
+    utterance.onend = () => setSpeakingWord(null);
+    utterance.onerror = () => setSpeakingWord(null);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const displayedWords = localWords.filter((w) => {
+    if (wordFilter === "learning") return !w.mastered;
+    if (wordFilter === "mastered") return w.mastered;
+    return true;
+  });
 
   // Profile Edit State
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -260,13 +294,19 @@ export default function StudentHubView({
               <h1 className="text-xl sm:text-2xl font-bold text-[#17191d] font-serif">
                 {student.name}
               </h1>
-              <span className="text-[11px] bg-[#f5ebeb] text-[#842323] font-bold px-2.5 py-0.5 rounded-full border border-[#e5c9c9]">
-                {student.targetTrack === "BCS_GOVT"
-                  ? "বিসিএস ও সরকারি চাকরি প্রস্তুতি"
-                  : student.targetTrack === "ADMISSION"
-                  ? "বিশ্ববিদ্যালয় ভর্তি পরীক্ষা"
-                  : "অর্থনীতি ও আন্তর্জাতিক পলিসি গবেষণা"}
-              </span>
+              {isEnglishMode ? (
+                <span className="text-[11px] bg-[#f0f9ff] text-[#0284c7] font-bold px-2.5 py-0.5 rounded-full border border-[#bae6fd] flex items-center gap-1">
+                  🇬🇧 English Learning Track (IELTS & Vocabulary)
+                </span>
+              ) : (
+                <span className="text-[11px] bg-[#f5ebeb] text-[#842323] font-bold px-2.5 py-0.5 rounded-full border border-[#e5c9c9]">
+                  {student.targetTrack === "BCS_GOVT"
+                    ? "বিসিএস ও সরকারি চাকরি প্রস্তুতি"
+                    : student.targetTrack === "ADMISSION"
+                    ? "বিশ্ববিদ্যালয় ভর্তি পরীক্ষা"
+                    : "অর্থনীতি ও আন্তর্জাতিক পলিসি গবেষণা"}
+                </span>
+              )}
             </div>
             <p className="text-xs text-[#525964] mt-1">
               শিক্ষা প্রতিষ্ঠান: <strong>{student.institution || "সাধারণ শিক্ষার্থী"}</strong> &bull; ইমেইল: {student.email}
@@ -301,51 +341,59 @@ export default function StudentHubView({
       {/* Navigation Tabs Bar */}
       <div className="border-b border-[#ded8cb] flex items-center gap-2 overflow-x-auto pb-px text-xs font-semibold no-print">
         <button
+          onClick={() => setActiveTab("flashcards")}
+          className={`px-4 py-2.5 rounded-t-lg transition flex items-center gap-2 border-b-2 ${
+            activeTab === "flashcards"
+              ? isEnglishMode
+                ? "bg-white text-[#0284c7] border-[#0284c7] shadow-2xs font-bold"
+                : "bg-white text-[#842323] border-[#842323] shadow-2xs font-bold"
+              : "text-[#646c7a] hover:text-[#17191d] border-transparent"
+          }`}
+        >
+          <Sparkles className={`w-4 h-4 ${isEnglishMode ? "text-[#0284c7]" : "text-[#c29547]"}`} />
+          <span>{isEnglishMode ? "Word Bank & Flashcards" : "ওয়ার্ড ব্যাংক ও ফ্ল্যাশকার্ড"} ({localWords.length})</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab("notes")}
           className={`px-4 py-2.5 rounded-t-lg transition flex items-center gap-2 border-b-2 ${
             activeTab === "notes"
-              ? "bg-white text-[#842323] border-[#842323] shadow-2xs"
+              ? isEnglishMode
+                ? "bg-white text-[#0284c7] border-[#0284c7] shadow-2xs font-bold"
+                : "bg-white text-[#842323] border-[#842323] shadow-2xs font-bold"
               : "text-[#646c7a] hover:text-[#17191d] border-transparent"
           }`}
         >
           <Highlighter className="w-4 h-4" />
-          <span>সংরক্ষিত উদ্ধৃতি ও স্টাডি নোট ({notes.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("flashcards")}
-          className={`px-4 py-2.5 rounded-t-lg transition flex items-center gap-2 border-b-2 ${
-            activeTab === "flashcards"
-              ? "bg-white text-[#842323] border-[#842323] shadow-2xs"
-              : "text-[#646c7a] hover:text-[#17191d] border-transparent"
-          }`}
-        >
-          <Sparkles className="w-4 h-4 text-[#c29547]" />
-          <span>ওয়ার্ড ব্যাংক ও ফ্ল্যাশকার্ড ({localWords.length})</span>
+          <span>{isEnglishMode ? "সংরক্ষিত স্টাডি নোট ও কোটস" : "সংরক্ষিত উদ্ধৃতি ও স্টাডি নোট"} ({notes.length})</span>
         </button>
 
         <button
           onClick={() => setActiveTab("analytics")}
           className={`px-4 py-2.5 rounded-t-lg transition flex items-center gap-2 border-b-2 ${
             activeTab === "analytics"
-              ? "bg-white text-[#842323] border-[#842323] shadow-2xs"
+              ? isEnglishMode
+                ? "bg-white text-[#0284c7] border-[#0284c7] shadow-2xs font-bold"
+                : "bg-white text-[#842323] border-[#842323] shadow-2xs font-bold"
               : "text-[#646c7a] hover:text-[#17191d] border-transparent"
           }`}
         >
-          <Trophy className="w-4 h-4 text-[#842323]" />
-          <span>কুইজ স্কোরকার্ড ও ভুল বিশ্লেষণ ({quizAnalytics.totalAttempts})</span>
+          <Trophy className={`w-4 h-4 ${isEnglishMode ? "text-[#0284c7]" : "text-[#842323]"}`} />
+          <span>{isEnglishMode ? "Comprehension & Quiz Analytics" : "কুইজ স্কোরকার্ড ও ভুল বিশ্লেষণ"} ({quizAnalytics.totalAttempts})</span>
         </button>
 
         <button
           onClick={() => setActiveTab("profile")}
           className={`px-4 py-2.5 rounded-t-lg transition flex items-center gap-2 border-b-2 ${
             activeTab === "profile"
-              ? "bg-white text-[#842323] border-[#842323] shadow-2xs"
+              ? isEnglishMode
+                ? "bg-white text-[#0284c7] border-[#0284c7] shadow-2xs font-bold"
+                : "bg-white text-[#842323] border-[#842323] shadow-2xs font-bold"
               : "text-[#646c7a] hover:text-[#17191d] border-transparent"
           }`}
         >
           <Target className="w-4 h-4" />
-          <span>পরীক্ষা ট্র্যাক ও প্রোফাইল সুইচার</span>
+          <span>{isEnglishMode ? "লার্নিং ট্র্যাক ও প্রোফাইল" : "পরীক্ষা ট্র্যাক ও প্রোফাইল সুইচার"}</span>
         </button>
       </div>
 
@@ -620,26 +668,51 @@ export default function StudentHubView({
                 <div className="py-6 space-y-3">
                   {!isCardFlipped ? (
                     <div>
-                      <div className="flex items-center justify-center gap-2">
+                      <div className="flex items-center justify-center gap-3">
                         <h3 className="text-2xl sm:text-3xl font-black font-serif text-[#17191d] tracking-wide">
                           {currentFlashcard.term.term}
                         </h3>
+                        {isEnglishMode && (
+                          <button
+                            type="button"
+                            onClick={(e) => handleSpeak(currentFlashcard.term.term, e)}
+                            className={`p-2 rounded-full transition ${
+                              speakingWord === currentFlashcard.term.term
+                                ? "bg-[#38bdf8] text-[#0f172a]"
+                                : "bg-[#f0f9ff] text-[#0284c7] hover:bg-[#e0f2fe]"
+                            }`}
+                            title="উচ্চারণ শুনুন (Pronunciation)"
+                          >
+                            <Volume2 className="w-5 h-5" />
+                          </button>
+                        )}
                       </div>
+                      {isEnglishMode && (
+                        <div className="text-sm font-semibold text-[#c29547] mt-1">
+                          [{getBanglaPronunciation(currentFlashcard.term.term)}]
+                        </div>
+                      )}
                       {currentFlashcard.term.context && (
-                        <p className="text-xs text-[#646c7a] italic mt-3 max-w-md mx-auto">
+                        <p className="text-xs text-[#646c7a] italic mt-3 max-w-md mx-auto bg-[#faf8f4] p-2.5 rounded-lg border border-[#e5dfd2]">
                           &ldquo;{currentFlashcard.term.context}&rdquo;
                         </p>
                       )}
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-center gap-2">
+                    <div className="space-y-3">
+                      <div className="space-y-2 max-w-md mx-auto">
                         <p className="text-base sm:text-lg font-serif font-medium text-[#1c1d21] leading-relaxed">
                           {currentFlashcard.term.definition}
                         </p>
+                        {isEnglishMode && currentFlashcard.term.context && (
+                          <div className="text-xs text-[#0369a1] bg-[#f0f9ff] p-2 rounded border border-[#bae6fd] mt-2 text-left">
+                            <span className="font-semibold block text-[10px] text-[#0284c7] uppercase">বাস্তব প্রয়োগের উদাহরণ:</span>
+                            {currentFlashcard.term.context}
+                          </div>
+                        )}
                       </div>
                       <span className="text-[11px] text-[#842323] font-semibold block mt-2">
-                        সূত্র: {currentFlashcard.term.article.title}
+                        উৎস প্রতিবেদন: {currentFlashcard.term.article?.title}
                       </span>
                     </div>
                   )}
@@ -700,7 +773,7 @@ export default function StudentHubView({
             <div>
               {localWords.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {localWords.map((item) => (
+                  {displayedWords.map((item) => (
                     <div
                       key={item.id}
                       className={`p-4 bg-white border rounded-xl shadow-2xs flex flex-col justify-between transition ${
@@ -708,33 +781,61 @@ export default function StudentHubView({
                       }`}
                     >
                       <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[10px] font-bold uppercase text-[#842323] tracking-wider">
-                            পারিভাষিক শব্দ
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className={`text-[10px] font-bold uppercase tracking-wider ${
+                            isEnglishMode ? "text-[#0284c7]" : "text-[#842323]"
+                          }`}>
+                            {isEnglishMode ? "Vocabulary Word" : "পারিভাষিক শব্দ"}
                           </span>
                           {item.mastered && (
                             <span className="text-[10px] font-bold text-[#166534] bg-[#dcfce7] px-2 py-0.5 rounded-full flex items-center gap-1">
                               <Check className="w-3 h-3" />
-                              <span>মুখস্থ</span>
+                              <span>{isEnglishMode ? "Mastered" : "মুখস্থ"}</span>
                             </span>
                           )}
                         </div>
-                        <div className="mb-1.5">
-                          <h3 className="text-sm font-bold text-[#1c1d21] font-serif">
-                            {item.term.term}
-                          </h3>
+                        <div className="mb-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <h3 className="text-base font-bold text-[#1c1d21] font-serif">
+                              {item.term.term}
+                            </h3>
+                            {isEnglishMode && (
+                              <button
+                                type="button"
+                                onClick={(e) => handleSpeak(item.term.term, e)}
+                                className={`p-1.5 rounded-md transition ${
+                                  speakingWord === item.term.term
+                                    ? "bg-[#38bdf8] text-[#0f172a]"
+                                    : "text-[#0284c7] hover:bg-[#e0f2fe]"
+                                }`}
+                                title="উচ্চারণ শুনুন"
+                              >
+                                <Volume2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                          {isEnglishMode && (
+                            <div className="text-[11px] font-medium text-[#c29547]">
+                              [{getBanglaPronunciation(item.term.term)}]
+                            </div>
+                          )}
                         </div>
                         <p className="text-xs text-[#4e5564] leading-relaxed">
                           {item.term.definition}
                         </p>
+                        {item.term.context && (
+                          <div className="mt-2 text-[11px] text-[#64748b] bg-[#faf8f4] p-2 rounded border border-[#f0ede6] italic line-clamp-3">
+                            {item.term.context}
+                          </div>
+                        )}
                       </div>
 
                       <div className="mt-4 pt-2.5 border-t border-[#f2ede4] flex items-center justify-between text-[11px]">
                         <Link
-                          href={`/article/${item.term.article.slug}`}
+                          href={`/article/${item.term.article?.slug}`}
                           className="text-[#842323] font-semibold hover:underline truncate max-w-[140px]"
                         >
-                          সূত্র: {item.term.article.title}
+                          সূত্র: {item.term.article?.title}
                         </Link>
                         <button
                           onClick={() =>
@@ -742,13 +843,15 @@ export default function StudentHubView({
                               ? handleReviewAgain(item.id)
                               : handleMasterCard(item.id)
                           }
-                          className={`text-[10px] font-bold px-2 py-1 rounded transition ${
+                          className={`text-[10px] font-bold px-2.5 py-1 rounded transition ${
                             item.mastered
-                              ? "text-[#64748b] hover:text-[#b91c1c]"
+                              ? "text-[#64748b] hover:text-[#b91c1c] hover:bg-[#fee2e2]"
                               : "bg-[#f5f1e8] text-[#842323] hover:bg-[#ebdcc4]"
                           }`}
                         >
-                          {item.mastered ? "আবার প্র্যাকটিস" : "মুখস্থ চিহ্নিত করুন"}
+                          {item.mastered
+                            ? (isEnglishMode ? "রিভিশন শুরু" : "আবার প্র্যাকটিস")
+                            : (isEnglishMode ? "আয়ত্ত করেছি" : "মুখস্থ চিহ্নিত করুন")}
                         </button>
                       </div>
                     </div>

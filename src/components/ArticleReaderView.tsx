@@ -11,12 +11,17 @@ import SideNotePanel from "@/components/SideNotePanel";
 import HighlighterTooltip from "@/components/HighlighterTooltip";
 import ArticleSummaryReflection from "@/components/ArticleSummaryReflection";
 import FactSheetTable from "@/components/FactSheetTable";
+import VocabularyTable from "@/components/VocabularyTable";
+import InterlinearArticleBody from "@/components/InterlinearArticleBody";
+import FocusDictionaryModal from "@/components/FocusDictionaryModal";
 import { Article, StudyNote, Student } from "@/types";
 import { createStudyNoteAction, saveMarkerHighlightAction } from "@/actions/student";
 import { applyHighlightsToHtml } from "@/lib/highlighter";
+import { extractVocabularyTableRows } from "@/lib/vocabulary-table-engine";
+import { generateScaffoldedEnglishQuiz } from "@/lib/quiz/scaffolded-english-quiz";
 import Link from "next/link";
-import { Clock, ArrowLeft, Lightbulb, Highlighter, Check, Edit3, X, Globe, ExternalLink } from "lucide-react";
-import { useLanguage } from "@/context/LanguageContext";
+import { Clock, ArrowLeft, Lightbulb, Highlighter, Check, Edit3, X, Globe, ExternalLink, BookOpen } from "lucide-react";
+import { useAppMode } from "@/context/LanguageContext";
 import { isBengaliText, translateTitleToBengali, translateSummaryToBengali, translateContentToBengaliHtml } from "@/lib/bilingual";
 import { getNewspaperSourceInfo } from "@/lib/sources";
 
@@ -45,68 +50,95 @@ export default function ArticleReaderView({
   const [personalMemo, setPersonalMemo] = useState("");
   const [isSavingNote, setIsSavingNote] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
-  const [mounted, setMounted] = useState(false);
+  const [showPhonics, setShowPhonics] = useState(true);
 
-  const { language } = useLanguage();
+  // Focus Mode & Quick Dictionary State
+  const [isDictModalOpen, setIsDictModalOpen] = useState(false);
+  const [dictLookupWord, setDictLookupWord] = useState("");
+
+  const { mode, isEnglishMode } = useAppMode();
   const isEnglish = !isBengaliText(article.title);
-  const [readerTranslation, setReaderTranslation] = useState(isEnglish && language === "bn");
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const [readerTranslation, setReaderTranslation] = useState(isEnglish && !isEnglishMode);
 
   useEffect(() => {
     if (isEnglish) {
-      setReaderTranslation(language === "bn");
+      setReaderTranslation(!isEnglishMode);
     }
-  }, [language, isEnglish]);
+  }, [isEnglishMode, isEnglish]);
 
-  const displayTitle = (isEnglish && readerTranslation) ? translateTitleToBengali(article.title) : article.title;
+  // Determine if we should present the English Learning experience
+  const useEnglishLearningExperience = isEnglishMode || (isEnglish && !readerTranslation);
+
+  // Generate 3-column vocabulary rows
+  const vocabRows = useMemo(() => {
+    return extractVocabularyTableRows(article.title, article.content, article.vocabulary);
+  }, [article.title, article.content, article.vocabulary]);
+
+  // Generate Scaffolded English Micro-Quiz
+  const englishQuizzes = useMemo(() => {
+    return generateScaffoldedEnglishQuiz(article.title, article.content);
+  }, [article.title, article.content]);
+
+  // Audio speech on word click
+  const handlePlayWordAudio = (word: string) => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(word);
+      utterance.lang = "en-US";
+      utterance.rate = 0.88;
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  // Open Dictionary Modal with word
+  const handleOpenDictionary = (term?: string) => {
+    if (term) {
+      setDictLookupWord(term);
+    }
+    setIsDictModalOpen(true);
+  };
+
+  const displayTitle = (isEnglish && readerTranslation)
+    ? translateTitleToBengali(article.title)
+    : article.title;
+
   const displaySummary = (isEnglish && readerTranslation)
     ? translateSummaryToBengali(article.title, article.summary, article.category?.name)
     : article.summary;
 
+  const renderedArticleHtml = useMemo(() => {
+    let baseHtml = article.content;
+    if (isEnglish && readerTranslation) {
+      baseHtml = translateContentToBengaliHtml(article.content, article.title, article.category?.name);
+    }
+    return applyHighlightsToHtml(baseHtml, notes);
+  }, [article.content, article.title, article.category?.name, isEnglish, readerTranslation, notes]);
+
   const sourceInfo = getNewspaperSourceInfo(article.imageCaption, article.title);
 
-  // Compute live highlighted HTML with active markers or translated content
-  const renderedArticleHtml = useMemo(() => {
-    if (isEnglish && readerTranslation) {
-      return translateContentToBengaliHtml(article.content, article.title, article.category?.name);
-    }
-    if (!mounted) return article.content;
-    return applyHighlightsToHtml(article.content, notes);
-  }, [article.content, article.title, article.category?.name, notes, mounted, isEnglish, readerTranslation]);
-
-  // Click on a highlighted phrase inside article opens the notebook
-  const handleArticleClick = (e: React.MouseEvent<HTMLElement>) => {
+  const handleArticleClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
-    const mark = target.closest("mark.kk-highlight") as HTMLElement | null;
-    if (mark) {
-      const noteId = mark.getAttribute("data-note-id");
-      if (noteId) {
+    if (target.tagName === "MARK" && target.hasAttribute("data-note-id")) {
+      const noteId = target.getAttribute("data-note-id");
+      const matchedNote = notes.find((n) => n.id === noteId);
+      if (matchedNote) {
         setIsNotebookOpen(true);
-        const found = notes.find((n) => n.id === noteId);
-        if (found?.memo) {
-          setToastMessage(found.memo);
-          setTimeout(() => setToastMessage(""), 2800);
-        }
       }
     }
   };
 
-  // Detect text selection for PDF-style floating marker
   const handleMouseUp = () => {
     if (typeof window !== "undefined") {
       const selection = window.getSelection();
       const text = selection ? selection.toString().trim() : "";
-      if (text.length >= 3 && text.length <= 600) {
+      if (text.length >= 2 && text.length <= 600) {
         setSelectedSnippet(text);
         const range = selection?.getRangeAt(0);
         if (range) {
           const rect = range.getBoundingClientRect();
           setTooltipPos({
             top: rect.top,
-            left: Math.max(12, rect.left + rect.width / 2 - 120),
+            left: Math.max(12, rect.left + rect.width / 2 - 140),
           });
         }
       } else {
@@ -117,7 +149,6 @@ export default function ArticleReaderView({
     }
   };
 
-  // 1-Click Marker Highlight
   const handleApplyHighlight = async (colorName: "হলুদ মার্কার" | "সবুজ মার্কার" | "বেগুনি মার্কার") => {
     if (!selectedSnippet) return;
     if (!student) {
@@ -143,7 +174,6 @@ export default function ArticleReaderView({
     }
   };
 
-  // Add highlight with memo
   const handleAddMemoNote = async () => {
     if (!selectedSnippet) return;
     if (!student) {
@@ -205,7 +235,7 @@ export default function ArticleReaderView({
         </div>
       )}
 
-      {/* Floating PDF Marker Tooltip */}
+      {/* Floating Marker Tooltip with Instant 1-Click Dictionary Lookup */}
       <HighlighterTooltip
         position={tooltipPos}
         selectedText={selectedSnippet}
@@ -217,6 +247,11 @@ export default function ArticleReaderView({
         onDismiss={() => {
           setTooltipPos(null);
           setSelectedSnippet("");
+        }}
+        onLookupDictionary={(text) => {
+          setTooltipPos(null);
+          setSelectedSnippet("");
+          handleOpenDictionary(text);
         }}
       />
 
@@ -245,7 +280,7 @@ export default function ArticleReaderView({
         {!isFocusMode && (
           <div className="flex items-center gap-2 text-xs text-[#68707f] mb-6">
             <Link href="/" className="hover:text-[#842323] flex items-center gap-1">
-              <ArrowLeft className="w-3.5 h-3.5" /> প্রচ্ছদ
+              <ArrowLeft className="w-3.5 h-3.5" /> {isEnglishMode ? "Feed" : "প্রচ্ছদ"}
             </Link>
             <span>/</span>
             <Link href={`/category/${article.category.slug}`} className="hover:text-[#842323] font-medium">
@@ -273,16 +308,22 @@ export default function ArticleReaderView({
           copied={copied}
           onCopyLink={handleCopyLink}
           onOpenShare={() => setIsShareModalOpen(true)}
+          isEnglishArticle={isEnglish}
+          showPhonics={showPhonics}
+          onTogglePhonics={() => setShowPhonics(!showPhonics)}
+          onOpenDictionary={handleOpenDictionary}
         />
 
         {/* Main Content & Side Note Panel Wrapper */}
-        <div className={`flex flex-col lg:flex-row gap-8 items-start`}>
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
           {/* Main Reading Column */}
           <main className="flex-1 min-w-0 w-full" onMouseUp={handleMouseUp}>
             {/* Article Header */}
             <header className="mb-6">
               <div className="flex flex-wrap items-center gap-2 mb-3">
-                <span className="text-xs font-semibold uppercase tracking-wider text-[#842323] bg-[#f5ebeb] px-2.5 py-1 rounded inline-block">
+                <span className={`text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded inline-block ${
+                  useEnglishLearningExperience ? "text-blue-900 bg-blue-50" : "text-[#842323] bg-[#f5ebeb]"
+                }`}>
                   {article.category.name}
                 </span>
                 {article.examTags && (
@@ -290,10 +331,15 @@ export default function ArticleReaderView({
                     লক্ষ্য: {article.examTags}
                   </span>
                 )}
+                {useEnglishLearningExperience && (
+                  <span className="text-xs font-bold bg-amber-100 text-amber-900 border border-amber-200 px-2.5 py-1 rounded">
+                    🇬🇧 English Scaffolded Reader
+                  </span>
+                )}
               </div>
 
-              {/* Bilingual Reader Switcher for English Articles */}
-              {isEnglish && (
+              {/* Bilingual Reader Switcher for English Articles (Only in Job Prep mode) */}
+              {isEnglish && !isEnglishMode && (
                 <div className="mb-4 p-3 bg-gradient-to-r from-amber-50/80 to-[#fdfbf7] border border-amber-200/90 rounded-xl flex flex-wrap items-center justify-between gap-3 shadow-2xs">
                   <div className="flex items-center gap-2">
                     <Globe className="w-4 h-4 text-[#842323]" />
@@ -384,7 +430,7 @@ export default function ArticleReaderView({
                 <div className="flex items-center gap-2 mb-2 pb-2 border-b border-[#e7e1d5]">
                   <Lightbulb className="w-4 h-4 text-[#842323]" />
                   <h3 className="text-xs font-bold uppercase tracking-wider text-[#1c1d21]">
-                    শিক্ষণীয় মূল বিষয়বস্তু (Exam Key Takeaways)
+                    {useEnglishLearningExperience ? "Key Learning Takeaways" : "শিক্ষণীয় মূল বিষয়বস্তু (Exam Key Takeaways)"}
                   </h3>
                 </div>
                 <ul className="space-y-1.5 text-xs sm:text-sm text-[#3b414d] font-sans list-disc list-inside">
@@ -397,30 +443,46 @@ export default function ArticleReaderView({
               </div>
             )}
 
-            {/* High-Yield Statistical Exam Fact Sheet Table */}
-            <FactSheetTable
-              factTable={article.factTable}
-              articleSlug={article.slug}
-              articleTitle={article.title}
-              sourceName={article.sourceName || sourceInfo.name}
-              sourceUrl={article.sourceUrl}
-              student={student}
-              onSaveToNotebook={(quote, memo) => {
-                setNotes((prev) => [
-                  {
-                    id: `note-${Date.now()}`,
-                    studentId: student?.id || "",
-                    articleId: article.id,
-                    quoteText: quote,
-                    memo,
-                    createdAt: new Date(),
-                  },
-                  ...prev,
-                ]);
-                setToastMessage("পরীক্ষা তথ্য ছকটি আপনার স্টাডি নোটবুকে যুক্ত হয়েছে!");
-                setTimeout(() => setToastMessage(""), 2800);
-              }}
-            />
+            {/* CONDITIONAL TABLE:
+                In English Learning Mode -> Render 3-Column Vocabulary Matrix with fresh practical examples!
+                In Job Prep Mode / Bengali -> Render FactSheetTable
+            */}
+            {useEnglishLearningExperience ? (
+              <VocabularyTable
+                rows={vocabRows}
+                articleSlug={article.slug}
+                articleTitle={article.title}
+                student={student}
+                onSaveFeedback={(msg) => {
+                  setToastMessage(msg);
+                  setTimeout(() => setToastMessage(""), 2800);
+                }}
+              />
+            ) : (
+              <FactSheetTable
+                factTable={article.factTable}
+                articleSlug={article.slug}
+                articleTitle={article.title}
+                sourceName={article.sourceName || sourceInfo.name}
+                sourceUrl={article.sourceUrl}
+                student={student}
+                onSaveToNotebook={(quote, memo) => {
+                  setNotes((prev) => [
+                    {
+                      id: `note-${Date.now()}`,
+                      studentId: student?.id || "",
+                      articleId: article.id,
+                      quoteText: quote,
+                      memo,
+                      createdAt: new Date(),
+                    },
+                    ...prev,
+                  ]);
+                  setToastMessage("পরীক্ষা তথ্য ছকটি আপনার স্টাডি নোটবুকে যুক্ত হয়েছে!");
+                  setTimeout(() => setToastMessage(""), 2800);
+                }}
+              />
+            )}
 
             {/* Featured Image (Hidden in Focus Mode) */}
             {!isFocusMode && (
@@ -438,12 +500,36 @@ export default function ArticleReaderView({
               </figure>
             )}
 
-            {/* Main Article Body with Active Visible Highlights */}
-            <article
-              className={`prose prose-neutral max-w-none text-[#23272e] space-y-5 font-serif transition-all duration-200 select-text ${fontClass}`}
-              dangerouslySetInnerHTML={{ __html: renderedArticleHtml }}
-              onClick={handleArticleClick}
-            />
+            {/* Main Article Body:
+                In English Learning Experience without translation -> Render Interlinear Scaffolding
+                Otherwise -> Standard Highlighting Article View
+            */}
+            {useEnglishLearningExperience && !readerTranslation ? (
+              <div className="mb-8 p-4 sm:p-6 bg-white border border-[#ded8cb] rounded-2xl shadow-2xs">
+                <div className="flex items-center justify-between pb-3 mb-5 border-b border-[#f1f5f9]">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-blue-900 font-mono">
+                      ইংরেজি মূল পাঠ ও উচ্চারণ নির্দেশিকা
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-[#64748b]">
+                    যেকোনো শব্দের ওপর ক্লিক করে উচ্চারণ শুনুন
+                  </span>
+                </div>
+                <InterlinearArticleBody
+                  htmlContent={renderedArticleHtml}
+                  showPhonics={showPhonics}
+                  fontSize={fontSize}
+                  onWordClick={handlePlayWordAudio}
+                />
+              </div>
+            ) : (
+              <article
+                className={`prose prose-neutral max-w-none text-[#23272e] space-y-5 font-serif transition-all duration-200 select-text ${fontClass}`}
+                dangerouslySetInnerHTML={{ __html: renderedArticleHtml }}
+                onClick={handleArticleClick}
+              />
+            )}
 
             {/* Optional Memo Input Drawer when triggered */}
             {showMemoInput && selectedSnippet && (
@@ -494,7 +580,7 @@ export default function ArticleReaderView({
               </div>
             )}
 
-            {/* Requirement 3: Post-Reading Reflection & Active Recall Summary Section */}
+            {/* Post-Reading Reflection & Active Recall Summary Section */}
             <ArticleSummaryReflection
               articleSlug={article.slug}
               articleTitle={article.title}
@@ -503,16 +589,27 @@ export default function ArticleReaderView({
               onNotesChange={setNotes}
             />
 
-            {/* Comprehension Micro-Quiz */}
-            {article.quizQuestions && article.quizQuestions.length > 0 && (
-              <MicroQuiz questions={article.quizQuestions} studentId={student?.id || ""} />
+            {/* ACTIVE RECALL MICRO-QUIZ:
+                In English Learning Mode -> Render Scaffolded English Active Recall (Bangla questions + English options with Bangla brackets)
+                In Job Prep Mode -> Render factual GK Quiz
+            */}
+            {useEnglishLearningExperience ? (
+              <MicroQuiz
+                questions={englishQuizzes}
+                studentId={student?.id || ""}
+                isEnglishMode
+              />
+            ) : (
+              article.quizQuestions && article.quizQuestions.length > 0 && (
+                <MicroQuiz questions={article.quizQuestions} studentId={student?.id || ""} />
+              )
             )}
 
             {/* Related Articles Section */}
             {!isFocusMode && relatedArticles.length > 0 && (
               <div className="mt-12 pt-8 border-t border-[#e2dcd0]">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-[#1c1d21] mb-4">
-                  সম্পর্কিত অন্যান্য সংবাদ ও পাঠ
+                  {useEnglishLearningExperience ? "Related English Studies & Editorial Readings" : "সম্পর্কিত অন্যান্য সংবাদ ও পাঠ"}
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {relatedArticles.map((rel) => (
@@ -534,7 +631,7 @@ export default function ArticleReaderView({
             )}
           </main>
 
-          {/* Requirement 1 & 2: Active Side Note & SLM Dictionary Panel */}
+          {/* Active Side Note & SLM Dictionary Panel */}
           <SideNotePanel
             articleSlug={article.slug}
             articleTitle={article.title}
@@ -554,12 +651,27 @@ export default function ArticleReaderView({
         />
       </div>
 
-      {/* Floating Action Bubble Toggle (One click opens, another click minimizes) */}
+      {/* Focus Mode & In-Reader Quick Dictionary Modal */}
+      <FocusDictionaryModal
+        isOpen={isDictModalOpen}
+        onClose={() => setIsDictModalOpen(false)}
+        initialWord={dictLookupWord}
+        articleSlug={article.slug}
+        student={student}
+        onSaveFeedback={(msg) => {
+          setToastMessage(msg);
+          setTimeout(() => setToastMessage(""), 2800);
+        }}
+      />
+
+      {/* Floating Action Bubble Toggle */}
       <button
         onClick={() => setIsNotebookOpen(!isNotebookOpen)}
         className={`fixed bottom-6 right-6 z-40 w-13 h-13 sm:w-14 sm:h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 border hover:scale-110 active:scale-95 group ${
           isNotebookOpen
             ? "bg-[#1f2733] hover:bg-[#121720] text-white border-[#384152]"
+            : useEnglishLearningExperience
+            ? "bg-[#1e40af] hover:bg-[#1d4ed8] text-white border-[#1d4ed8]"
             : "bg-[#842323] hover:bg-[#6e1c1c] text-white border-[#9c2b2b]"
         }`}
         title={isNotebookOpen ? "নোটবুক মিনিমাইজ করুন" : "নোটবুক ও অভিধান খুলুন"}

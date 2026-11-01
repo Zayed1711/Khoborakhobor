@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { generateContextualMicroQuiz } from "@/lib/quiz/generator";
 import { evaluateExamRelevance, extractFactTable } from "@/lib/scraper/examFilter";
+import { extractVocabularyTableRows } from "@/lib/vocabulary-table-engine";
+import { generateScaffoldedEnglishQuiz } from "@/lib/quiz/scaffolded-english-quiz";
 
 const parser = new Parser({
   headers: {
@@ -808,8 +810,31 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
 
         const takeaways = extractStudentTakeaways(title, cleanContent || summary, categoryName);
         const factTable = extractFactTable(title, cleanContent || summary, categoryName, source.name);
-        const vocabList = extractVocabulary(title + " " + cleanContent);
-        const quiz = generateContextualMicroQuiz(title, cleanContent || summary, categoryName, takeaways);
+        const isEnglishNews = !isBengaliText(title);
+        let vocabList: { term: string; definition: string; context?: string | null }[] = [];
+        let quizList: { question: string; options: string[]; correctOption: number; explanation?: string }[] = [];
+
+        if (isEnglishNews) {
+          const vocabRows = extractVocabularyTableRows(title, cleanContent || summary);
+          vocabList = vocabRows.map((r) => ({
+            term: `${r.word} [${r.banglaPhonetic}]`,
+            definition: `${r.banglaMeaning} | ${r.englishDefinition}`,
+            context: r.freshExampleEn,
+          }));
+
+          const scaffoldQuizzes = generateScaffoldedEnglishQuiz(title, cleanContent || summary);
+          quizList = scaffoldQuizzes.map((sq) => ({
+            question: sq.question,
+            options: sq.options,
+            correctOption: sq.correctOption,
+            explanation: sq.explanation,
+          }));
+        } else {
+          vocabList = extractVocabulary(title + " " + cleanContent);
+          const singleQuiz = generateContextualMicroQuiz(title, cleanContent || summary, categoryName, takeaways);
+          quizList = [singleQuiz];
+        }
+
 
         const fallbackImg = CATEGORY_EDITORIAL_IMAGES[targetCategorySlug] || CATEGORY_EDITORIAL_IMAGES["national"];
         const featuredImg =
@@ -861,15 +886,18 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
           }
 
           // Add micro quiz
-          await prisma.quizQuestion.create({
-            data: {
-              articleId: savedArticle.id,
-              question: quiz.question,
-              options: JSON.stringify(quiz.options),
-              correctOption: quiz.correctOption,
-              explanation: quiz.explanation,
-            },
-          });
+          for (const q of quizList) {
+            await prisma.quizQuestion.create({
+              data: {
+                articleId: savedArticle.id,
+                question: q.question,
+                options: JSON.stringify(q.options),
+                correctOption: q.correctOption,
+                explanation: q.explanation || null,
+              },
+            });
+          }
+
 
           results.saved++;
           countFromThisSource++;
