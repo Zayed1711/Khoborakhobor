@@ -14,6 +14,9 @@ export interface ScaffoldedQuizQuestion {
   correctOption: number;
   explanation: string;
   topicTag: string;
+  targetWord?: string;
+  contextQuote?: string;
+  paragraphRef?: string;
 }
 
 interface VocabQuizItem {
@@ -130,6 +133,47 @@ export function generateScaffoldedEnglishQuiz(
   const questions: ScaffoldedQuizQuestion[] = [];
   let idCounter = 1;
 
+  // Clean content paragraphs for citation extraction
+  const cleanContent = (articleContent || "").replace(/<[^>]+>/g, "\n");
+  const paras = cleanContent
+    .split(/\n+/)
+    .map((p) => p.trim())
+    .filter((p) => p.length >= 20);
+
+  // Helper to extract context sentence and paragraph
+  const getContext = (regex: RegExp) => {
+    if (paras.length === 0) {
+      return {
+        quote: articleTitle.length > 200 ? articleTitle.slice(0, 197) + "..." : articleTitle,
+        paragraphRef: "প্রধান শিরোনাম",
+      };
+    }
+    for (let pIdx = 0; pIdx < paras.length; pIdx++) {
+      if (regex.test(paras[pIdx])) {
+        const sentences = paras[pIdx].split(/(?<=[.?!।])\s+/).filter(Boolean);
+        for (let sIdx = 0; sIdx < sentences.length; sIdx++) {
+          if (regex.test(sentences[sIdx])) {
+            const s = sentences[sIdx].trim();
+            return {
+              quote: s.length > 220 ? s.slice(0, 217) + "..." : s,
+              paragraphRef: `অনুচ্ছেদ ${pIdx + 1} • বাক্য ${sIdx + 1}`,
+            };
+          }
+        }
+        const p = paras[pIdx].trim();
+        return {
+          quote: p.length > 220 ? p.slice(0, 217) + "..." : p,
+          paragraphRef: `অনুচ্ছেদ ${pIdx + 1}`,
+        };
+      }
+    }
+    const lead = paras[0].split(/(?<=[.?!।])\s+/)[0] || paras[0];
+    return {
+      quote: lead.length > 220 ? lead.slice(0, 217) + "..." : lead,
+      paragraphRef: "অনুচ্ছেদ ১ • মূল প্রেক্ষাপট",
+    };
+  };
+
   // 1. Vocabulary in Context Questions
   for (const [key, item] of Object.entries(HIGH_YIELD_SCAFFOLDED_BANK)) {
     const searchWord = key.replace("_", " ");
@@ -154,13 +198,18 @@ export function generateScaffoldedEnglishQuiz(
       allOpts[0] = allOpts[correctIndex];
       allOpts[correctIndex] = temp;
 
+      const citation = getContext(regex);
+
       questions.push({
         id: `scaffold-vocab-${key}-${idCounter++}`,
-        question: `এই প্যাসেজে "${item.targetWord}" শব্দটা দিয়ে কী বোঝানো হয়েছে?`,
+        question: `উদ্ধৃত অনুচ্ছেদে "${item.targetWord}" শব্দটা দিয়ে কী বোঝানো হয়েছে?`,
         options: allOpts,
         correctOption: correctIndex,
         explanation: `${item.explanationTip} সঠিক উত্তর: "${item.correctEn}" (${item.correctBn})।`,
         topicTag: "শব্দার্থ ও প্রেক্ষাপট",
+        targetWord: item.targetWord,
+        contextQuote: citation.quote,
+        paragraphRef: citation.paragraphRef,
       });
 
       if (questions.length >= 2) break;
@@ -169,6 +218,8 @@ export function generateScaffoldedEnglishQuiz(
 
   // 2. Preposition / Collocation Spotter Challenge
   if (combined.includes("comply") || combined.includes("compliance")) {
+    const regex = /\bcompl(y|iance)\b/i;
+    const citation = getContext(regex);
     questions.push({
       id: `scaffold-prep-${idCounter++}`,
       question: `প্যাসেজে "comply" শব্দের পর কোন Preposition-টি মানানসইভাবে বসেছে?`,
@@ -181,8 +232,13 @@ export function generateScaffoldedEnglishQuiz(
       correctOption: 0,
       explanation: "ইংরেজি ব্যাকরণে নিয়ম, শর্ত বা আইন মানার ক্ষেত্রে সবসময় 'comply with' ব্যবহৃত হয়।",
       topicTag: "উপযুক্ত প্রিপজিশন",
+      targetWord: "comply with",
+      contextQuote: citation.quote,
+      paragraphRef: citation.paragraphRef,
     });
   } else if (combined.includes("depend") || combined.includes("dependent")) {
+    const regex = /\bdepend(ent)?\b/i;
+    const citation = getContext(regex);
     questions.push({
       id: `scaffold-prep-${idCounter++}`,
       question: `প্যাসেজে "depend" শব্দের সাথে উপযুক্ত কোন Preposition-টি ব্যবহৃত হয়?`,
@@ -195,11 +251,16 @@ export function generateScaffoldedEnglishQuiz(
       correctOption: 0,
       explanation: "নির্ভরশীলতা প্রকাশের ক্ষেত্রে 'depend on' বা 'depend upon' ব্যবহৃত হয়।",
       topicTag: "উপযুক্ত প্রিপজিশন",
+      targetWord: "depend on",
+      contextQuote: citation.quote,
+      paragraphRef: citation.paragraphRef,
     });
   }
 
   // 3. Cloze Test / Missing Verb Challenge
   if (combined.includes("rate") || combined.includes("hike") || combined.includes("inflation")) {
+    const regex = /\b(rate|hike|inflation)\b/i;
+    const citation = getContext(regex);
     questions.push({
       id: `scaffold-cloze-${idCounter++}`,
       question: `নিচের বাক্যের শূন্যস্থানে প্যাসেজের প্রেক্ষাপট অনুযায়ী কোন শব্দটি সবচেয়ে মানানসই?\n"The authorities decided to _______ key interest rates to fight inflation."`,
@@ -212,12 +273,16 @@ export function generateScaffoldedEnglishQuiz(
       correctOption: 0,
       explanation: "মূল্যস্ফীতি নিয়ন্ত্রণে কেন্দ্রীয় ব্যাংক সাধারণত সুদের হার বাড়ায় (hike interest rates)।",
       topicTag: "শূন্যস্থান পূরণ",
+      targetWord: "hike",
+      contextQuote: citation.quote,
+      paragraphRef: citation.paragraphRef,
     });
   }
 
   // 4. Default Guaranteed Vocabulary Question if none matched
   if (questions.length === 0) {
     const defaultItem = HIGH_YIELD_SCAFFOLDED_BANK["inflation"];
+    const citation = getContext(/\binflation\b/i);
     questions.push({
       id: `scaffold-vocab-default-${idCounter++}`,
       question: `ইংরেজি সংবাদে "${defaultItem.targetWord}" শব্দটা দিয়ে সাধারণত কী বোঝানো হয়?`,
@@ -230,6 +295,9 @@ export function generateScaffoldedEnglishQuiz(
       correctOption: 0,
       explanation: defaultItem.explanationTip,
       topicTag: "শব্দার্থ ও প্রেক্ষাপট",
+      targetWord: defaultItem.targetWord,
+      contextQuote: citation.quote,
+      paragraphRef: citation.paragraphRef,
     });
   }
 

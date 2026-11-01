@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { 
   Flame, Sparkles, TrendingUp, HelpCircle, 
@@ -9,38 +9,58 @@ import {
 import ThemeSwitcher from "./ThemeSwitcher";
 import { useAppMode } from "@/context/LanguageContext";
 
-interface RightStudyRailProps {
-  streakDays?: number;
-  featuredQuiz?: {
-    question: string;
-    options: string[];
-    correctOption: number;
-    explanation?: string | null;
-  };
+export interface DailyFeaturedQuizItem {
+  id?: string;
+  question: string;
+  options: string[];
+  correctOption: number;
+  explanation?: string | null;
+  topicTag?: string;
+  sourceName?: string | null;
+  articleTitle?: string | null;
+  articleSlug?: string | null;
+  contextQuote?: string | null;
+  paragraphRef?: string | null;
 }
 
-const DEFAULT_GK_QUIZ = {
-  question: "কেন্দ্রীয় ব্যাংকের সম্প্রসারিত মুদ্রানীতির প্রাথমিক লক্ষ্য কোনটি?",
+interface RightStudyRailProps {
+  streakDays?: number;
+  featuredQuiz?: DailyFeaturedQuizItem;
+  featuredEnglishQuiz?: DailyFeaturedQuizItem;
+}
+
+const DEFAULT_GK_QUIZ: DailyFeaturedQuizItem = {
+  sourceName: "প্রথম আলো",
+  articleTitle: "মূল্যস্ফীতি নিয়ন্ত্রণে কেন্দ্রীয় ব্যাংকের সংকোচনমূলক মুদ্রানীতি পর্যালোচনা",
+  articleSlug: "bangladesh-bank-new-repo-rate-inflation-policy-202",
+  paragraphRef: "অনুচ্ছেদ ২ • বাক্য ১",
+  contextQuote: "উচ্চ মূল্যস্ফীতি নিয়ন্ত্রণে কেন্দ্রীয় ব্যাংক নীতি সুদহার বৃদ্ধির মাধ্যমে বাজারে অর্থ ও নগদ টাকার প্রবাহ সংকুচিত করার নীতি গ্রহণ করেছে।",
+  question: "উদ্ধৃত প্রেক্ষাপটের আলোকে কেন্দ্রীয় ব্যাংকের সংকোচনমূলক মুদ্রানীতির প্রাথমিক লক্ষ্য কোনটি?",
   options: [
-    "অর্থ সরবরাহ বৃদ্ধি ও অর্থনৈতিক বিনিয়োগ বাড়ানো",
-    "ব্যাংকিং সুদের হার সর্বোচ্চ বৃদ্ধি করা",
+    "অর্থ সরবরাহ নিয়ন্ত্রণ ও মূল্যস্ফীতি হ্রাস করা",
+    "ব্যাংকিং সুদের হার শূন্যে নামিয়ে আনা",
     "নিত্যপ্রয়োজনীয় পণ্যের আমদানি সম্পূর্ণ বন্ধ করা",
-    "সরকারি বৈদেশিক রিজার্ভ হ্রাস করা",
+    "সরকারি বৈদেশিক রিজার্ভ দ্রুত হ্রাস করা",
   ],
   correctOption: 0,
-  explanation: "সম্প্রসারিত মুদ্রানীতি (Expansionary Monetary Policy) বাজারে অর্থ সরবরাহ বাড়িয়ে বিনিয়োগ ও উৎপাদন ত্বরান্বিত করে।",
+  explanation: "সংকোচনমূলক মুদ্রানীতি (Contractionary Monetary Policy) বাজারে নগদ টাকার সরবরাহ কমিয়ে মূল্যস্ফীতি সংবরণ করতে সাহায্য করে।",
 };
 
-const DEFAULT_ENGLISH_QUIZ = {
-  question: "এই প্যাসেজে \"rein in\" শব্দটা দিয়ে কী বোঝানো হয়েছে?",
+const DEFAULT_ENGLISH_QUIZ: DailyFeaturedQuizItem = {
+  sourceName: "The Daily Star",
+  articleTitle: "Monetary policy stance: Central bank tightens credit to curb consumer inflation",
+  articleSlug: "central-bank-tightens-credit-to-curb-consumer-inflation-101",
+  paragraphRef: "অনুচ্ছেদ ২ • বাক্য ৩",
+  contextQuote: "The governor emphasized that coordinated fiscal policy is essential to rein in stubborn consumer price inflation over the coming quarters.",
+  question: 'উদ্ধৃত অনুচ্ছেদে "rein in" শব্দবন্ধ দিয়ে কী বোঝানো হয়েছে?',
   options: [
-    "Control or restrain (নিয়ন্ত্রণ বা রাশ টেনে ধরা)",
-    "Increase rapidly (দ্রুত হারে বৃদ্ধি পাওয়া)",
+    "Control or restrain strictly (কঠোরভাবে নিয়ন্ত্রণ করা বা লাগাম টানা)",
+    "Accelerate without any limits (সীমাহীন গতিতে বৃদ্ধি করা)",
     "Postpone indefinitely (অনির্দিষ্টকালের জন্য পিছিয়ে দেওয়া)",
     "Ignore completely (পুরোপুরি এড়িয়ে চলা)",
   ],
   correctOption: 0,
-  explanation: "\"Rein in\" একটি অত্যন্ত গুরুত্বপূর্ণ ইংরেজি phrasal verb, যার অর্থ লাগাম টেনে ধরা বা কোনো কিছুকে নিয়ন্ত্রণে রাখা।",
+  explanation: '"Rein in" একটি অত্যন্ত গুরুত্বপূর্ণ ইংরেজি phrasal verb, যার অর্থ লাগাম টেনে ধরা বা কোনো কিছুকে নিয়ন্ত্রণে রাখা।',
 };
 
 const GK_TRENDING_HASHTAGS = [
@@ -61,14 +81,22 @@ const ENGLISH_TRENDING_HASHTAGS = [
 
 export default function RightStudyRail({
   streakDays = 14,
-  featuredQuiz = DEFAULT_GK_QUIZ,
+  featuredQuiz,
+  featuredEnglishQuiz,
 }: RightStudyRailProps) {
   const { isEnglishMode } = useAppMode();
   const [selectedOpt, setSelectedOpt] = useState<number | null>(null);
   const [answered, setAnswered] = useState(false);
 
-  const activeQuiz = isEnglishMode ? DEFAULT_ENGLISH_QUIZ : (featuredQuiz || DEFAULT_GK_QUIZ);
+  const activeQuiz =
+    (isEnglishMode ? featuredEnglishQuiz : featuredQuiz) ||
+    (isEnglishMode ? DEFAULT_ENGLISH_QUIZ : DEFAULT_GK_QUIZ);
   const activeHashtags = isEnglishMode ? ENGLISH_TRENDING_HASHTAGS : GK_TRENDING_HASHTAGS;
+
+  useEffect(() => {
+    setSelectedOpt(null);
+    setAnswered(false);
+  }, [isEnglishMode, activeQuiz?.question]);
 
   const handleSelect = (idx: number) => {
     if (answered) return;
@@ -128,6 +156,45 @@ export default function RightStudyRail({
             {isEnglishMode ? "শব্দার্থ ও প্রয়োগ" : "একটিভ রিকল"}
           </span>
         </div>
+
+        {/* Source Citation & Context Sentence Box */}
+        {(activeQuiz.sourceName || activeQuiz.articleTitle || activeQuiz.contextQuote) && (
+          <div className="p-2.5 bg-[#fbf9f5] border border-[#e2dcd0] rounded-xl space-y-2">
+            {/* Source Newspaper Badge & Article Link */}
+            <div className="flex items-center justify-between text-[11px] gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="font-bold text-[#842323] uppercase tracking-wide text-[10px] bg-[#f0eae1] px-1.5 py-0.5 rounded border border-[#ded8cb] shrink-0 font-serif">
+                  {activeQuiz.sourceName || (isEnglishMode ? "Editorial Desk" : "উৎস সংবাদ")}
+                </span>
+                {activeQuiz.paragraphRef && (
+                  <span className="text-[10px] text-[#717887] font-mono shrink-0">
+                    {activeQuiz.paragraphRef}
+                  </span>
+                )}
+              </div>
+              {activeQuiz.articleSlug && (
+                <Link
+                  href={`/article/${activeQuiz.articleSlug}`}
+                  className="text-[10px] text-[#1e40af] hover:text-[#1e3a8a] hover:underline font-semibold flex items-center gap-0.5 shrink-0 ml-auto group"
+                  title="মূল প্রতিবেদনটি বিস্তারিত পড়ুন"
+                >
+                  <span>মূল প্রতিবেদন পড়ুন</span>
+                  <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              )}
+            </div>
+
+            {/* Context Line / Excerpt Quote */}
+            {activeQuiz.contextQuote && (
+              <div className="text-[11px] text-[#404652] italic leading-relaxed border-l-2 border-[#842323]/60 pl-2 py-0.5 bg-white/70 rounded-r font-serif">
+                <span className="text-[#717887] not-italic block text-[9px] font-semibold uppercase tracking-wider mb-0.5 font-sans">
+                  সংশ্লিষ্ট বাক্য / অনুচ্ছেদ উদ্ধৃতি:
+                </span>
+                “{activeQuiz.contextQuote}”
+              </div>
+            )}
+          </div>
+        )}
 
         <p className="text-xs font-bold text-[#1c1d21] leading-snug">
           {activeQuiz.question}

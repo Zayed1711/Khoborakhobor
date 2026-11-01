@@ -7,7 +7,7 @@ import MobileBottomNav from "@/components/MobileBottomNav";
 import { getPublishedArticles } from "@/actions/articles";
 import { getCurrentSession } from "@/actions/auth";
 import { prisma } from "@/lib/prisma";
-import { getDailyFeaturedQuiz } from "@/lib/quiz/generator";
+import { getDailyChallengeQuiz } from "@/lib/quiz/generator";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +19,8 @@ export default async function Home() {
   });
 
   const capsuleArticles = articles.filter((a) => a.isCapsule);
-  const dailyQuiz = getDailyFeaturedQuiz(undefined, articles);
+  const dailyBnQuiz = getDailyChallengeQuiz({ mode: "bn", articles });
+  const dailyEnQuiz = getDailyChallengeQuiz({ mode: "en", articles });
 
   return (
     <div className="min-h-screen bg-[#fbf9f5] flex flex-col font-sans pb-16 lg:pb-0">
@@ -44,7 +45,8 @@ export default async function Home() {
         {/* Right Column: Study Widgets, Streaks & Trends */}
         <RightStudyRail
           streakDays={session.student?.streakDays || 0}
-          featuredQuiz={dailyQuiz}
+          featuredQuiz={dailyBnQuiz}
+          featuredEnglishQuiz={dailyEnQuiz}
         />
       </main>
 

@@ -1,3 +1,6 @@
+import { isBengaliText } from "@/lib/bilingual";
+import { generateScaffoldedEnglishQuiz } from "@/lib/quiz/scaffolded-english-quiz";
+
 /**
  * KhoboraKhobor (খবরাখবর) - 100% Article-Aligned Contextual Quiz Engine
  * Generates questions strictly aligned with the specific person, event, policy,
@@ -10,6 +13,11 @@ export interface GeneratedQuiz {
   correctOption: number;
   explanation: string;
   topicTag: string;
+  sourceName?: string;
+  articleTitle?: string;
+  articleSlug?: string;
+  contextQuote?: string;
+  paragraphRef?: string;
 }
 
 interface RawQuizTemplate {
@@ -32,6 +40,40 @@ export function shuffleQuizOptions(options: string[], correctIndex: number): {
 
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
+    const temp = shuffled[i];
+    shuffled[i] = shuffled[j];
+    shuffled[j] = temp;
+  }
+
+  const newCorrectOption = shuffled.indexOf(correctText);
+  return {
+    options: shuffled,
+    correctOption: newCorrectOption >= 0 ? newCorrectOption : 0,
+  };
+}
+
+/**
+ * Fisher-Yates shuffle algorithm with deterministic seed for daily rotation
+ */
+export function shuffleQuizOptionsWithSeed(
+  options: string[],
+  correctIndex: number,
+  seed: number
+): {
+  options: string[];
+  correctOption: number;
+} {
+  const correctText = options[correctIndex];
+  const shuffled = [...options];
+
+  let s = Math.abs(seed) || 1;
+  const nextRand = () => {
+    s = (s * 9301 + 49297) % 233280;
+    return s / 233280;
+  };
+
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(nextRand() * (i + 1));
     const temp = shuffled[i];
     shuffled[i] = shuffled[j];
     shuffled[j] = temp;
@@ -644,71 +686,488 @@ export function generateContextualMicroQuiz(
 }
 
 /**
- * Returns today's featured daily challenge quiz for the homepage.
+ * Contextual citation extractor: Locates the exact paragraph, sentence quote, and source details.
+ */
+export function extractContextualCitation(
+  article: {
+    title: string;
+    content?: string | null;
+    summary?: string | null;
+    sourceName?: string | null;
+    slug?: string;
+  },
+  keywordsOrTarget?: string
+): {
+  contextQuote: string;
+  paragraphRef: string;
+  sourceName: string;
+  articleTitle: string;
+  articleSlug: string;
+} {
+  const sourceName = article.sourceName || "অনলাইন সংস্করণ";
+  const articleTitle = article.title;
+  const articleSlug = article.slug || "";
+
+  const cleanContent = (article.content || article.summary || "").replace(/<[^>]+>/g, "\n");
+  const paras = cleanContent
+    .split(/\n+/)
+    .map((p) => p.trim())
+    .filter((p) => p.length >= 20);
+
+  let targetTerm = keywordsOrTarget?.trim();
+  if (targetTerm) {
+    targetTerm = targetTerm.replace(/[\[\]\(\)"']/g, "").trim();
+  }
+
+  if (targetTerm && paras.length > 0) {
+    const escaped = targetTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const termRegex = new RegExp(`\\b${escaped}\\b`, "i");
+
+    for (let pIdx = 0; pIdx < paras.length; pIdx++) {
+      if (termRegex.test(paras[pIdx]) || paras[pIdx].includes(targetTerm)) {
+        const sentences = paras[pIdx].split(/(?<=[.?!।])\s+/).filter(Boolean);
+        for (let sIdx = 0; sIdx < sentences.length; sIdx++) {
+          if (termRegex.test(sentences[sIdx]) || sentences[sIdx].includes(targetTerm)) {
+            const s = sentences[sIdx].trim();
+            return {
+              contextQuote: s.length > 220 ? s.slice(0, 217) + "..." : s,
+              paragraphRef: `অনুচ্ছেদ ${pIdx + 1} • বাক্য ${sIdx + 1}`,
+              sourceName,
+              articleTitle,
+              articleSlug,
+            };
+          }
+        }
+        const p = paras[pIdx].trim();
+        return {
+          contextQuote: p.length > 220 ? p.slice(0, 217) + "..." : p,
+          paragraphRef: `অনুচ্ছেদ ${pIdx + 1}`,
+          sourceName,
+          articleTitle,
+          articleSlug,
+        };
+      }
+    }
+  }
+
+  // Fallback to first substantive sentence
+  const first = paras[0] || cleanContent.trim() || articleTitle;
+  const sentences = first.split(/(?<=[.?!।])\s+/).filter(Boolean);
+  const q = (sentences[0] || first).trim();
+
+  return {
+    contextQuote: q.length > 220 ? q.slice(0, 217) + "..." : q,
+    paragraphRef: "অনুচ্ছেদ ১ • মূল প্রেক্ষাপট",
+    sourceName,
+    articleTitle,
+    articleSlug,
+  };
+}
+
+/**
+ * Calculates a reliable, deterministic daily day index for rotational seed
+ */
+export function getDailySeedNumber(dateInput?: string | Date): number {
+  if (dateInput instanceof Date) {
+    return Math.floor(Date.UTC(dateInput.getFullYear(), dateInput.getMonth(), dateInput.getDate()) / (1000 * 60 * 60 * 24));
+  }
+  if (typeof dateInput === "string" && dateInput.trim()) {
+    const parsed = new Date(dateInput);
+    if (!isNaN(parsed.getTime())) {
+      return Math.floor(Date.UTC(parsed.getFullYear(), parsed.getMonth(), parsed.getDate()) / (1000 * 60 * 60 * 24));
+    }
+    const digitsOnly = parseInt(dateInput.replace(/\D/g, ""), 10);
+    if (!isNaN(digitsOnly) && digitsOnly > 0) return digitsOnly;
+  }
+  const now = new Date();
+  return Math.floor(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / (1000 * 60 * 60 * 24));
+}
+
+export const DAILY_ENGLISH_FALLBACK_POOL: Array<{
+  topicTag: string;
+  sourceName: string;
+  articleTitle: string;
+  articleSlug: string;
+  paragraphRef: string;
+  contextQuote: string;
+  question: string;
+  options: [string, string, string, string];
+  explanation: string;
+}> = [
+  {
+    topicTag: "মুদ্রানীতি ও সমষ্টিক অর্থনীতি",
+    sourceName: "The Daily Star",
+    articleTitle: "Monetary policy stance: Central bank tightens credit to curb consumer inflation",
+    articleSlug: "central-bank-tightens-credit-to-curb-consumer-inflation-101",
+    paragraphRef: "অনুচ্ছেদ ২ • বাক্য ৩",
+    contextQuote: "The governor emphasized that coordinated fiscal policy is essential to rein in stubborn consumer price inflation over the coming quarters.",
+    question: 'উদ্ধৃত অনুচ্ছেদে "rein in" শব্দবন্ধ দিয়ে কী বোঝানো হয়েছে?',
+    options: [
+      "Control or restrain strictly (কঠোরভাবে নিয়ন্ত্রণ করা বা লাগাম টানা)",
+      "Accelerate without any limits (সীমাহীন গতিতে বৃদ্ধি করা)",
+      "Postpone indefinitely (অনির্দিষ্টকালের জন্য পিছিয়ে দেওয়া)",
+      "Ignore completely (পুরোপুরি উপেক্ষা বা এড়িয়ে চলা)",
+    ],
+    explanation: '"Rein in" একটি বিশিষ্ট phrasal verb, যার অর্থ লাগাম টেনে ধরা বা কোনো অনিয়ন্ত্রিত বিষয়কে শক্তভাবে নিয়ন্ত্রণ করা।',
+  },
+  {
+    topicTag: "বৈদেশিক বাণিজ্য ও রিজার্ভ",
+    sourceName: "The Business Standard",
+    articleTitle: "Forex reserve safeguards: Regulatory authorities enforce strict import monitoring",
+    articleSlug: "regulatory-authorities-enforce-strict-import-monitoring-102",
+    paragraphRef: "অনুচ্ছেদ ৩ • বাক্য ১",
+    contextQuote: "In a bid to safeguard national foreign exchange reserves, the banking regulator moved decisively to curb non-essential commodity imports.",
+    question: 'উদ্ধৃত অনুচ্ছেদে "curb" শব্দটা দিয়ে কী বোঝানো হয়েছে?',
+    options: [
+      "Restrain or keep in check (দমন করা, সংবরণ করা বা রাশ টানা)",
+      "Promote and expand widely (ব্যাপকভাবে উৎসাহিত বা সম্প্রসারিত করা)",
+      "Double public subsidies (সরকারি ভর্তুকি দ্বিগুণ করা)",
+      "Celebrate an annual festival (বার্ষিক কোনো উৎসব উদযাপন করা)",
+    ],
+    explanation: '"Curb" শব্দের অর্থ কোনো ক্ষতিকর বা অতিরিক্ত খরচকে নিয়ন্ত্রণ বা দমন করা।',
+  },
+  {
+    topicTag: "সরকারি রাজস্ব ও বাজেট",
+    sourceName: "Dhaka Tribune",
+    articleTitle: "Ministry fiscal guidelines: New expenditure framework focuses on administrative overheads",
+    articleSlug: "ministry-fiscal-guidelines-expenditure-framework-103",
+    paragraphRef: "অনুচ্ছেদ ১ • বাক্য ৪",
+    contextQuote: "The finance ministry announced comprehensive austerity measures to eliminate luxury vehicle purchases and overseas official tours.",
+    question: 'উদ্ধৃত অনুচ্ছেদে "austerity" শব্দটা দিয়ে কী বোঝানো হয়েছে?',
+    options: [
+      "Measures to reduce government spending (ব্যয়সংকোচন বা কৃচ্ছ্রসাধন নীতি)",
+      "Massive luxury spending (বিলাসবহুল অতিরিক্ত খরচ)",
+      "Printing unlimited new money (অতিরিক্ত নতুন টাকা ছাপানো)",
+      "Borrowing from foreign individuals (ব্যক্তিগত বিদেশি ঋণ গ্রহণ)",
+    ],
+    explanation: '"Austerity" শব্দের মূল অর্থ রাষ্ট্রীয় বা প্রাতিষ্ঠানিক ব্যয় কমানোর কঠোর কৃচ্ছ্রসাধন নীতি।',
+  },
+  {
+    topicTag: "পরিবেশ বিজ্ঞান ও জনস্বাস্থ্য",
+    sourceName: "The Daily Star",
+    articleTitle: "Winter air quality warning: Meteorological department records hazardous particulate density",
+    articleSlug: "winter-air-quality-warning-particulate-density-104",
+    paragraphRef: "অনুচ্ছেদ ৪ • বাক্য ২",
+    contextQuote: "Environmental epidemiologists warned that pediatric health indicators could deteriorate sharply if brick kilns operate without modern scrubbers.",
+    question: 'উদ্ধৃত অনুচ্ছেদে "deteriorate" শব্দটা দিয়ে কী বোঝানো হয়েছে?',
+    options: [
+      "To become progressively worse (ধীরে ধীরে আরও অবনতি ঘটা বা খারাপ হওয়া)",
+      "To recover and improve rapidly (দ্রুত সেরে ওঠা বা উন্নতি করা)",
+      "To remain completely constant (সম্পূর্ণ অপরিবর্তিত থাকা)",
+      "To double in physical density (ঘনত্ব দ্বিগুণ হওয়া)",
+    ],
+    explanation: '"Deteriorate" একটি ক্রিয়াপদ (Verb), যার অর্থ ক্রমাগত খারাপ বা সংকটজনক দশায় পৌঁছানো।',
+  },
+  {
+    topicTag: "সামাজিক নিরাপত্তা ও খাদ্য বিতরণ",
+    sourceName: "The Business Standard",
+    articleTitle: "Open market food distribution: Expanded subsidised rationing begins across industrial belts",
+    articleSlug: "open-market-food-distribution-expanded-rationing-105",
+    paragraphRef: "অনুচ্ছেদ ২ • বাক্য ১",
+    contextQuote: "The newly expanded food security programme directly aims to alleviate severe living cost pressures for low-wage factory workers.",
+    question: 'উদ্ধৃত অনুচ্ছেদে "alleviate" শব্দটা দিয়ে কী বোঝানো হয়েছে?',
+    options: [
+      "To make suffering or problems less severe (কষ্ট বা সমস্যার তীব্রতা কমানো বা উপশম করা)",
+      "To worsen an existing dispute (বিদ্যমান বিরোধ আরও জটিল করে তোলা)",
+      "To suspend all emergency relief (জরুরি ত্রাণ বিতরণ পুরোপুরি বন্ধ করা)",
+      "To impose punitive commercial taxes (শাস্তিমূলক বাড়তি বাণিজ্যিক কর আরোপ করা)",
+    ],
+    explanation: '"Alleviate" মানে কোনো কষ্ট, যন্ত্রণা বা তীব্র সংকটের মাত্রা উপশম করা।',
+  },
+  {
+    topicTag: "রপ্তানি বাণিজ্য ও বৈশ্বিক সাপ্লাই চেইন",
+    sourceName: "Dhaka Tribune",
+    articleTitle: "RMG export performance: Manufacturers adapt to changing global tariff structures",
+    articleSlug: "rmg-export-performance-changing-tariff-structures-106",
+    paragraphRef: "অনুচ্ছেদ ৫ • বাক্য ৩",
+    contextQuote: "Trade analysts observed that agile product diversification demonstrates the extraordinary resilience of local apparel manufacturing clusters.",
+    question: 'উদ্ধৃত অনুচ্ছেদে "resilience" শব্দটা দিয়ে কী বোঝানো হয়েছে?',
+    options: [
+      "Ability to quickly recover from difficulties (সংকটের ধাক্কা সামলে দ্রুত ঘুরে দাঁড়ানোর ক্ষমতা)",
+      "Extreme physical or financial fragility (চরম ভঙ্গুরতা বা দুর্বলতা)",
+      "Reluctance to adopt new methods (নতুন পদ্ধতি গ্রহণে অনীহা)",
+      "Complete lack of adaptability (অভিযোজন ক্ষমতার সামগ্রিক অভাব)",
+    ],
+    explanation: '"Resilience" বিপর্যয় বা প্রতিকূলতার ধাক্কা সামলে ঘুরে দাঁড়ানোর ইতিবাচক ক্ষমতাকে বোঝায়।',
+  },
+  {
+    topicTag: "আন্তর্জাতিক সমুদ্র আইন ও ভৌগোলিক নিরাপত্তা",
+    sourceName: "The Daily Star",
+    articleTitle: "Bay of Bengal surveillance: Naval flotilla enhances exclusive economic zone patrols",
+    articleSlug: "bay-of-bengal-surveillance-naval-flotilla-patrols-107",
+    paragraphRef: "অনুচ্ছেদ ১ • বাক্য ২",
+    contextQuote: "The commander reaffirmed the navy's constitutional obligation to defend the sovereign borders and maritime sovereignty of Bangladesh.",
+    question: 'উদ্ধৃত অনুচ্ছেদে "sovereignty" শব্দটা দিয়ে কী বোঝানো হয়েছে?',
+    options: [
+      "Supreme and independent state authority (স্বাধীন রাষ্ট্রের সর্বোচ্চ ও চূড়ান্ত সার্বভৌম ক্ষমতা)",
+      "Foreign occupational administrative rule (বিদেশি সামরিক বা প্রশাসনিক নিয়ন্ত্রণ)",
+      "Voluntary regional territorial surrender (আঞ্চলিক নিয়ন্ত্রণ স্বেচ্ছায় সমর্পণ করা)",
+      "Commercial monopoly over local waters (স্থানীয় জলসীমায় বাণিজ্যিক একচেটিয়াত্ব)",
+    ],
+    explanation: '"Sovereignty" হলো নিজ ভূখণ্ডের ওপর বিদেশি হস্তক্ষেপহীন একটি স্বাধীন রাষ্ট্রের সর্বোচ্চ সার্বভৌম কর্তৃত্ব।',
+  },
+];
+
+export const DAILY_BENGALI_FALLBACK_POOL: Array<{
+  topicTag: string;
+  sourceName: string;
+  articleTitle: string;
+  articleSlug: string;
+  paragraphRef: string;
+  contextQuote: string;
+  question: string;
+  options: [string, string, string, string];
+  explanation: string;
+}> = [
+  {
+    topicTag: "কূটনীতি ও মুক্তিযুদ্ধের ইতিহাস",
+    sourceName: "প্রথম আলো",
+    articleTitle: "১৯৭৪ সালের ৩০ অক্টোবর হেনরি কিসিঞ্জারের ঢাকা সফর ও কূটনৈতিক দলিল",
+    articleSlug: "henry-kissinger-dhaka-visit-1974-archive-201",
+    paragraphRef: "অনুচ্ছেদ ১ • বাক্য ২",
+    contextQuote: "১৯৭১ সালে মুক্তিযুদ্ধকালে পাকিস্তানের পক্ষে অবস্থান নিয়ে সপ্তম নৌবহর পাঠানোর নির্দেশদাতা হেনরি কিসিঞ্জার স্বাধীনতার তিন বছর পর ১৯৭৪ সালের ৩০ অক্টোবর ঢাকায় রাষ্ট্রীয় সফরে আসেন।",
+    question: "[কূটনীতি ও মুক্তিযুদ্ধের ইতিহাস] ১৯৭১ সালে বাংলাদেশের স্বাধীনতা যুদ্ধের বিরোধিতা এবং পরবর্তীতে ১৯৭৪ সালের ৩০ অক্টোবর ঢাকা সফরকারী তৎকালীন মার্কিন পররাষ্ট্রমন্ত্রী কে ছিলেন?",
+    options: [
+      "হেনরি কিসিঞ্জার (Henry Kissinger)",
+      "আর্চার কে ব্লাড (মার্কিন কনসাল জেনারেল)",
+      "রিচার্ড নিক্সন (মার্কিন প্রেসিডেন্ট)",
+      "রবার্ট ম্যাকনামারা (বিশ্বব্যাংক প্রধান)",
+    ],
+    explanation: "১৯৭১ সালে মুক্তিযুদ্ধকালে পাকিস্তানের পক্ষে অবস্থান নিয়ে সপ্তম নৌবহর পাঠানোর নির্দেশদাতা হেনরি কিসিঞ্জার স্বাধীনতার তিন বছর পর ১৯৭৪ সালের ৩০ অক্টোবর ঢাকায় রাষ্ট্রীয় সফরে এসে বঙ্গবন্ধুর সঙ্গে বৈঠক করেন।",
+  },
+  {
+    topicTag: "অর্থনীতি ও মুদ্রানীতি",
+    sourceName: "প্রথম আলো",
+    articleTitle: "মূল্যস্ফীতি নিয়ন্ত্রণে বাংলাদেশ ব্যাংকের নতুন নীতি সুদহার ও সংকোচনমূলক মুদ্রানীতি",
+    articleSlug: "bangladesh-bank-new-repo-rate-inflation-policy-202",
+    paragraphRef: "অনুচ্ছেদ ২ • বাক্য ১",
+    contextQuote: "উচ্চ মূল্যস্ফীতি নিয়ন্ত্রণে কেন্দ্রীয় ব্যাংক নীতি সুদহার (Repo Rate) বৃদ্ধির মাধ্যমে ঋণ ও নগদ টাকার প্রবাহ সংকুচিত করার পদক্ষেপ গ্রহণ করেছে।",
+    question: "[অর্থনীতি ও মুদ্রানীতি] উচ্চ মূল্যস্ফীতি নিয়ন্ত্রণে কেন্দ্রীয় ব্যাংক নীতি সুদহার (Repo Rate) বৃদ্ধির মাধ্যমে কোন মুদ্রানীতি বাস্তবায়ন করে?",
+    options: [
+      "সংকোচনমূলক মুদ্রানীতি (Contractionary Monetary Policy)",
+      "সম্প্রসারণমূলক মুদ্রানীতি (Expansionary Policy)",
+      "শূন্য-সুদহার ঋণ বিতরণ নীতি",
+      "কাগুজে মুদ্রা ছাপিয়ে অভ্যন্তরীণ ঋণ বৃদ্ধি",
+    ],
+    explanation: "মূল্যস্ফীতি নিয়ন্ত্রণে কেন্দ্রীয় ব্যাংক নীতি সুদহার বৃদ্ধি করে ঋণ ও নগদ টাকার প্রবাহ সংকুচিত করে, যা সংকোচনমূলক মুদ্রানীতি নামে পরিচিত।",
+  },
+  {
+    topicTag: "সংবিধান ও আইন",
+    sourceName: "ইত্তেফাক",
+    articleTitle: "জাতীয় সংসদহীন অবস্থায় জরুরি রাষ্ট্র পরিচালনার সাংবিধানিক বিধান ও রাষ্ট্রপতির ক্ষমতা",
+    articleSlug: "constitutional-article-93-presidential-ordinance-203",
+    paragraphRef: "অনুচ্ছেদ ৩ • বাক্য ২",
+    contextQuote: "সংবিধানের ৯৩ অনুচ্ছেদ অনুসারে সংসদ ভেঙে যাওয়া বা অধিবেশন না থাকা অবস্থায় রাষ্ট্রপতি জরুরি প্রয়োজনে বিশেষ অধ্যাদেশ জারি করতে পারেন।",
+    question: "[সংবিধান ও আইন] জাতীয় সংসদ ভেঙে যাওয়া অবস্থায় রাষ্ট্রের জরুরি প্রয়োজনে রাষ্ট্রপতি কর্তৃক জারিকৃত সাময়িক আইনকে কী বলা হয়?",
+    options: [
+      "অধ্যাদেশ (সংবিধানের ৯৩ অনুচ্ছেদ অনুযায়ী)",
+      "বিশেষ নির্বাহী প্রজ্ঞাপন",
+      "সাংবিধানিক সংশোধনী বিল",
+      "বিচার বিভাগীয় রুলিং",
+    ],
+    explanation: "সংবিধানের ৯৩ অনুচ্ছেদ অনুসারে সংসদ না থাকলে রাষ্ট্রপতি জরুরি প্রয়োজনে অধ্যাদেশ জারি করতে পারেন।",
+  },
+  {
+    topicTag: "জনস্বাস্থ্য ও রোগনিয়ন্ত্রণ গবেষণা",
+    sourceName: "সমকাল",
+    articleTitle: "জাতীয় রোগ নজরদারি ও সংক্রামক ব্যাধি প্রতিরোধে শীর্ষ গবেষণা প্রতিষ্ঠানের কার্যক্রম",
+    articleSlug: "iedcr-epidemiology-surveillance-public-health-204",
+    paragraphRef: "অনুচ্ছেদ ১ • বাক্য ৩",
+    contextQuote: "স্বাস্থ্য অধিদপ্তরের অধীন রোগতত্ত্ব, রোগ নিয়ন্ত্রণ ও গবেষণা ইনস্টিটিউট (আইইডিসিআর) জাতীয় পর্যায়ে মহামারি ও সংক্রামক ব্যাধি নজরদারিতে নেতৃত্ব দেয়।",
+    question: "[জনস্বাস্থ্য ও রোগনিয়ন্ত্রণ গবেষণা] বাংলাদেশে মহামারি, সংক্রামক ব্যাধি প্রতিরোধ ও জাতীয় রোগ নজরদারির দায়িত্বে নিয়োজিত শীর্ষ স্বায়ত্তশাসিত স্বাস্থ্য গবেষণা প্রতিষ্ঠান কোনটি?",
+    options: [
+      "আইইডিসিআর (IEDCR - রোগতত্ত্ব, রোগ নিয়ন্ত্রণ ও গবেষণা ইনস্টিটিউট)",
+      "বিসিএসআইআর (BCSIR - শিল্প গবেষণা পরিষদ)",
+      "বিএমডিসি (BMDC - মেডিকেল ও ডেন্টাল কাউন্সিল)",
+      "আইসিডিডিআরবি (icddr,b - উদরাময় গবেষণা কেন্দ্র)",
+    ],
+    explanation: "স্বাস্থ্য অধিদপ্তরের অধীন আইইডিসিআর জাতীয় পর্যায়ে মহামারি ও সংক্রামক ব্যাধি নজরদারির শীর্ষ জাতীয় প্রতিষ্ঠান।",
+  },
+  {
+    topicTag: "শাসনব্যবস্থা ও রাষ্ট্র সংস্কার",
+    sourceName: "যুগান্তর",
+    articleTitle: "জুলাই গণঅভ্যুত্থান-পরবর্তী নাগরিক সংস্কার রূপরেখা ও জাতীয় ঐকমত্য",
+    articleSlug: "july-charter-state-reform-consensus-205",
+    paragraphRef: "অনুচ্ছেদ ২ • বাক্য ১",
+    contextQuote: "২০২৪ সালের জুলাই গণঅভ্যুত্থানের পর বাংলাদেশে গণতান্ত্রিক জবাবদিহিতা, মানবাধিকার ও প্রাতিষ্ঠানিক সংস্কারের রূপরেখা হিসেবে জুলাই সনদ প্রণীত হয়।",
+    question: "[শাসনব্যবস্থা ও রাষ্ট্র সংস্কার] ২০২৪ সালের জুলাই গণঅভ্যুত্থান-পরবর্তী বাংলাদেশে রাষ্ট্রকাঠামো, জবাবদিহিতা ও নির্বাচনী ব্যবস্থা সংস্কারের যৌথ নাগরিক অঙ্গীকারনামা কী নামে পরিচিত?",
+    options: [
+      "জুলাই সনদ (July Charter)",
+      "একুশ দফা সনদ",
+      "ঢাকা ডিক্লারেশন ফ্রেমওয়ার্ক",
+      "রূপকল্প ২০৪১ রোডম্যাপ",
+    ],
+    explanation: "জুলাই গণঅভ্যুত্থানের পর গণতান্ত্রিক সংস্কার ও প্রাতিষ্ঠানিক জবাবদিহিতার রূপরেখা হিসেবে জুলাই সনদ আলোচিত ও সমাদৃত হয়।",
+  },
+  {
+    topicTag: "তথ্যপ্রযুক্তি ও ওয়েব ইঞ্জিনিয়ারিং",
+    sourceName: "প্রথম আলো বিজ্ঞান ও প্রযুক্তি",
+    articleTitle: "উন্মুক্ত উৎসের কন্টেন্ট ম্যানেজমেন্ট সিস্টেমের বৈশ্বিক প্রভাব ও সাইবার নিরাপত্তা",
+    articleSlug: "wordpress-open-source-cms-global-web-206",
+    paragraphRef: "অনুচ্ছেদ ২ • বাক্য ৩",
+    contextQuote: "ওয়ার্ডপ্রেস বিশ্বের সর্বাধিক জনপ্রিয় ওপেন সোর্স সিএমএস, যা বিশ্বব্যাপী ইন্টারনেটের প্রায় ৪৩% ওয়েবসাইটের পরিকাঠামো হিসেবে ব্যবহৃত হয়।",
+    question: "[তথ্যপ্রযুক্তি ও ওয়েব ইঞ্জিনিয়ারিং] বিশ্বব্যাপী ওয়েবসাইটের সিংহভাগ নির্মাণ ও ডিজিটাল কন্টেন্ট ব্যবস্থাপনায় ব্যবহৃত বিশ্বের সর্বাধিক জনপ্রিয় উন্মুক্ত উৎসের (Open Source) কন্টেন্ট ম্যানেজমেন্ট সিস্টেম (CMS) কোনটি?",
+    options: [
+      "ওয়ার্ডপ্রেস (WordPress CMS)",
+      "শপিফাই ইঞ্জিন (Shopify Engine)",
+      "অ্যাডোবি ড্রিমওয়েভার (Adobe Dreamweaver)",
+      "ওরাকল ইআরপি ফ্রেমওয়ার্ক (Oracle ERP)",
+    ],
+    explanation: "ওয়ার্ডপ্রেস বিশ্বের সর্বাধিক জনপ্রিয় ওপেন সোর্স কন্টেন্ট ম্যানেজমেন্ট সিস্টেম।",
+  },
+  {
+    topicTag: "বিশ্ব সাহিত্য ও সংস্কৃতি",
+    sourceName: "প্রথম আলো সাহিত্য সাময়িকী",
+    articleTitle: "ফরাসি ঔপন্যাসিক গুস্তাভ ফ্লবেয়ারকে নিয়ে এলিফ শাফাকের নতুন উপন্যাস",
+    articleSlug: "elif-shafak-new-novel-gustave-flaubert-207",
+    paragraphRef: "অনুচ্ছেদ ১ • বাক্য ২",
+    contextQuote: "তুর্কি বংশোদ্ভূত বিশিষ্ট ব্রিটিশ ঔপন্যাসিক এলিফ শাফাক ফরাসি সাহিত্যের প্রখ্যাত লেখক গুস্তাভ ফ্লবেয়ারের জীবনের নারীদের দৃষ্টিকোণ তুলে ধরে উপন্যাস রচনা করেছেন।",
+    question: "[বিশ্ব সাহিত্য ও সংস্কৃতি] ফরাসি ঔপন্যাসিক গুস্তাভ ফ্লবেয়ারের সাহিত্য ও জীবনকে উপজীব্য করে 'দেয়ার আর মোর থিংস ইন হেভেন অ্যান্ড আর্থ' উপন্যাস রচনা করেছেন কোন বিশিষ্ট লেখক?",
+    options: [
+      "এলিফ শাফাক (Elif Shafak)",
+      "অরুন্ধতী রায় (Arundhati Roy)",
+      "ওরহান পামুক (Orhan Pamuk)",
+      "সালমান রুশদি (Salman Rushdie)",
+    ],
+    explanation: "তুর্কি বংশোদ্ভূত ব্রিটিশ ঔপন্যাসিক এলিফ শাফাক ফরাসি সাহিত্যের প্রখ্যাত লেখক গুস্তাভ ফ্লবেয়ারের ওপর ভিত্তি করে সমকালীন উপন্যাস রচনা করেছেন।",
+  },
+];
+
+/**
+ * Returns a fully contextualized, daily rotating challenge quiz with source, line, and shuffled options.
+ */
+export function getDailyChallengeQuiz(options: {
+  mode: "bn" | "en";
+  articles?: Array<{
+    title: string;
+    content?: string | null;
+    summary?: string | null;
+    slug?: string;
+    sourceName?: string | null;
+    category?: { name: string } | null;
+    keyTakeaways?: any;
+    quizQuestions?: any[];
+  }>;
+  date?: Date | string;
+}): GeneratedQuiz {
+  const dayNum = getDailySeedNumber(options.date);
+  const mode = options.mode;
+  const articles = options.articles || [];
+
+  if (articles.length > 0) {
+    const candidates = mode === "en"
+      ? articles.filter((a) => !isBengaliText(a.title))
+      : articles.filter((a) => isBengaliText(a.title));
+
+    if (candidates.length > 0) {
+      const article = candidates[dayNum % candidates.length];
+
+      if (mode === "en") {
+        const scaffoldQuizzes = generateScaffoldedEnglishQuiz(
+          article.title,
+          article.content || article.summary || ""
+        );
+
+        if (scaffoldQuizzes.length > 0) {
+          const q = scaffoldQuizzes[(dayNum * 2) % scaffoldQuizzes.length];
+          const shuffled = shuffleQuizOptionsWithSeed(q.options, q.correctOption, dayNum);
+
+          return {
+            question: q.question,
+            options: shuffled.options,
+            correctOption: shuffled.correctOption,
+            explanation: q.explanation,
+            topicTag: q.topicTag || "English Editorial & Vocabulary",
+            sourceName: article.sourceName || "The Daily Star (English Edition)",
+            articleTitle: article.title,
+            articleSlug: article.slug,
+            contextQuote: q.contextQuote || article.title,
+            paragraphRef: q.paragraphRef || "অনুচ্ছেদ ১",
+          };
+        }
+      } else {
+        let takeaways: string[] = [];
+        if (article.keyTakeaways) {
+          if (Array.isArray(article.keyTakeaways)) {
+            takeaways = article.keyTakeaways;
+          } else if (typeof article.keyTakeaways === "string") {
+            try {
+              takeaways = JSON.parse(article.keyTakeaways);
+            } catch {
+              takeaways = [];
+            }
+          }
+        }
+
+        const microQuiz = generateContextualMicroQuiz(
+          article.title,
+          article.content || article.summary || "",
+          article.category?.name || "জাতীয় পরিক্রমা",
+          takeaways
+        );
+
+        const citation = extractContextualCitation(article, microQuiz.topicTag);
+        const shuffled = shuffleQuizOptionsWithSeed(microQuiz.options, microQuiz.correctOption, dayNum);
+
+        return {
+          question: microQuiz.question,
+          options: shuffled.options,
+          correctOption: shuffled.correctOption,
+          explanation: microQuiz.explanation,
+          topicTag: microQuiz.topicTag,
+          sourceName: citation.sourceName,
+          articleTitle: citation.articleTitle,
+          articleSlug: citation.articleSlug,
+          contextQuote: citation.contextQuote,
+          paragraphRef: citation.paragraphRef,
+        };
+      }
+    }
+  }
+
+  // Fallback Rotation from high-yield 7-day challenge pool
+  const pool = mode === "en" ? DAILY_ENGLISH_FALLBACK_POOL : DAILY_BENGALI_FALLBACK_POOL;
+  const fallback = pool[dayNum % pool.length];
+  const shuffled = shuffleQuizOptionsWithSeed(
+    [fallback.options[0], fallback.options[1], fallback.options[2], fallback.options[3]],
+    0,
+    dayNum
+  );
+
+  return {
+    question: fallback.question,
+    options: shuffled.options,
+    correctOption: shuffled.correctOption,
+    explanation: fallback.explanation,
+    topicTag: fallback.topicTag,
+    sourceName: fallback.sourceName,
+    articleTitle: fallback.articleTitle,
+    articleSlug: fallback.articleSlug,
+    contextQuote: fallback.contextQuote,
+    paragraphRef: fallback.paragraphRef,
+  };
+}
+
+/**
+ * Legacy adapter maintaining 100% backward compatibility with previous call signatures
  */
 export function getDailyFeaturedQuiz(
   seedDateStr?: string,
-  topArticles?: Array<{ title: string; content?: string | null; summary?: string | null; category?: { name: string } | null; keyTakeaways?: any }>
+  topArticles?: Array<{
+    title: string;
+    content?: string | null;
+    summary?: string | null;
+    slug?: string;
+    sourceName?: string | null;
+    category?: { name: string } | null;
+    keyTakeaways?: any;
+    quizQuestions?: any[];
+  }>,
+  mode: "bn" | "en" = "bn"
 ): GeneratedQuiz {
-  if (topArticles && topArticles.length > 0) {
-    const leadArticle = topArticles[0];
-    const categoryName = leadArticle.category?.name || "জাতীয় পরিক্রমা";
-    let takeaways: string[] = [];
-    if (leadArticle.keyTakeaways) {
-      if (Array.isArray(leadArticle.keyTakeaways)) {
-        takeaways = leadArticle.keyTakeaways;
-      } else if (typeof leadArticle.keyTakeaways === "string") {
-        try {
-          takeaways = JSON.parse(leadArticle.keyTakeaways);
-        } catch {
-          takeaways = [];
-        }
-      }
-    }
-    return generateContextualMicroQuiz(leadArticle.title, leadArticle.content || leadArticle.summary || "", categoryName, takeaways);
-  }
-
-  // High-yield fallback rotation challenge pool
-  const dailyFallbacks = [
-    {
-      topicTag: "অর্থনীতি ও মুদ্রানীতি",
-      questionStem: "উচ্চ মূল্যস্ফীতি নিয়ন্ত্রণে কেন্দ্রীয় ব্যাংক নীতি সুদহার (Repo Rate) বৃদ্ধির মাধ্যমে কোন মুদ্রানীতি বাস্তবায়ন করে?",
-      correctAnswer: "সংকোচনমূলক মুদ্রানীতি (Contractionary Monetary Policy)",
-      distractors: [
-        "সম্প্রসারণমূলক মুদ্রানীতি (Expansionary Policy)",
-        "শূন্য-সুদহার ঋণ বিতরণ নীতি",
-        "কাগুজে মুদ্রা ছাপিয়ে অভ্যন্তরীণ ঋণ বৃদ্ধি",
-      ] as [string, string, string],
-      explanation: "মূল্যস্ফীতি নিয়ন্ত্রণে কেন্দ্রীয় ব্যাংক নীতি সুদহার বৃদ্ধি করে ঋণ ও নগদ টাকার প্রবাহ সংকুচিত করে, যা সংকোচনমূলক মুদ্রানীতি নামে পরিচিত।",
-    },
-    {
-      topicTag: "সংবিধান ও আইন",
-      questionStem: "জাতীয় সংসদ ভেঙে যাওয়া অবস্থায় রাষ্ট্রের জরুরি প্রয়োজনে রাষ্ট্রপতি কর্তৃক জারিকৃত সাময়িক আইনকে কী বলা হয়?",
-      correctAnswer: "অধ্যাদেশ (সংবিধানের ৯৩ অনুচ্ছেদ অনুযায়ী)",
-      distractors: [
-        "বিশেষ নির্বাহী প্রজ্ঞাপন",
-        "সাংবিধানিক সংশোধনী বিল",
-        "বিচার বিভাগীয় রুলিং",
-      ] as [string, string, string],
-      explanation: "সংবিধানের ৯৩ অনুচ্ছেদ অনুসারে সংসদ না থাকলে রাষ্ট্রপতি জরুরি প্রয়োজনে অধ্যাদেশ জারি করতে পারেন।",
-    },
-  ];
-
-  const dayNum = seedDateStr ? parseInt(seedDateStr.replace(/\D/g, ""), 10) || 0 : Date.now();
-  const fallback = dailyFallbacks[dayNum % dailyFallbacks.length];
-
-  const { options, correctOption } = shuffleQuizOptions([
-    fallback.correctAnswer,
-    fallback.distractors[0],
-    fallback.distractors[1],
-    fallback.distractors[2],
-  ], 0);
-
-  return {
-    question: `[আজকের চ্যালেঞ্জ • ${fallback.topicTag}] ${fallback.questionStem}`,
-    options,
-    correctOption,
-    explanation: fallback.explanation,
-    topicTag: fallback.topicTag,
-  };
+  return getDailyChallengeQuiz({
+    mode,
+    articles: topArticles,
+    date: seedDateStr,
+  });
 }
