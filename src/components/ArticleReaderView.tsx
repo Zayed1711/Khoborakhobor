@@ -21,7 +21,7 @@ import { extractVocabularyTableRows } from "@/lib/vocabulary-table-engine";
 import { generateScaffoldedEnglishQuiz } from "@/lib/quiz/scaffolded-english-quiz";
 import { generateContextualMicroQuiz } from "@/lib/quiz/generator";
 import Link from "next/link";
-import { Clock, ArrowLeft, Lightbulb, Highlighter, Check, Edit3, X, Globe, ExternalLink, BookOpen } from "lucide-react";
+import { Clock, ArrowLeft, Lightbulb, Highlighter, Check, Edit3, X, Globe, ExternalLink, BookOpen, Volume2 } from "lucide-react";
 import { useAppMode } from "@/context/LanguageContext";
 import { isBengaliText, translateTitleToBengali, translateSummaryToBengali, translateContentToBengaliHtml } from "@/lib/bilingual";
 import { getNewspaperSourceInfo } from "@/lib/sources";
@@ -51,7 +51,6 @@ export default function ArticleReaderView({
   const [personalMemo, setPersonalMemo] = useState("");
   const [isSavingNote, setIsSavingNote] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
-  const [showPhonics, setShowPhonics] = useState(true);
 
   // Focus Mode & Quick Dictionary State
   const [isDictModalOpen, setIsDictModalOpen] = useState(false);
@@ -365,9 +364,7 @@ export default function ArticleReaderView({
           copied={copied}
           onCopyLink={handleCopyLink}
           onOpenShare={() => setIsShareModalOpen(true)}
-          isEnglishArticle={isEnglish}
-          showPhonics={showPhonics}
-          onTogglePhonics={() => setShowPhonics(!showPhonics)}
+          isEnglishArticle={isEnglish && useEnglishLearningExperience && !readerTranslation}
           onOpenDictionary={handleOpenDictionary}
         />
 
@@ -389,8 +386,8 @@ export default function ArticleReaderView({
                   </span>
                 )}
                 {useEnglishLearningExperience && (
-                  <span className="text-xs font-bold bg-amber-100 text-amber-900 border border-amber-200 px-2.5 py-1 rounded">
-                    🇬🇧 English Scaffolded Reader
+                  <span className="text-xs font-semibold bg-blue-50 text-blue-900 border border-blue-200 px-2.5 py-1 rounded font-sans">
+                    English Audio Reader
                   </span>
                 )}
               </div>
@@ -565,17 +562,17 @@ export default function ArticleReaderView({
               <div className="mb-8 p-4 sm:p-6 bg-white border border-[#ded8cb] rounded-2xl shadow-2xs">
                 <div className="flex items-center justify-between pb-3 mb-5 border-b border-[#f1f5f9]">
                   <div className="flex items-center gap-2">
+                    <Volume2 className="w-4 h-4 text-blue-700" />
                     <span className="text-xs font-bold uppercase tracking-wider text-blue-900 font-mono">
-                      ইংরেজি মূল পাঠ ও উচ্চারণ নির্দেশিকা
+                      ইংরেজি মূল পাঠ ও অডিও উচ্চারণ
                     </span>
                   </div>
                   <span className="text-[11px] text-[#64748b]">
-                    যেকোনো শব্দের ওপর ক্লিক করে উচ্চারণ শুনুন
+                    যেকোনো শব্দের ওপর ক্লিক করে সঠিক ইংরেজি উচ্চারণ শুনুন
                   </span>
                 </div>
                 <InterlinearArticleBody
                   htmlContent={renderedArticleHtml}
-                  showPhonics={showPhonics}
                   fontSize={fontSize}
                   onWordClick={handlePlayWordAudio}
                 />

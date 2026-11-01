@@ -1,11 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
-import { getBanglaPronunciation } from "@/lib/phonetics/en-to-bn";
 
 interface InterlinearArticleBodyProps {
   htmlContent: string;
-  showPhonics: boolean;
+  showPhonics?: boolean;
   fontSize: "normal" | "large" | "xlarge";
   onWordClick?: (word: string) => void;
 }
@@ -13,13 +12,11 @@ interface InterlinearArticleBodyProps {
 interface WordToken {
   original: string;
   cleanWord: string;
-  phonetic: string;
   isPunctuationOnly: boolean;
 }
 
 export default function InterlinearArticleBody({
   htmlContent,
-  showPhonics,
   fontSize,
   onWordClick,
 }: InterlinearArticleBodyProps) {
@@ -47,19 +44,17 @@ export default function InterlinearArticleBody({
       .filter((p) => p.length > 0);
   }, [htmlContent]);
 
-  // Tokenize paragraph into words with Bangla phonetics
+  // Tokenize paragraph into words
   const tokenizedParagraphs = useMemo(() => {
     return paragraphs.map((para) => {
       // Split by whitespace
       const rawTokens = para.split(/\s+/);
       return rawTokens.map((tok) => {
         const clean = tok.replace(/^[^\w]+|[^\w]+$/g, "");
-        const phonetic = clean ? getBanglaPronunciation(clean) : "";
 
         return {
           original: tok,
           cleanWord: clean,
-          phonetic,
           isPunctuationOnly: !clean,
         } as WordToken;
       });
@@ -68,42 +63,46 @@ export default function InterlinearArticleBody({
 
   const fontClass =
     fontSize === "xlarge"
-      ? "text-2xl sm:text-3xl leading-[2.6]"
+      ? "text-xl sm:text-2xl leading-[2.1]"
       : fontSize === "large"
-      ? "text-xl sm:text-2xl leading-[2.4]"
-      : "text-lg sm:text-xl leading-[2.2]";
+      ? "text-lg sm:text-xl leading-[1.95]"
+      : "text-base sm:text-lg leading-[1.85]";
+
+  const handleWordClick = (word: string) => {
+    if (!word || !onWordClick) return;
+    if (typeof window !== "undefined") {
+      const selection = window.getSelection()?.toString().trim();
+      // If user was drag-selecting a phrase for highlights, avoid triggering word speech
+      if (selection && selection.length > word.length) {
+        return;
+      }
+    }
+    onWordClick(word);
+  };
 
   return (
-    <div className={`space-y-7 ${fontClass} select-text font-serif`}>
+    <div className={`space-y-6 ${fontClass} select-text font-serif`}>
       {tokenizedParagraphs.map((paraTokens, pIdx) => (
-        <p key={pIdx} className="flex flex-wrap items-baseline gap-x-2 gap-y-3.5">
+        <p key={pIdx} className="leading-relaxed text-[#0f172a] select-text">
           {paraTokens.map((token, tIdx) => {
             if (token.isPunctuationOnly) {
               return (
-                <span key={tIdx} className="text-[#334155] self-baseline">
-                  {token.original}
+                <span key={tIdx} className="text-[#334155]">
+                  {token.original}{" "}
                 </span>
               );
             }
 
             return (
-              <span
-                key={tIdx}
-                onClick={() => onWordClick && onWordClick(token.cleanWord)}
-                className="inline-flex flex-col items-center group cursor-pointer hover:bg-blue-50/60 rounded px-1 -mx-0.5 transition-colors"
-                title={`শুনুন ও অর্থ দেখুন: ${token.cleanWord}`}
-              >
-                {/* 1. Large Legible English Typography */}
-                <span className="font-medium text-[#0f172a] group-hover:text-blue-800 transition-colors leading-snug">
+              <span key={tIdx}>
+                <span
+                  onClick={() => handleWordClick(token.cleanWord)}
+                  className="cursor-pointer hover:text-blue-800 hover:bg-blue-50/80 rounded px-1 -mx-0.5 transition-colors"
+                  title={`ক্লিক করে উচ্চারণ শুনুন: ${token.cleanWord}`}
+                >
                   {token.original}
                 </span>
-
-                {/* 2. Sublinear Bangla Phonics Guidance */}
-                {showPhonics && token.phonetic && (
-                  <span className="text-[10px] sm:text-[11px] font-sans font-medium text-amber-950 bg-amber-100/70 border border-amber-200/80 px-1 py-0.2 rounded leading-tight tracking-tight mt-0.5 select-none shadow-2xs">
-                    {token.phonetic}
-                  </span>
-                )}
+                {" "}
               </span>
             );
           })}

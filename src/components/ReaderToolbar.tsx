@@ -2,7 +2,7 @@
 
 import { 
   Eye, EyeOff, Share2, 
-  Type, Edit3, Check, Volume2, Sparkles, BookOpen, Search
+  Type, Edit3, Check, Volume2, BookOpen
 } from "lucide-react";
 import ThemeSwitcher from "./ThemeSwitcher";
 
@@ -37,8 +37,6 @@ export default function ReaderToolbar({
   onCopyLink,
   onOpenShare,
   isEnglishArticle = false,
-  showPhonics = true,
-  onTogglePhonics,
   onOpenDictionary,
 }: ReaderToolbarProps) {
   return (
@@ -85,21 +83,12 @@ export default function ReaderToolbar({
           </div>
         </div>
 
-        {/* Bangla Pronunciation Subtext Toggle for English Articles */}
-        {isEnglishArticle && onTogglePhonics && (
-          <button
-            type="button"
-            onClick={onTogglePhonics}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md transition text-xs border font-medium ${
-              showPhonics
-                ? "bg-amber-100 text-amber-950 border-amber-300 font-bold shadow-2xs"
-                : "bg-[#faf8f4] text-[#475569] border-[#ded8cb] hover:bg-[#ede7da]"
-            }`}
-            title="প্রতিটি ইংরেজি শব্দের নিচে বাংলা উচ্চারণ নির্দেশিকা প্রদর্শন বা লুকান"
-          >
-            <Volume2 className={`w-3.5 h-3.5 ${showPhonics ? "text-amber-800" : "text-[#737b88]"}`} />
-            <span>{showPhonics ? "উচ্চারণ গাইড: চালু" : "উচ্চারণ গাইড: বন্ধ"}</span>
-          </button>
+        {/* English Audio Speech Feature Badge */}
+        {isEnglishArticle && (
+          <div className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 text-blue-900 border border-blue-200/80 text-xs font-medium shadow-2xs">
+            <Volume2 className="w-3.5 h-3.5 text-blue-700" />
+            <span>শব্দে ক্লিক করে উচ্চারণ শুনুন</span>
+          </div>
         )}
 
         {/* Quick Dictionary Button */}
