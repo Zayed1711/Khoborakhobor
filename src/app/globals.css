@@ -1,26 +1,167 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Premium Editorial Warm Parchment Palette (Default) */
+  --bg-page: #fbf9f5;
+  --bg-card: #ffffff;
+  --bg-elevated: #f5f2ea;
+  --bg-hover: #f1ede3;
+  
+  --text-main: #111827;
+  --text-body: #2c323f;
+  --text-muted: #555f6d;
+  --text-light: #7b8594;
+  
+  --border-editorial: #e3ded5;
+  --border-subtle: #ece8df;
+  --border-strong: #23272e;
+  
+  --brand-crimson: #842323;
+  --brand-crimson-hover: #6e1c1c;
+  --brand-gold: #c29547;
+  --brand-navy: #1f2733;
+
+  --scrollbar-track: #f1ede4;
+  --scrollbar-thumb: #cfc8ba;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+[data-theme="sepia"] {
+  /* Eye-Care Warm Amber Sepia Palette (WCAG AAA High Contrast) */
+  --bg-page: #f4ebd8;
+  --bg-card: #faf4e6;
+  --bg-elevated: #ece0c8;
+  --bg-hover: #e5d7bd;
+
+  --text-main: #2b1d0c;
+  --text-body: #3d2b15;
+  --text-muted: #6d5334;
+  --text-light: #8a7050;
+
+  --border-editorial: #dfd1b8;
+  --border-subtle: #ebdcc5;
+  --border-strong: #2b1d0c;
+
+  --brand-crimson: #8c2626;
+  --brand-crimson-hover: #731e1e;
+  --brand-gold: #b38234;
+
+  --scrollbar-track: #ebe0cb;
+  --scrollbar-thumb: #cbbaa0;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Custom crisp scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  filter: brightness(0.9);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Typography polish */
+.font-editorial-serif {
+  font-family: Georgia, Cambria, "Times New Roman", Times, "Noto Serif Bengali", serif;
 }
+
+.font-editorial-sans {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Bengali", sans-serif;
+}
+
+/* -------------------------------------------------------------
+   Eye-Care Theme Dynamic Color Adaptations (Strict Contrast)
+   ------------------------------------------------------------- */
+[data-theme="sepia"] {
+  background-color: var(--bg-page) !important;
+  color: var(--text-main) !important;
+}
+[data-theme="sepia"] .bg-white {
+  background-color: var(--bg-card) !important;
+}
+[data-theme="sepia"] .bg-\[\#fbf9f5\],
+[data-theme="sepia"] .bg-\[\#f9f8f5\],
+[data-theme="sepia"] .bg-\[\#fcfbf9\] {
+  background-color: var(--bg-page) !important;
+}
+[data-theme="sepia"] .bg-\[\#faf8f3\],
+[data-theme="sepia"] .bg-\[\#faf8f4\],
+[data-theme="sepia"] .bg-\[\#f8f5ee\],
+[data-theme="sepia"] .bg-\[\#f6f2e8\],
+[data-theme="sepia"] .bg-\[\#f5f1e8\],
+[data-theme="sepia"] .bg-\[\#f5efe4\],
+[data-theme="sepia"] .bg-\[\#f3efe6\] {
+  background-color: var(--bg-elevated) !important;
+}
+[data-theme="sepia"] .border-\[\#e5e0d6\],
+[data-theme="sepia"] .border-\[\#ded8cb\],
+[data-theme="sepia"] .border-\[\#e4ded3\],
+[data-theme="sepia"] .border-\[\#ece7dc\],
+[data-theme="sepia"] .border-\[\#e2dcd0\],
+[data-theme="sepia"] .border-\[\#eee9df\],
+[data-theme="sepia"] .border-\[\#e5dfd4\],
+[data-theme="sepia"] .border-\[\#e2ddd3\],
+[data-theme="sepia"] .border-\[\#eae4d6\] {
+  border-color: var(--border-editorial) !important;
+}
+[data-theme="sepia"] .text-\[\#17191d\],
+[data-theme="sepia"] .text-\[\#1c1d21\],
+[data-theme="sepia"] .text-\[\#1f2328\],
+[data-theme="sepia"] .text-\[\#1a1c20\],
+[data-theme="sepia"] .text-\[\#2a2d34\],
+[data-theme="sepia"] .text-\#17191d {
+  color: var(--text-main) !important;
+}
+[data-theme="sepia"] .text-\[\#505764\],
+[data-theme="sepia"] .text-\[\#525964\],
+[data-theme="sepia"] .text-\[\#343a46\],
+[data-theme="sepia"] .text-\[\#3b414d\],
+[data-theme="sepia"] .text-\[\#404652\],
+[data-theme="sepia"] .text-\[\#4e5564\],
+[data-theme="sepia"] .text-\[\#454c59\],
+[data-theme="sepia"] .text-\[\#252a33\],
+[data-theme="sepia"] .text-\[\#3d4450\] {
+  color: var(--text-body) !important;
+}
+[data-theme="sepia"] .text-\[\#788191\],
+[data-theme="sepia"] .text-\[\#717887\],
+[data-theme="sepia"] .text-\[\#68707f\],
+[data-theme="sepia"] .text-\[\#646c7a\],
+[data-theme="sepia"] .text-\[\#88909d\],
+[data-theme="sepia"] .text-\[\#8e95a2\] {
+  color: var(--text-muted) !important;
+}
+
+/* ======================================================== */
+/* Active Study Highlighter Marker Styles */
+/* ======================================================== */
+mark.kk-highlight {
+  color: #17191d;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  transition: all 0.15s ease-in-out;
+}
+mark.kk-highlight-yellow {
+  background-color: rgba(254, 240, 138, 0.9) !important;
+  border-bottom: 2px solid #facc15 !important;
+}
+mark.kk-highlight-green {
+  background-color: rgba(187, 247, 208, 0.9) !important;
+  border-bottom: 2px solid #4ade80 !important;
+}
+mark.kk-highlight-purple {
+  background-color: rgba(233, 213, 255, 0.9) !important;
+  border-bottom: 2px solid #c084fc !important;
+}
+mark.kk-highlight:hover {
+  filter: brightness(0.94);
+  cursor: pointer;
+}
+

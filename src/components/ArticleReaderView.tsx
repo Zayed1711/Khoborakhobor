@@ -1,0 +1,585 @@
+"use client";
+
+import { useState, useEffect, useMemo } from "react";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import ReaderToolbar from "@/components/ReaderToolbar";
+import ShareStudyModal from "@/components/ShareStudyModal";
+import VocabularyModal from "@/components/VocabularyModal";
+import MicroQuiz from "@/components/MicroQuiz";
+import SideNotePanel from "@/components/SideNotePanel";
+import HighlighterTooltip from "@/components/HighlighterTooltip";
+import ArticleSummaryReflection from "@/components/ArticleSummaryReflection";
+import FactSheetTable from "@/components/FactSheetTable";
+import { Article, StudyNote, Student } from "@/types";
+import { createStudyNoteAction, saveMarkerHighlightAction } from "@/actions/student";
+import { applyHighlightsToHtml } from "@/lib/highlighter";
+import Link from "next/link";
+import { Clock, ArrowLeft, Lightbulb, Highlighter, Check, Edit3, X, Globe, ExternalLink } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
+import { isBengaliText, translateTitleToBengali, translateSummaryToBengali, translateContentToBengaliHtml } from "@/lib/bilingual";
+import { getNewspaperSourceInfo } from "@/lib/sources";
+
+interface ArticleReaderViewProps {
+  article: Article;
+  relatedArticles: Article[];
+  initialNotes: StudyNote[];
+  student: Student | null;
+}
+
+export default function ArticleReaderView({
+  article,
+  relatedArticles,
+  initialNotes,
+  student,
+}: ArticleReaderViewProps) {
+  const [fontSize, setFontSize] = useState<"normal" | "large" | "xlarge">("normal");
+  const [isFocusMode, setIsFocusMode] = useState(false);
+  const [isNotebookOpen, setIsNotebookOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [notes, setNotes] = useState<StudyNote[]>(initialNotes);
+  const [selectedSnippet, setSelectedSnippet] = useState("");
+  const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number } | null>(null);
+  const [showMemoInput, setShowMemoInput] = useState(false);
+  const [personalMemo, setPersonalMemo] = useState("");
+  const [isSavingNote, setIsSavingNote] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [mounted, setMounted] = useState(false);
+
+  const { language } = useLanguage();
+  const isEnglish = !isBengaliText(article.title);
+  const [readerTranslation, setReaderTranslation] = useState(isEnglish && language === "bn");
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isEnglish) {
+      setReaderTranslation(language === "bn");
+    }
+  }, [language, isEnglish]);
+
+  const displayTitle = (isEnglish && readerTranslation) ? translateTitleToBengali(article.title) : article.title;
+  const displaySummary = (isEnglish && readerTranslation)
+    ? translateSummaryToBengali(article.title, article.summary, article.category?.name)
+    : article.summary;
+
+  const sourceInfo = getNewspaperSourceInfo(article.imageCaption, article.title);
+
+  // Compute live highlighted HTML with active markers or translated content
+  const renderedArticleHtml = useMemo(() => {
+    if (isEnglish && readerTranslation) {
+      return translateContentToBengaliHtml(article.content, article.title, article.category?.name);
+    }
+    if (!mounted) return article.content;
+    return applyHighlightsToHtml(article.content, notes);
+  }, [article.content, article.title, article.category?.name, notes, mounted, isEnglish, readerTranslation]);
+
+  // Click on a highlighted phrase inside article opens the notebook
+  const handleArticleClick = (e: React.MouseEvent<HTMLElement>) => {
+    const target = e.target as HTMLElement;
+    const mark = target.closest("mark.kk-highlight") as HTMLElement | null;
+    if (mark) {
+      const noteId = mark.getAttribute("data-note-id");
+      if (noteId) {
+        setIsNotebookOpen(true);
+        const found = notes.find((n) => n.id === noteId);
+        if (found?.memo) {
+          setToastMessage(found.memo);
+          setTimeout(() => setToastMessage(""), 2800);
+        }
+      }
+    }
+  };
+
+  // Detect text selection for PDF-style floating marker
+  const handleMouseUp = () => {
+    if (typeof window !== "undefined") {
+      const selection = window.getSelection();
+      const text = selection ? selection.toString().trim() : "";
+      if (text.length >= 3 && text.length <= 600) {
+        setSelectedSnippet(text);
+        const range = selection?.getRangeAt(0);
+        if (range) {
+          const rect = range.getBoundingClientRect();
+          setTooltipPos({
+            top: rect.top,
+            left: Math.max(12, rect.left + rect.width / 2 - 120),
+          });
+        }
+      } else {
+        if (!showMemoInput) {
+          setTooltipPos(null);
+        }
+      }
+    }
+  };
+
+  // 1-Click Marker Highlight
+  const handleApplyHighlight = async (colorName: "হলুদ মার্কার" | "সবুজ মার্কার" | "বেগুনি মার্কার") => {
+    if (!selectedSnippet) return;
+    if (!student) {
+      alert("ব্যক্তিগত ক্লাউড নোটবুকে হাইলাইট সংরক্ষণ করতে অনুগ্রহ করে লগইন করুন।");
+      return;
+    }
+
+    try {
+      const newNote = await saveMarkerHighlightAction(
+        student.id,
+        article.slug,
+        selectedSnippet,
+        colorName
+      );
+      setNotes([newNote as any, ...notes]);
+      setTooltipPos(null);
+      setSelectedSnippet("");
+      setToastMessage(`${colorName} দিয়ে নিবন্ধে ও নোটবুকে হাইলাইট সংরক্ষিত হয়েছে`);
+      setTimeout(() => setToastMessage(""), 2800);
+    } catch (err) {
+      console.error(err);
+      alert("হাইলাইট সংরক্ষণ করতে সমস্যা হয়েছে।");
+    }
+  };
+
+  // Add highlight with memo
+  const handleAddMemoNote = async () => {
+    if (!selectedSnippet) return;
+    if (!student) {
+      alert("ব্যক্তিগত স্টাডি নোট সংরক্ষণ করতে অনুগ্রহ করে লগইন করুন।");
+      return;
+    }
+    setIsSavingNote(true);
+    try {
+      const newNote = await createStudyNoteAction(
+        student.id,
+        article.slug,
+        selectedSnippet,
+        personalMemo || undefined
+      );
+      setNotes([newNote as any, ...notes]);
+      setSelectedSnippet("");
+      setPersonalMemo("");
+      setShowMemoInput(false);
+      setTooltipPos(null);
+      setToastMessage("ব্যক্তিগত নোটসহ ক্লাউড নোটবুকে সংরক্ষিত হয়েছে");
+      setTimeout(() => setToastMessage(""), 2800);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSavingNote(false);
+    }
+  };
+
+  const handleToggleFocusMode = () => {
+    const next = !isFocusMode;
+    setIsFocusMode(next);
+    if (next) {
+      setIsNotebookOpen(true);
+    }
+  };
+
+  const handleCopyLink = () => {
+    if (typeof window !== "undefined") {
+      navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    }
+  };
+
+  const fontClass =
+    fontSize === "xlarge"
+      ? "text-xl sm:text-2xl leading-[2.1]"
+      : fontSize === "large"
+      ? "text-lg sm:text-xl leading-[1.95]"
+      : "text-base sm:text-[1.125rem] leading-[1.8]";
+
+  return (
+    <div className="min-h-screen bg-[#fbf9f5] flex flex-col font-sans transition-all duration-300">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-[#17191d] text-white text-xs px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-2 border border-[#374151] animate-in fade-in slide-in-from-top-4">
+          <Check className="w-3.5 h-3.5 text-[#86efac]" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Floating PDF Marker Tooltip */}
+      <HighlighterTooltip
+        position={tooltipPos}
+        selectedText={selectedSnippet}
+        onApplyHighlight={handleApplyHighlight}
+        onOpenMemo={() => {
+          setShowMemoInput(true);
+          setTooltipPos(null);
+        }}
+        onDismiss={() => {
+          setTooltipPos(null);
+          setSelectedSnippet("");
+        }}
+      />
+
+      {!isFocusMode && (
+        <Header
+          session={
+            student
+              ? { role: "student", student: student as any }
+              : { role: null, student: null }
+          }
+        />
+      )}
+
+      <div
+        className={`flex-1 mx-auto px-4 sm:px-6 py-8 w-full transition-all duration-300 ${
+          isFocusMode
+            ? isNotebookOpen
+              ? "max-w-6xl py-10"
+              : "max-w-3xl py-12"
+            : isNotebookOpen
+            ? "max-w-6xl"
+            : "max-w-3xl"
+        }`}
+      >
+        {/* Navigation Breadcrumb */}
+        {!isFocusMode && (
+          <div className="flex items-center gap-2 text-xs text-[#68707f] mb-6">
+            <Link href="/" className="hover:text-[#842323] flex items-center gap-1">
+              <ArrowLeft className="w-3.5 h-3.5" /> প্রচ্ছদ
+            </Link>
+            <span>/</span>
+            <Link href={`/category/${article.category.slug}`} className="hover:text-[#842323] font-medium">
+              {article.category.name}
+            </Link>
+            {article.examTags && (
+              <>
+                <span>/</span>
+                <span className="text-[#842323] font-semibold">{article.examTags.split(",")[0]}</span>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Reader Ergonomics Toolbar */}
+        <ReaderToolbar
+          articleTitle={article.title}
+          fontSize={fontSize}
+          onFontSizeChange={setFontSize}
+          isFocusMode={isFocusMode}
+          onToggleFocusMode={handleToggleFocusMode}
+          isNotebookOpen={isNotebookOpen}
+          onToggleNotebook={() => setIsNotebookOpen(!isNotebookOpen)}
+          noteCount={notes.length}
+          copied={copied}
+          onCopyLink={handleCopyLink}
+          onOpenShare={() => setIsShareModalOpen(true)}
+        />
+
+        {/* Main Content & Side Note Panel Wrapper */}
+        <div className={`flex flex-col lg:flex-row gap-8 items-start`}>
+          {/* Main Reading Column */}
+          <main className="flex-1 min-w-0 w-full" onMouseUp={handleMouseUp}>
+            {/* Article Header */}
+            <header className="mb-6">
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <span className="text-xs font-semibold uppercase tracking-wider text-[#842323] bg-[#f5ebeb] px-2.5 py-1 rounded inline-block">
+                  {article.category.name}
+                </span>
+                {article.examTags && (
+                  <span className="text-xs text-[#525a68] bg-[#eee9df] px-2.5 py-1 rounded">
+                    লক্ষ্য: {article.examTags}
+                  </span>
+                )}
+              </div>
+
+              {/* Bilingual Reader Switcher for English Articles */}
+              {isEnglish && (
+                <div className="mb-4 p-3 bg-gradient-to-r from-amber-50/80 to-[#fdfbf7] border border-amber-200/90 rounded-xl flex flex-wrap items-center justify-between gap-3 shadow-2xs">
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-[#842323]" />
+                    <div>
+                      <span className="text-xs font-bold text-[#1c1d21] block">
+                        খবরাখবর দ্বিভাষিক পাঠক (Bilingual Reader View)
+                      </span>
+                      <span className="text-[11px] text-[#6b7280]">
+                        মূল ইংরেজি সম্পাদকীয় ও বিসিএস পাঠোপযোগী প্রাতিষ্ঠানিক বাংলা ভাবানুবাদ
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="inline-flex rounded-lg border border-[#ded8cb] bg-white p-0.5 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setReaderTranslation(true)}
+                      className={`px-3 py-1 rounded-md font-semibold transition ${
+                        readerTranslation
+                          ? "bg-[#842323] text-white shadow-2xs font-bold"
+                          : "text-[#404652] hover:bg-[#f6f2e9]"
+                      }`}
+                    >
+                      বাংলা ভাবানুবাদ
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setReaderTranslation(false)}
+                      className={`px-3 py-1 rounded-md font-semibold transition ${
+                        !readerTranslation
+                          ? "bg-[#842323] text-white shadow-2xs font-bold"
+                          : "text-[#404652] hover:bg-[#f6f2e9]"
+                      }`}
+                    >
+                      English Original
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#17191d] leading-snug font-serif">
+                {displayTitle}
+              </h1>
+              <p className="mt-4 text-base sm:text-lg text-[#3b414d] leading-relaxed font-sans border-l-3 border-[#842323] pl-4 py-0.5">
+                {displaySummary}
+              </p>
+
+              {/* Timestamp Bar */}
+              <div className="mt-6 pt-3 border-t border-b border-[#e5dfd4] flex items-center justify-between gap-4 py-2 text-xs text-[#68707f]">
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`w-6 h-6 rounded-full ${sourceInfo.bgColor} ${sourceInfo.borderColor} border shrink-0 flex items-center justify-center select-none shadow-2xs`}
+                    title={`উৎস: ${sourceInfo.name}`}
+                  >
+                    <span className={`${sourceInfo.textColor} font-bold text-[10px]`}>
+                      {sourceInfo.monogram}
+                    </span>
+                  </div>
+                  <span className="font-semibold text-[#1c1d21]">{article.sourceName || sourceInfo.name}</span>
+                  <span>•</span>
+                  <span>{article.publishedAt}</span>
+                  {article.sourceUrl && (
+                    <>
+                      <span>•</span>
+                      <a
+                        href={article.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 font-semibold text-[#842323] hover:text-[#5e1919] hover:underline"
+                        title="সংবাদপত্রের বিস্তারিত প্রতিবেদন দেখুন"
+                      >
+                        <span>বিস্তারিত প্রতিবেদন</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </>
+                  )}
+                </div>
+                <div className="flex items-center gap-1 text-[#788191]">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>{article.readTime} পাঠ</span>
+                </div>
+              </div>
+            </header>
+
+            {/* Key Takeaways Box for Fast Revision */}
+            {article.keyTakeaways && article.keyTakeaways.length > 0 && (
+              <div className="mb-6 p-4 bg-[#f6f2e8] border border-[#e2dcd0] rounded-md">
+                <div className="flex items-center gap-2 mb-2 pb-2 border-b border-[#e7e1d5]">
+                  <Lightbulb className="w-4 h-4 text-[#842323]" />
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#1c1d21]">
+                    শিক্ষণীয় মূল বিষয়বস্তু (Exam Key Takeaways)
+                  </h3>
+                </div>
+                <ul className="space-y-1.5 text-xs sm:text-sm text-[#3b414d] font-sans list-disc list-inside">
+                  {article.keyTakeaways.map((point, idx) => (
+                    <li key={idx} className="leading-relaxed">
+                      {point}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* High-Yield Statistical Exam Fact Sheet Table */}
+            <FactSheetTable
+              factTable={article.factTable}
+              articleSlug={article.slug}
+              articleTitle={article.title}
+              sourceName={article.sourceName || sourceInfo.name}
+              sourceUrl={article.sourceUrl}
+              student={student}
+              onSaveToNotebook={(quote, memo) => {
+                setNotes((prev) => [
+                  {
+                    id: `note-${Date.now()}`,
+                    studentId: student?.id || "",
+                    articleId: article.id,
+                    quoteText: quote,
+                    memo,
+                    createdAt: new Date(),
+                  },
+                  ...prev,
+                ]);
+                setToastMessage("পরীক্ষা তথ্য ছকটি আপনার স্টাডি নোটবুকে যুক্ত হয়েছে!");
+                setTimeout(() => setToastMessage(""), 2800);
+              }}
+            />
+
+            {/* Featured Image (Hidden in Focus Mode) */}
+            {!isFocusMode && (
+              <figure className="mb-8 rounded-md overflow-hidden bg-[#eee9df] border border-[#e4ded3]">
+                <img
+                  src={article.featuredImage}
+                  alt={article.title}
+                  className="w-full max-h-[460px] object-cover brightness-[0.98]"
+                />
+                {article.imageCaption && (
+                  <figcaption className="p-2.5 text-xs text-[#68707f] bg-[#f7f4ed] italic text-center border-t border-[#ebe5da]">
+                    {article.imageCaption}
+                  </figcaption>
+                )}
+              </figure>
+            )}
+
+            {/* Main Article Body with Active Visible Highlights */}
+            <article
+              className={`prose prose-neutral max-w-none text-[#23272e] space-y-5 font-serif transition-all duration-200 select-text ${fontClass}`}
+              dangerouslySetInnerHTML={{ __html: renderedArticleHtml }}
+              onClick={handleArticleClick}
+            />
+
+            {/* Optional Memo Input Drawer when triggered */}
+            {showMemoInput && selectedSnippet && (
+              <div className="mt-6 p-4 bg-[#ffffff] border border-[#ded8cb] rounded-xl shadow-lg animate-in fade-in">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-[#842323] flex items-center gap-1.5">
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>হাইলাইটে ব্যক্তিগত নোট যুক্ত করুন</span>
+                  </span>
+                  <button
+                    onClick={() => {
+                      setShowMemoInput(false);
+                      setSelectedSnippet("");
+                    }}
+                    className="p-1 text-[#8e95a2] hover:text-[#1c1d21]"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <p className="text-xs italic text-[#4e5564] bg-[#faf8f4] p-2.5 rounded border border-[#ece7dc] mb-2.5 line-clamp-3">
+                  "{selectedSnippet}"
+                </p>
+                <input
+                  type="text"
+                  placeholder="আপনার নিজস্ব ব্যাখ্যা বা পরীক্ষার গুরুত্বপূর্ণ পয়েন্ট লিখুন..."
+                  value={personalMemo}
+                  onChange={(e) => setPersonalMemo(e.target.value)}
+                  className="w-full text-xs p-2.5 bg-[#fdfcf9] border border-[#dcd7cb] rounded-md mb-2.5 outline-none focus:border-[#842323]"
+                />
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => {
+                      setShowMemoInput(false);
+                      setSelectedSnippet("");
+                    }}
+                    className="px-3 py-1.5 text-xs text-[#6c7482] hover:bg-[#f6f2e8] rounded"
+                  >
+                    বাতিল
+                  </button>
+                  <button
+                    onClick={handleAddMemoNote}
+                    disabled={isSavingNote}
+                    className="px-4 py-1.5 bg-[#842323] hover:bg-[#6e1c1c] text-white text-xs font-semibold rounded transition"
+                  >
+                    {isSavingNote ? "সংরক্ষণ হচ্ছে..." : "নোটবুকে সংরক্ষণ করুন"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Requirement 3: Post-Reading Reflection & Active Recall Summary Section */}
+            <ArticleSummaryReflection
+              articleSlug={article.slug}
+              articleTitle={article.title}
+              student={student}
+              notes={notes}
+              onNotesChange={setNotes}
+            />
+
+            {/* Comprehension Micro-Quiz */}
+            {article.quizQuestions && article.quizQuestions.length > 0 && (
+              <MicroQuiz questions={article.quizQuestions} studentId={student?.id || ""} />
+            )}
+
+            {/* Related Articles Section */}
+            {!isFocusMode && relatedArticles.length > 0 && (
+              <div className="mt-12 pt-8 border-t border-[#e2dcd0]">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-[#1c1d21] mb-4">
+                  সম্পর্কিত অন্যান্য সংবাদ ও পাঠ
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {relatedArticles.map((rel) => (
+                    <Link
+                      key={rel.id}
+                      href={`/article/${rel.slug}`}
+                      className="p-3.5 bg-white border border-[#e2dcd0] rounded-lg hover:border-[#842323] transition flex flex-col justify-between group"
+                    >
+                      <h4 className="text-xs font-bold text-[#1c1d21] group-hover:text-[#842323] line-clamp-2">
+                        {rel.title}
+                      </h4>
+                      <span className="text-[10px] text-[#788191] mt-2 block">
+                        {rel.readTime} পাঠ &bull; {rel.publishedAt}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </main>
+
+          {/* Requirement 1 & 2: Active Side Note & SLM Dictionary Panel */}
+          <SideNotePanel
+            articleSlug={article.slug}
+            articleTitle={article.title}
+            student={student}
+            notes={notes}
+            onNotesChange={setNotes}
+            isOpen={isNotebookOpen}
+            onClose={() => setIsNotebookOpen(false)}
+          />
+        </div>
+
+        {/* Study Group Sharing Modal */}
+        <ShareStudyModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          article={article}
+        />
+      </div>
+
+      {/* Floating Action Bubble Toggle (One click opens, another click minimizes) */}
+      <button
+        onClick={() => setIsNotebookOpen(!isNotebookOpen)}
+        className={`fixed bottom-6 right-6 z-40 w-13 h-13 sm:w-14 sm:h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 border hover:scale-110 active:scale-95 group ${
+          isNotebookOpen
+            ? "bg-[#1f2733] hover:bg-[#121720] text-white border-[#384152]"
+            : "bg-[#842323] hover:bg-[#6e1c1c] text-white border-[#9c2b2b]"
+        }`}
+        title={isNotebookOpen ? "নোটবুক মিনিমাইজ করুন" : "নোটবুক ও অভিধান খুলুন"}
+        aria-label={isNotebookOpen ? "নোটবুক বন্ধ করুন" : "নোটবুক খুলুন"}
+      >
+        {isNotebookOpen ? (
+          <X className="w-5 h-5 transition-transform group-hover:rotate-90 duration-200" />
+        ) : (
+          <div className="relative flex items-center justify-center">
+            <Edit3 className="w-5 h-5 text-white" />
+            {notes.length > 0 && (
+              <span className="absolute -top-2.5 -right-2.5 min-w-[20px] h-5 px-1 bg-amber-400 text-neutral-950 text-[10px] font-black rounded-full flex items-center justify-center shadow-md border-2 border-white">
+                {notes.length}
+              </span>
+            )}
+          </div>
+        )}
+      </button>
+
+      {!isFocusMode && <Footer />}
+    </div>
+  );
+}

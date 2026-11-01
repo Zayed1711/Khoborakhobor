@@ -1,36 +1,114 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# খবরাখবর (KhoboraKhobor)
 
-## Getting Started
+> **সত্য, বিশ্লেষণ ও শিক্ষণীয় তথ্যের আধার — শিক্ষার্থী ও গবেষক কেন্দ্রিক ডিজিটাল পত্রিকা।**
+> A modern, academic, exam-oriented digital newspaper and social learning platform crafted specifically for BCS, Bank, University Admission, and Competitive Examination candidates in Bangladesh.
 
-First, run the development server:
+---
 
+## মূল বৈশিষ্ট্যসমূহ (Key Features)
+
+### ১. ৩-কলাম বিশিষ্ট সোশ্যাল নিউজফিড (3-Column Academic Feed)
+* **ইনস্টাগ্রাম/লিঙ্কডইন স্টাইল ৫-মিনিট ক্যাপসুল স্টোরিজ**: দ্রুত পরীক্ষার সারসংক্ষেপ পড়ার জন্য বৃত্তাকার স্টোরিজ।
+* **বিগত ৭ দিনের অতীত সংবাদ নির্বাচন স্ট্রিপ**: আজকের দিনের পাশাপাশি পেছনের ৭ দিনের যেকোনো নির্দিষ্ট দিনের সংবাদ ও বিষয়ভিত্তিক সম্পাদকীয় এক ক্লিকে বাছাই করে রিভিশন দেওয়ার সুবিধা।
+* **বিভাগ ও বিষয়ভিত্তিক ফিল্টারিং**: জাতীয় পরিক্রমা, রাজনীতি ও সুশাসন, অর্থনীতি ও বাণিজ্য, বিজ্ঞান ও প্রযুক্তি, আন্তর্জাতিক সম্পর্ক, ইত্যাদি।
+
+### ২. দ্বিভাষিক সংবাদ ও ভাবানুবাদ (Bilingual Studies Engine)
+* **বাংলা সংবাদ ও English Studies সুইচার**: বাংলা পাঠকদের জন্য খাঁটি বাংলা সংবাদ এবং ইংরেজি ভাষা দক্ষতা বৃদ্ধির জন্য আন্তর্জাতিক ইংরেজি প্রতিবেদন।
+* **তাৎক্ষণিক অ্যাকাডেমিক ভাবানুবাদ**: ইংরেজি প্রতিবেদনের জন্য স্বয়ংক্রিয় বাংলা ভাবানুবাদ, বিষয়ভিত্তিক প্রেক্ষাপট ও সারসংক্ষেপ।
+* **ইন্টারেক্টিভ শব্দভাণ্ডার ও অভিধান**: যেকোনো শব্দে ডাবল-ক্লিক করলেই তাৎক্ষণিক অ্যাকাডেমিক অর্থ ও ব্যবহারিক দৃষ্টান্ত।
+
+### ৩. গেম-স্টাইল স্টেপ-বাই-স্টেপ অনবোর্ডিং গাইড (Gamified Onboarding Tour)
+* নতুন শিক্ষার্থী প্রথমবার প্রবেশ করলে স্পটলাইট ব্যাকড্রপ সহ ৬টি মূল ফিচার পরিচিতি পর্ব।
+* টিউটোরিয়াল শেষে **`প্রাথমিক সংকলক পদক (Novice Scholar Badge)`** আনলক।
+* সাইডবার থেকে যেকোনো সময় নির্দেশিকা পুনরায় দেখার সুযোগ।
+
+### ৪. সক্রিয় স্মরণ ও ডেইলি স্টাডি স্ট্রিক (Active Recall Quizzes & Streak)
+* প্রতিদিনের সংবাদের ওপর ভিত্তি করে স্বয়ংক্রিয়ভাবে তৈরি মাইক্রো-কুইজ চ্যালেঞ্জ (Fisher-Yates shuffled options)।
+* ধারাবাহিকতা বজায় রাখতে **ডেইলি স্টাডি স্ট্রিক** ট্র্যাকার।
+
+### ৫. সার্বজনীন পমোডোরো স্টাডি টাইমার (Floating Pomodoro Study Timer)
+* স্ক্রিনের নিচে ডানে সার্বজনীন ভাসমান টাইমার।
+* ১০ থেকে ৪৫ মিনিটের কাস্টম সেশন এবং ৫ মিনিটের সক্রিয় রিকল বিরতি।
+* মোবাইল ডিভাইসে নেভিগেশন বারের সাথে সংঘাতহীন রেসপন্সিভ প্লেসমেন্ট।
+
+### ৬. আইনি নিরাপত্তা ও ব্র্যান্ড কালার মনোগ্রাম (Fair-Use Typographic Monograms)
+* কোনো কপিরাইটেড ইমেজ লোগো ছাড়াই প্রতিটি সংবাদপত্রের অফিসিয়াল ব্র্যান্ড কালার প্যালেট ও অক্ষরের বৈশিষ্ট্য অনুযায়ী কাস্টমাইজড টাইপোগ্রাফিক মনোগ্রাম (`প`, `DS`, `BBC`, `TBS`, `বিডি`, `DT`, `স`)।
+* ১০০% ফেয়ার ইউজ কমপ্লায়েন্ট।
+
+### ৭. স্পাইডার ও ক্রলার অ্যাডমিন কমান্ড কনসোল (Spider Admin Console)
+* আরএসএস ও নিউজ স্পাইডার পরিচালনা কেন্দ্র।
+* **যে কোনো তারিখ (All Dates)**, **বিগত ৭ দিন (Past 7 Days)**, অথবা যেকোনো নির্দিষ্ট ক্যালেন্ডার তারিখের সংবাদ সংকলন করার পূর্ণ নিয়ন্ত্রণ।
+* ড্রপডাউন ও ফিল্টারিং: ক্যাটাগরি, ভাষা (উভয়/বাংলা/ইংরেজি), এবং ড্রাই-রান প্রিভিউ।
+* সুরক্ষিত অ্যাডমিন অ্যাক্সেস গেটওয়ে (`ADMIN_PASSCODE` দ্বারা সুরক্ষিত)।
+
+---
+
+## প্রযুক্তিগত রূপরেখা (Tech Stack)
+
+* **ফ্রন্টএন্ড ফ্রেমওয়ার্ক**: [Next.js 16](https://nextjs.org/) (App Router, Server Components & Server Actions)
+* **প্রোগ্রামিং ভাষা**: [TypeScript](https://www.typescriptlang.org/)
+* **স্টাইলিং**: [Tailwind CSS v4](https://tailwindcss.com/)
+* **আইকন ও গ্রাফিক্স**: [Lucide React](https://lucide.dev/) (সম্পূর্ণ ইমোজি-মুক্ত মার্জিত টাইপোগ্রাফি)
+* **ডেটাবেস ও ওআরএম**: [SQLite](https://www.sqlite.org/) + [Prisma ORM](https://www.prisma.io/)
+* **ক্রিপ্টোগ্রাফি ও নিরাপত্তা**: PBKDF2 with SHA-256 (সল্ট-ভিত্তিক সুরক্ষিত পাসওয়ার্ড হ্যাশিং)
+* **আরএসএস ক্রলিং ও পার্সিং**: `rss-parser`, `cheerio`
+
+---
+
+## লোকাল সেটআপ নির্দেশিকা (Local Setup Instructions)
+
+### ১. রিপোজিটরি ক্লোন করুন
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/Zayed1711/Khoborakhobor.git
+cd Khoborakhobor
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### ২. ডিপেন্ডেন্সি ইনস্টল করুন
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### ৩. পরিবেশ চলক (Environment Variables) কনফিগার করুন
+`.env.example` থেকে একটি `.env` ফাইল তৈরি করুন:
+```bash
+cp .env.example .env
+```
+`.env` ফাইলে নিচের মানগুলো নিশ্চিত করুন:
+```env
+DATABASE_URL="file:./dev.db"
+ADMIN_PASSCODE="072429"
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### ৪. প্রিজমা ডেটাবেস জেনারেট ও সিঙ্ক করুন
+```bash
+npx prisma generate
+npx prisma db push
+```
 
-## Learn More
+### ৫. ডেভেলপমেন্ট সার্ভার চালু করুন
+```bash
+npm run dev
+```
+ব্রাউজারে ওপেন করুন: [http://localhost:3000](http://localhost:3000)
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## টেস্ট ও কোয়ালিটি অ্যাসুরেন্স (QA Testing)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+প্ল্যাটফর্মের ব্ল্যাক বক্স, হোয়াইট বক্স, গ্রে বক্স এবং লিগ্যাল কমপ্লায়েন্স যাচাই করতে স্বয়ংক্রিয় টেস্ট স্যুট রান করুন:
+```bash
+npx tsx scripts/qa_master_test_suite.ts
+```
+> ৪৪টি টেস্টের মধ্যে ৪৪টিই সফলভাবে উত্তীর্ণ (১০০% পাস রেট)।
 
-## Deploy on Vercel
+প্রোডাকশন বিল্ড যাচাই করতে:
+```bash
+npm run build
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## লাইসেন্স ও সর্বস্বত্ব (License)
+
+&copy; ২০২৬ **খবরাখবর (KhoboraKhobor)**। সর্বস্বত্ব সংরক্ষিত।  
+শিক্ষার্থী, গবেষক ও জ্ঞানান্বেষী পাঠকদের জন্য নিবেদিত।

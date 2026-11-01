@@ -1,0 +1,4 @@
+name,feed_url,category_slug,exam_track,article_selector,date_format
+The Daily Star (English),https://www.thedailystar.net/frontpage/rss.xml,economy,Economy & Global Affairs,article .field-name-body,YYYY-MM-DD
+The Business Standard (English),https://www.tbsnews.net/rss.xml,tech,Technology & Industrial Growth,.section-content,YYYY-MM-DD
+Prothom Alo (English),https://en.prothomalo.com/feed,national,National Affairs & Diplomacy,article .story-element,YYYY-MM-DD

@@ -1,0 +1,72 @@
+"use client";
+
+import Link from "next/link";
+import { Zap, Sparkles } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
+import { isBengaliText, translateTitleToBengali } from "@/lib/bilingual";
+
+interface CapsuleStoryPillsProps {
+  capsuleArticles: {
+    id: string;
+    slug: string;
+    title: string;
+    featuredImage?: string;
+    category: {
+      name: string;
+      slug: string;
+    };
+    readTime: string;
+  }[];
+}
+
+export default function CapsuleStoryPills({ capsuleArticles }: CapsuleStoryPillsProps) {
+  const { language } = useLanguage();
+  if (!capsuleArticles || capsuleArticles.length === 0) return null;
+
+  return (
+    <div className="bg-white border border-[#ded8cb] rounded-2xl p-4 shadow-2xs space-y-2.5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-[#842323]">
+          <Zap className="w-4 h-4 text-[#c29547] fill-[#c29547]" />
+          <span>আজকের ৫-মিনিট ক্যাপসুল স্টোরিজ</span>
+        </div>
+        <Link
+          href="/capsule"
+          className="text-[11px] font-semibold text-[#842323] hover:underline"
+        >
+          সবগুলো দেখুন &rarr;
+        </Link>
+      </div>
+
+      {/* Horizontal Story Stream */}
+      <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-none">
+        {capsuleArticles.slice(0, 6).map((art, idx) => (
+          <Link
+            key={art.id}
+            href={`/article/${art.slug}`}
+            className="group flex flex-col items-center gap-1.5 shrink-0 w-20 text-center"
+          >
+            {/* Story Circle with Gradient Ring */}
+            <div className="w-14 h-14 rounded-full p-0.5 bg-gradient-to-tr from-[#c29547] via-[#842323] to-[#ef4444] group-hover:scale-105 transition-transform duration-200">
+              <div className="w-full h-full rounded-full overflow-hidden bg-white p-0.5">
+                <img
+                  src={
+                    art.featuredImage ||
+                    "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=200&q=80"
+                  }
+                  alt={art.title}
+                  className="w-full h-full object-cover rounded-full"
+                />
+              </div>
+            </div>
+
+            <span className="text-[10px] font-semibold text-[#343a46] group-hover:text-[#842323] transition line-clamp-1 w-full">
+              {(language === "bn" && !isBengaliText(art.title)) ? translateTitleToBengali(art.title) : art.title}
+            </span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+

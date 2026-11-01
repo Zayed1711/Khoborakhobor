@@ -1,0 +1,157 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// -------------------------------------------------------------
+// 1. Student Identity & Exam Preparation Goals
+// -------------------------------------------------------------
+model Student {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  passwordHash  String
+  phone         String?   // Contact phone number
+  role          String    @default("student") // student, admin, moderator
+  status        String    @default("active")  // active, suspended, pending
+  bio           String?   // Academic bio / administrative remarks
+  avatar        String?
+  targetTrack   String    @default("BCS_GOVT") // BCS_GOVT, ADMISSION, GENERAL_KNOWLEDGE, RESEARCH
+  institution   String?   // University / College name
+  streakDays    Int       @default(1)
+  lastActive    DateTime  @default(now())
+  
+  notes         StudyNote[]
+  savedArticles SavedArticle[]
+  quizAttempts  QuizAttempt[]
+  wordBank      SavedWord[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// -------------------------------------------------------------
+// 2. Curated Editorial News & Study Material
+// -------------------------------------------------------------
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  color       String?
+  articles    Article[]
+  createdAt   DateTime  @default(now())
+}
+
+model Article {
+  id            String    @id @default(cuid())
+  slug          String    @unique
+  title         String
+  summary       String
+  content       String    // Rich semantic HTML
+  keyTakeaways  String?   // JSON array of high-yield exam takeaways
+  examTags      String?   // Comma-separated: "BCS, Admission, Economics, Science"
+  featuredImage String
+  imageCaption  String?
+  sourceName    String?   // Official publisher name: e.g. "প্রথম আলো", "The Daily Star"
+  sourceUrl     String?   // Outbound URL for full journalistic field coverage
+  factTable     String?   // JSON array of FactTableRow: [{ parameter, value, relevance }]
+  publishedAt   String
+  readTime      String
+  isBreaking    Boolean   @default(false)
+  isLead        Boolean   @default(false)
+  isCapsule     Boolean   @default(false) // Daily 5-min briefing feature
+  
+  categoryId    String
+  category      Category  @relation(fields: [categoryId], references: [id])
+  
+  vocabulary    VocabularyTerm[]
+  quizQuestions QuizQuestion[]
+  savedBy       SavedArticle[]
+  notes         StudyNote[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// -------------------------------------------------------------
+// 3. Smart Vocabulary & Concept Explainer
+// -------------------------------------------------------------
+model VocabularyTerm {
+  id          String    @id @default(cuid())
+  term        String    // e.g. "মুদ্রানীতি", "সার্বভৌম বন্ড", "কার্বন ক্রেডিট"
+  definition  String    // Plain-language conceptual explanation
+  context     String?   // How it was used in this article
+  articleId   String
+  article     Article   @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  savedBy     SavedWord[]
+
+  createdAt   DateTime  @default(now())
+}
+
+model SavedWord {
+  id          String         @id @default(cuid())
+  studentId   String
+  student     Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  termId      String
+  term        VocabularyTerm @relation(fields: [termId], references: [id], onDelete: Cascade)
+  mastered    Boolean        @default(false)
+  createdAt   DateTime       @default(now())
+
+  @@unique([studentId, termId])
+}
+
+// -------------------------------------------------------------
+// 4. Active Recall: Comprehension Micro-Quiz
+// -------------------------------------------------------------
+model QuizQuestion {
+  id            String    @id @default(cuid())
+  articleId     String
+  article       Article   @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  question      String    // e.g. "মেট্রোরেলের বর্ধিত সময়সূচি কোন দিন থেকে কার্যকর হচ্ছে?"
+  options       String    // JSON array of 4 multiple-choice options
+  correctOption Int       // 0, 1, 2, or 3
+  explanation   String?   // Why this is the correct answer
+  
+  attempts      QuizAttempt[]
+}
+
+model QuizAttempt {
+  id          String       @id @default(cuid())
+  studentId   String
+  student     Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  questionId  String
+  question    QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  chosenOption Int
+  isCorrect   Boolean
+  createdAt   DateTime     @default(now())
+}
+
+// -------------------------------------------------------------
+// 5. Cloud-Synced Study Notebook & Saved Articles
+// -------------------------------------------------------------
+model SavedArticle {
+  id          String    @id @default(cuid())
+  studentId   String
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  articleId   String
+  article     Article   @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  tag         String    @default("GENERAL") // e.g. "REVISION", "ESSAY_RESEARCH"
+  createdAt   DateTime  @default(now())
+
+  @@unique([studentId, articleId])
+}
+
+model StudyNote {
+  id          String    @id @default(cuid())
+  studentId   String
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  articleId   String
+  article     Article   @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  quoteText   String    // The highlighted excerpt from the article
+  memo        String?   // Personal notes or reflections written by the student
+  createdAt   DateTime  @default(now())
+}
