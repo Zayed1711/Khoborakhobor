@@ -81,7 +81,7 @@ export default function ArticleCard({ article, variant = "standard" }: ArticleCa
         </div>
         <div className="mt-3 text-xs text-[#707886] flex items-center justify-between pt-2 border-t border-[#e8e2d4]">
           <span>{article.readTime} পাঠ</span>
-          <span className="text-[#842323] font-medium hover:underline">কলাম পড়ুন &rarr;</span>
+          <span className="text-[#842323] font-medium hover:underline">কলাম পড়ুন →</span>
         </div>
       </article>
     );

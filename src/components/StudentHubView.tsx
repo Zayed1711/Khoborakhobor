@@ -557,7 +557,7 @@ export default function StudentHubView({
                         href={`/article/${note.article.slug}`}
                         className="text-[#842323] font-semibold hover:underline no-print"
                       >
-                        মূল প্রতিবেদন &rarr;
+                        মূল প্রতিবেদন →
                       </Link>
                     </div>
                   </div>
@@ -752,7 +752,7 @@ export default function StudentHubView({
                   }}
                   className="text-xs font-semibold text-[#646c7a] hover:text-[#17191d] disabled:opacity-30 p-2"
                 >
-                  &larr; পূর্ববর্তী শব্দ
+                  ← পূর্ববর্তী শব্দ
                 </button>
                 <button
                   disabled={currentCardIndex === localWords.length - 1}
@@ -762,7 +762,7 @@ export default function StudentHubView({
                   }}
                   className="text-xs font-semibold text-[#842323] hover:underline disabled:opacity-30 p-2"
                 >
-                  পরবর্তী শব্দ &rarr;
+                  পরবর্তী শব্দ →
                 </button>
               </div>
             </div>

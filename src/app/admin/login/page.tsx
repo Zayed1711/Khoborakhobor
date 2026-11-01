@@ -86,10 +86,10 @@ export default function AdminLoginPage() {
 
           <div className="pt-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
             <Link href="/" className="hover:text-amber-400 transition">
-              &larr; প্রচ্ছদে ফিরুন
+              ← প্রচ্ছদে ফিরুন
             </Link>
             <Link href="/login" className="hover:text-amber-400 transition">
-              শিক্ষার্থী লগইন &rarr;
+              শিক্ষার্থী লগইন →
             </Link>
           </div>
         </div>

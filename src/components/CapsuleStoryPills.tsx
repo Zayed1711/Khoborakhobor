@@ -34,11 +34,12 @@ export default function CapsuleStoryPills({ capsuleArticles }: CapsuleStoryPills
         </div>
         <Link
           href="/capsule"
-          className={`text-[11px] font-semibold hover:underline ${
+          className={`text-[11px] font-semibold hover:underline flex items-center gap-1 ${
             isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"
           }`}
         >
-          {isEnglishMode ? "View all &rarr;" : "সবগুলো দেখুন &rarr;"}
+          <span>{isEnglishMode ? "View all" : "সবগুলো দেখুন"}</span>
+          <span>→</span>
         </Link>
       </div>
 

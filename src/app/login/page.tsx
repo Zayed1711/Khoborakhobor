@@ -368,7 +368,7 @@ function AuthForm() {
         {/* Bottom Gateway Nav */}
         <div className="pt-4 border-t border-[#ece7dc] flex items-center justify-center text-xs text-[#717887]">
           <Link href="/" className="hover:text-[#842323] transition flex items-center gap-1 font-medium">
-            <span>&larr; প্রচ্ছদে ফিরুন</span>
+            <span>← প্রচ্ছদে ফিরুন</span>
           </Link>
         </div>
       </div>

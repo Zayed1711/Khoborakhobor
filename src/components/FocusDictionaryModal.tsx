@@ -259,7 +259,7 @@ export default function FocusDictionaryModal({
             onClick={onClose}
             className="text-xs font-semibold text-[#1e40af] hover:underline"
           >
-            পড়ায় ফিরে যান &rarr;
+            পড়ায় ফিরে যান →
           </button>
         </div>
       </div>

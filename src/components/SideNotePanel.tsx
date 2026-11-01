@@ -151,7 +151,7 @@ export default function SideNotePanel({
             className="text-[11px] text-[#842323] hover:underline font-medium"
             title="সম্পূর্ণ স্টাডি হাব খুলুন"
           >
-            স্টাডি হাব &rarr;
+            স্টাডি হাব →
           </Link>
           <button
             onClick={onClose}
