@@ -24,7 +24,7 @@ export default function CapsuleStoryPills({ capsuleArticles }: CapsuleStoryPills
   if (!capsuleArticles || capsuleArticles.length === 0) return null;
 
   return (
-    <div className="bg-white border border-[#ded8cb] rounded-2xl p-4 shadow-2xs space-y-2.5">
+    <div className="bg-white border border-[#ded8cb] rounded-2xl p-3 sm:p-4 shadow-2xs space-y-2 sm:space-y-2.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5 text-xs font-bold text-[#842323]">
           <Zap className={`w-4 h-4 ${isEnglishMode ? "text-[#1e40af] fill-[#1e40af]" : "text-[#c29547] fill-[#c29547]"}`} />
@@ -44,15 +44,15 @@ export default function CapsuleStoryPills({ capsuleArticles }: CapsuleStoryPills
       </div>
 
       {/* Horizontal Story Stream */}
-      <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-none">
+      <div className="flex items-center gap-2.5 sm:gap-3 overflow-x-auto pb-1 scrollbar-none">
         {capsuleArticles.slice(0, 6).map((art, idx) => (
           <Link
             key={art.id}
             href={`/article/${art.slug}`}
-            className="group flex flex-col items-center gap-1.5 shrink-0 w-20 text-center"
+            className="group flex flex-col items-center gap-1 shrink-0 w-16 sm:w-20 text-center"
           >
             {/* Story Circle with Gradient Ring */}
-            <div className={`w-14 h-14 rounded-full p-0.5 bg-gradient-to-tr ${
+            <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full p-0.5 bg-gradient-to-tr ${
               isEnglishMode
                 ? "from-blue-600 via-indigo-600 to-amber-500"
                 : "from-[#c29547] via-[#842323] to-[#ef4444]"

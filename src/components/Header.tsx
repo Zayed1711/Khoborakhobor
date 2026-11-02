@@ -46,7 +46,7 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
   const [sessionState, setSessionState] = useState<UserSession | null>(session || null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileCategoryOpen, setIsMobileCategoryOpen] = useState(false);
   
   const { mode, setMode, isEnglishMode } = useAppMode();
 
@@ -100,15 +100,121 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
     }
   }, [isEnglishMode]);
 
-  // Fit 5 primary buttons + "অন্যান্য বিভাগ" dropdown so it fits cleanly in one line with zero scrolling
   const primaryCategories = categories.slice(0, 5);
   const extraCategories = categories.slice(5);
 
   return (
     <>
-      <header className="border-b border-[#e5e0d6] bg-[#ffffff] sticky top-0 z-40 shadow-[0_2px_8px_rgba(0,0,0,0.03)]">
-        {/* Top Micro-Bar (Pre-Header Utilities & Dual Mode Switcher) */}
-        <div className="border-b border-[#ece7dc] text-[11px] text-[#555d6b] py-1.5 px-4 sm:px-8 bg-[#faf8f3]">
+      <header className="border-b border-[#e5e0d6] bg-[#ffffff] sticky top-0 z-40 shadow-[0_2px_8px_rgba(0,0,0,0.03)] select-none">
+        {/* ======================================================== */}
+        {/* MOBILE DEDICATED APP BAR (< md: Clean, 52px, 0 Clutter) */}
+        {/* ======================================================== */}
+        <div className="md:hidden flex items-center justify-between px-3.5 py-2.5 bg-white border-b border-[#ece7dc]">
+          {/* Left: Mobile Brand Logo */}
+          <Link href="/" className="flex items-center gap-2 group">
+            <span className="text-2xl font-black font-serif text-[#17191d] tracking-tight">
+              খবরাখবর
+            </span>
+            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded tracking-wider uppercase font-mono ${
+              isEnglishMode ? "bg-blue-50 text-[#1e40af] border border-blue-200" : "bg-[#f5ebeb] text-[#842323] border border-[#ecd9d9]"
+            }`}>
+              {isEnglishMode ? "EN" : "বাংলা"}
+            </span>
+          </Link>
+
+          {/* Right: Quick Ergonomic Controls */}
+          <div className="flex items-center gap-1.5">
+            {/* 1-Tap Platform Mode Toggle Pill */}
+            <div className="inline-flex rounded-lg border border-[#ded8cc] bg-[#faf8f4] p-0.5 text-[10px] font-semibold">
+              <button
+                type="button"
+                onClick={() => setMode("job_prep")}
+                className={`px-2 py-1 rounded transition flex items-center gap-1 ${
+                  !isEnglishMode ? "bg-[#842323] text-white shadow-2xs font-bold" : "text-[#555d6b]"
+                }`}
+                title="চাকরি ও বিসিএস"
+              >
+                <span>চাকরি</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("english_learning")}
+                className={`px-2 py-1 rounded transition flex items-center gap-1 ${
+                  isEnglishMode ? "bg-[#1e40af] text-white shadow-2xs font-bold" : "text-[#555d6b]"
+                }`}
+                title="English Learning"
+              >
+                <span>English</span>
+              </button>
+            </div>
+
+            {/* Eye-Care Theme Switcher */}
+            <ThemeSwitcher compact />
+
+            {/* Instant Search Button (40x40 touch target) */}
+            <button
+              type="button"
+              onClick={() => setIsSearchOpen(true)}
+              className="w-8 h-8 rounded-lg border border-[#ded8cb] bg-[#faf8f4] flex items-center justify-center text-[#404652] hover:bg-[#ede7da] transition active:scale-95"
+              aria-label="অনুসন্ধান করুন"
+            >
+              <Search className={`w-4 h-4 ${isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"}`} />
+            </button>
+
+            {/* Mobile Categories Dropdown Trigger */}
+            <button
+              type="button"
+              onClick={() => setIsMobileCategoryOpen(!isMobileCategoryOpen)}
+              className="w-8 h-8 rounded-lg border border-[#ded8cb] bg-[#faf8f4] flex items-center justify-center text-[#404652] hover:bg-[#ede7da] transition"
+              aria-label="বিভাগসমূহ"
+              title="বিভাগসমূহ"
+            >
+              {isMobileCategoryOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Slide-down Category Drawer (Optional deep-dive) */}
+        {isMobileCategoryOpen && (
+          <div className="md:hidden border-b border-[#ece7dc] bg-[#faf8f4] px-4 py-3 max-h-[60vh] overflow-y-auto animate-in slide-in-from-top duration-200 space-y-1">
+            <span className="text-[11px] font-bold text-[#717887] uppercase tracking-wider block mb-2">
+              {isEnglishMode ? "Explore Tracks & Categories" : "সংবাদ ও স্টাডি বিভাগসমূহ"}
+            </span>
+            <Link
+              href="/"
+              onClick={() => setIsMobileCategoryOpen(false)}
+              className={`block px-3 py-2 rounded-lg font-bold text-xs ${
+                isEnglishMode ? "text-[#1e40af] bg-blue-50" : "text-[#842323] bg-[#f5ebeb]"
+              }`}
+            >
+              {isEnglishMode ? "All News Feed" : "প্রচ্ছদ (সকল খবর)"}
+            </Link>
+            <div className="grid grid-cols-2 gap-1.5 pt-1">
+              {categories.map((cat) => {
+                const displayName = isEnglishMode
+                  ? ENGLISH_CATEGORY_NAMES[cat.slug] || cat.name
+                  : cat.name;
+
+                return (
+                  <Link
+                    key={cat.id}
+                    href={`/category/${cat.slug}`}
+                    onClick={() => setIsMobileCategoryOpen(false)}
+                    className="block px-2.5 py-2 text-xs text-[#3b414d] hover:bg-[#ede7da] bg-white rounded-lg border border-[#ded8cb] font-medium truncate"
+                  >
+                    {displayName}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ======================================================== */}
+        {/* DESKTOP HEADER (Preserved 100% with full institutional layout) */}
+        {/* ======================================================== */}
+        {/* Top Micro-Bar */}
+        <div className="hidden md:block border-b border-[#ece7dc] text-[11px] text-[#555d6b] py-1.5 px-4 sm:px-8 bg-[#faf8f3]">
           <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <span className="flex items-center gap-1.5 font-medium text-[#404652]">
@@ -193,10 +299,10 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
           </div>
         </div>
 
-        {/* Masthead / Brand Centerpiece with Symmetrical Spacing */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-5 grid grid-cols-1 md:grid-cols-3 items-center gap-4 lg:gap-6">
+        {/* Masthead / Brand Centerpiece (Desktop) */}
+        <div className="hidden md:grid max-w-7xl mx-auto px-4 sm:px-8 py-5 grid-cols-1 md:grid-cols-3 items-center gap-4 lg:gap-6">
           {/* Left Column: Academic Motto / Tagline */}
-          <div className="hidden md:flex flex-col justify-center text-left w-full max-w-[260px] sm:max-w-[280px]">
+          <div className="flex flex-col justify-center text-left w-full max-w-[260px] sm:max-w-[280px]">
             <span className="text-xs tracking-wider text-[#68707f] font-serif uppercase font-semibold block">
               {isEnglishMode
                 ? "Editorial English & Active Recall"
@@ -251,29 +357,21 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
               </kbd>
             </button>
 
-            {/* Profile & Login Link (ONLY visible when NOT logged in!) */}
+            {/* Profile & Login Link */}
             {!isLoggedIn && (
               <Link
                 href="/login"
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2.5 rounded-lg border border-[#ded8cb] bg-[#faf8f4] hover:bg-[#ede7da] text-xs font-semibold text-[#1c1d21] transition shadow-2xs shrink-0"
+                className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-lg border border-[#ded8cb] bg-[#faf8f4] hover:bg-[#ede7da] text-xs font-semibold text-[#1c1d21] transition shadow-2xs shrink-0"
                 title="লগইন বা শিক্ষার্থী সাইন আপ"
               >
                 <UserCheck className={`w-3.5 h-3.5 ${isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"}`} />
                 <span>লগইন</span>
               </Link>
             )}
-
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 rounded-md border border-[#ded8cb] bg-[#faf8f4] text-[#404652]"
-              aria-label="Toggle menu"
-            >
-              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
           </div>
         </div>
 
-        {/* Single Unified Category Bar */}
+        {/* Single Unified Category Bar (Desktop) */}
         <nav className="border-t border-[#ece7dc] bg-[#faf8f4] hidden md:block">
           <div className="max-w-7xl mx-auto px-4 sm:px-8 py-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -351,64 +449,6 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
             </div>
           </div>
         </nav>
-
-        {/* Mobile Navigation Drawer */}
-        {isMobileMenuOpen && (
-          <div className="md:hidden border-t border-[#ece7dc] bg-[#faf8f4] px-4 py-3 space-y-2">
-            <div className="flex items-center justify-between pb-2 border-b border-[#ece7dc]">
-              <span className="text-xs font-semibold text-[#525964]">প্ল্যাটফর্ম মোড (Mode):</span>
-              <div className="inline-flex rounded-lg border border-[#ded8cc] bg-white p-0.5 text-xs font-semibold">
-                <button
-                  type="button"
-                  onClick={() => setMode("job_prep")}
-                  className={`px-2.5 py-1 rounded-md transition ${
-                    !isEnglishMode ? "bg-[#842323] text-white shadow-xs" : "text-[#404652] hover:bg-[#f6f2e9]"
-                  }`}
-                >
-                  চাকরি প্রস্তুতি
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMode("english_learning")}
-                  className={`px-2.5 py-1 rounded-md transition ${
-                    isEnglishMode ? "bg-[#1e40af] text-white shadow-xs" : "text-[#404652] hover:bg-[#f6f2e9]"
-                  }`}
-                >
-                  English
-                </button>
-              </div>
-            </div>
-            <div className="flex items-center justify-between pb-2 border-b border-[#ece7dc]">
-              <span className="text-xs font-semibold text-[#525964]">চোখের প্রশান্তি থিম:</span>
-              <ThemeSwitcher compact />
-            </div>
-            <Link
-              href="/"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className={`block px-3 py-2 rounded font-bold ${
-                isEnglishMode ? "text-[#1e40af] bg-blue-50" : "text-[#842323] bg-[#ede7da]"
-              }`}
-            >
-              {isEnglishMode ? "All News Feed" : "প্রচ্ছদ"}
-            </Link>
-            {categories.map((cat) => {
-              const displayName = isEnglishMode
-                ? ENGLISH_CATEGORY_NAMES[cat.slug] || cat.name
-                : cat.name;
-
-              return (
-                <Link
-                  key={cat.id}
-                  href={`/category/${cat.slug}`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-3 py-2 text-sm text-[#3b414d] hover:bg-[#f0ebe0] rounded font-medium"
-                >
-                  {displayName}
-                </Link>
-              );
-            })}
-          </div>
-        )}
       </header>
 
       {/* Global Search Dialog Modal */}

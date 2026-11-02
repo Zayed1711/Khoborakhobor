@@ -14,6 +14,7 @@ import FactSheetTable from "@/components/FactSheetTable";
 import VocabularyTable from "@/components/VocabularyTable";
 import InterlinearArticleBody from "@/components/InterlinearArticleBody";
 import FocusDictionaryModal from "@/components/FocusDictionaryModal";
+import MobileBottomNav from "@/components/MobileBottomNav";
 import { Article, StudyNote, Student } from "@/types";
 import { createStudyNoteAction, saveMarkerHighlightAction } from "@/actions/student";
 import { applyHighlightsToHtml } from "@/lib/highlighter";
@@ -199,9 +200,10 @@ export default function ArticleReaderView({
         const range = selection?.getRangeAt(0);
         if (range) {
           const rect = range.getBoundingClientRect();
+          const screenWidth = typeof window !== "undefined" ? window.innerWidth : 800;
           setTooltipPos({
             top: rect.top,
-            left: Math.max(12, rect.left + rect.width / 2 - 140),
+            left: Math.max(12, Math.min(screenWidth - 290, rect.left + rect.width / 2 - 140)),
           });
         }
       } else {
@@ -210,6 +212,12 @@ export default function ArticleReaderView({
         }
       }
     }
+  };
+
+  const handleTouchEnd = () => {
+    setTimeout(() => {
+      handleMouseUp();
+    }, 150);
   };
 
   const handleApplyHighlight = async (colorName: "হলুদ মার্কার" | "সবুজ মার্কার" | "বেগুনি মার্কার") => {
@@ -378,7 +386,7 @@ export default function ArticleReaderView({
         {/* Main Content & Side Note Panel Wrapper */}
         <div className="flex flex-col lg:flex-row gap-8 items-start">
           {/* Main Reading Column */}
-          <main className="flex-1 min-w-0 w-full" onMouseUp={handleMouseUp}>
+          <main className="flex-1 min-w-0 w-full" onMouseUp={handleMouseUp} onTouchEnd={handleTouchEnd}>
             {/* Article Header */}
             <header className="mb-6">
               <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -725,10 +733,10 @@ export default function ArticleReaderView({
         }}
       />
 
-      {/* Floating Action Bubble Toggle */}
+      {/* Floating Action Bubble Toggle (Ergonomic thumb reach above bottom bar) */}
       <button
         onClick={() => setIsNotebookOpen(!isNotebookOpen)}
-        className={`fixed bottom-6 right-6 z-40 w-13 h-13 sm:w-14 sm:h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 border hover:scale-110 active:scale-95 group ${
+        className={`fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-40 w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 border hover:scale-110 active:scale-95 group ${
           isNotebookOpen
             ? "bg-[#1f2733] hover:bg-[#121720] text-white border-[#384152]"
             : useEnglishLearningExperience
@@ -751,6 +759,9 @@ export default function ArticleReaderView({
           </div>
         )}
       </button>
+
+      {/* Mobile Sticky Bottom Bar */}
+      <MobileBottomNav />
 
       {!isFocusMode && <Footer />}
     </div>

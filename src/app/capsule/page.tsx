@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import MobileBottomNav from "@/components/MobileBottomNav";
 import { getDailyCapsuleArticles } from "@/actions/student";
 import { getCurrentSession } from "@/actions/auth";
 import { prisma } from "@/lib/prisma";
@@ -24,7 +25,7 @@ export default async function DailyCapsulePage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#fbf9f5] flex flex-col font-sans">
+    <div className="min-h-screen bg-[#fbf9f5] flex flex-col font-sans pb-16 lg:pb-0">
       <Header categories={allCategories} session={session} />
 
       <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 py-8 w-full">
@@ -116,6 +117,7 @@ export default async function DailyCapsulePage() {
         </div>
       </main>
 
+      <MobileBottomNav />
       <Footer />
     </div>
   );

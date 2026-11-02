@@ -318,21 +318,21 @@ export default function SocialFeedCard({
         )}
       </div>
 
-      {/* 5. Social Action Bar */}
-      <div className="px-4 sm:px-5 py-2.5 bg-[#faf8f4] border-t border-[#ece7dc] flex flex-wrap items-center justify-between gap-2 text-xs text-[#525964]">
+      {/* 5. Social Action Bar (1-row responsive layout on mobile) */}
+      <div className="px-3 sm:px-5 py-2.5 bg-[#faf8f4] border-t border-[#ece7dc] flex items-center justify-between gap-1 sm:gap-2 text-xs text-[#525964]">
         <div className="flex items-center gap-1 sm:gap-2">
           {/* Key Takeaways Toggle */}
           <button
             type="button"
             onClick={() => setShowTakeaways(!showTakeaways)}
-            className={`px-2.5 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 ${
+            className={`px-2 sm:px-2.5 py-1.5 rounded-lg font-medium transition flex items-center gap-1 sm:gap-1.5 ${
               showTakeaways
                 ? "bg-[#17191d] text-white"
                 : "hover:bg-[#ece7dc] text-[#404652]"
             }`}
           >
             <Lightbulb className="w-3.5 h-3.5 text-[#c29547]" />
-            <span>মূলবিন্দু</span>
+            <span className="text-[11px] sm:text-xs">মূলবিন্দু</span>
           </button>
 
           {/* Micro Quiz Toggle */}
@@ -340,24 +340,22 @@ export default function SocialFeedCard({
             <button
               type="button"
               onClick={() => setShowQuiz(!showQuiz)}
-              className={`px-2.5 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 ${
+              className={`px-2 sm:px-2.5 py-1.5 rounded-lg font-medium transition flex items-center gap-1 sm:gap-1.5 ${
                 showQuiz
                   ? "bg-[#842323] text-white"
                   : "hover:bg-[#ece7dc] text-[#404652]"
               }`}
             >
               <HelpCircle className="w-3.5 h-3.5 text-[#2e744a]" />
-              <span>কুইজ</span>
+              <span className="text-[11px] sm:text-xs">কুইজ</span>
             </button>
           )}
-        </div>
 
-        <div className="flex items-center gap-1 sm:gap-2">
           {/* Bookmark Toggle */}
           <button
             type="button"
             onClick={handleToggleSave}
-            className={`p-1.5 rounded-lg transition ${
+            className={`p-1.5 sm:p-2 rounded-lg transition ${
               isSaved
                 ? "text-[#842323] bg-[#f5ebeb]"
                 : "text-[#717887] hover:bg-[#ece7dc] hover:text-[#1c1d21]"
@@ -366,13 +364,16 @@ export default function SocialFeedCard({
           >
             <Bookmark className={`w-4 h-4 ${isSaved ? "fill-current" : ""}`} />
           </button>
+        </div>
 
+        <div className="flex items-center">
           {/* Read Detailed Study Note & Fact Sheet */}
           <Link
             href={`/article/${article.slug}`}
-            className="px-3 py-1.5 rounded-lg bg-[#ffffff] hover:bg-[#ece7da] border border-[#ded8cb] text-xs font-semibold text-[#1c1d21] flex items-center gap-1.5 transition shadow-2xs group"
+            className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#ffffff] hover:bg-[#ece7da] border border-[#ded8cb] text-xs font-semibold text-[#1c1d21] flex items-center gap-1 sm:gap-1.5 transition shadow-2xs group"
           >
-            <span>বিশদ স্টাডি নোট ও উপাত্ত ছক</span>
+            <span className="hidden sm:inline">বিশদ স্টাডি নোট ও উপাত্ত ছক</span>
+            <span className="sm:hidden font-bold">পড়ুন</span>
             <ArrowRight className="w-3 h-3 text-[#842323] group-hover:translate-x-0.5 transition-transform" />
           </Link>
         </div>

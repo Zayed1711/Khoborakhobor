@@ -61,14 +61,14 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4 bg-black/40 backdrop-blur-xs">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-3 sm:pt-20 px-2.5 sm:px-4 bg-black/50 backdrop-blur-xs">
       <div
         className="fixed inset-0"
         onClick={onClose}
         aria-hidden="true"
       />
 
-      <div className="relative w-full max-w-2xl bg-[#ffffff] rounded-lg shadow-xl border border-[#ded8cc] overflow-hidden z-10 flex flex-col">
+      <div className="relative w-full max-w-2xl max-h-[88vh] bg-[#ffffff] rounded-2xl shadow-2xl border border-[#ded8cc] overflow-hidden z-10 flex flex-col animate-in zoom-in-95 duration-150">
         {/* Search Input Bar */}
         <div className="flex items-center px-4 py-3.5 border-b border-[#ece7dc] bg-[#faf8f4]">
           {isPending ? (

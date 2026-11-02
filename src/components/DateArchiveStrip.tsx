@@ -89,10 +89,10 @@ export default function DateArchiveStrip({
   return (
     <div
       id="tutorial-date-archive"
-      className="bg-white border border-[#ded8cb] rounded-2xl p-3 shadow-2xs space-y-2 transition-all"
+      className="bg-white border border-[#ded8cb] rounded-2xl p-2.5 sm:p-3 shadow-2xs space-y-2 transition-all"
     >
       {/* Top Header Label */}
-      <div className="flex items-center justify-between pb-2 border-b border-[#f4efe4] px-1 text-xs">
+      <div className="flex items-center justify-between pb-1.5 sm:pb-2 border-b border-[#f4efe4] px-1 text-xs">
         <div className="flex items-center gap-1.5 font-bold text-[#1c1d21]">
           <History className="w-3.5 h-3.5 text-[#842323]" />
           <span>সংবাদ আর্কাইভ (বিগত ৭ দিন):</span>

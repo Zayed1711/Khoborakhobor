@@ -56,6 +56,9 @@ export default async function Home() {
             capsuleArticles={capsuleArticles}
             categories={categories}
             studentId={session.student?.id}
+            streakDays={session.student?.streakDays || 0}
+            featuredQuiz={dailyBnQuiz}
+            featuredEnglishQuiz={dailyEnQuiz}
           />
         </div>
 

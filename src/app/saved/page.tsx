@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import MobileBottomNav from "@/components/MobileBottomNav";
 import StudentHubView from "@/components/StudentHubView";
 import { getActiveStudent, getStudentQuizAnalytics } from "@/actions/student";
 import { prisma } from "@/lib/prisma";
@@ -53,7 +54,7 @@ export default async function SavedNotebookPage() {
   ]);
 
   return (
-    <div className="min-h-screen bg-[#fbf9f5] flex flex-col font-sans print:bg-white">
+    <div className="min-h-screen bg-[#fbf9f5] flex flex-col font-sans print:bg-white pb-16 lg:pb-0">
       <div className="no-print">
         <Header session={{ role: "student", student: student as any }} />
       </div>
@@ -68,6 +69,7 @@ export default async function SavedNotebookPage() {
       </main>
 
       <div className="no-print">
+        <MobileBottomNav />
         <Footer />
       </div>
     </div>
