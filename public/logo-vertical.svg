@@ -1,0 +1,61 @@
+<svg width="360" height="220" viewBox="0 0 360 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="kk-vt-crimson" x1="0" y1="0" x2="72" y2="72" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#9e1c1c"/>
+      <stop offset="50%" stop-color="#842323"/>
+      <stop offset="100%" stop-color="#540f0f"/>
+    </linearGradient>
+    <linearGradient id="kk-vt-gold" x1="0" y1="0" x2="72" y2="72" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#fde48b"/>
+      <stop offset="45%" stop-color="#d4af37"/>
+      <stop offset="100%" stop-color="#9a6e1a"/>
+    </linearGradient>
+    <linearGradient id="kk-vt-ivory" x1="15" y1="15" x2="60" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f5eee4"/>
+    </linearGradient>
+    <filter id="kk-vt-shadow" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="2.5" stdDeviation="2.5" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- Centered Emblem (72x72) -->
+  <g transform="translate(144, 12)">
+    <rect x="0" y="0" width="72" height="72" rx="18" fill="url(#kk-vt-crimson)" stroke="url(#kk-vt-gold)" stroke-width="2" filter="url(#kk-vt-shadow)"/>
+    <rect x="4" y="4" width="64" height="64" rx="14" fill="none" stroke="url(#kk-vt-gold)" stroke-opacity="0.32" stroke-width="0.8"/>
+    
+    <path d="M 23 33 C 23 30 21 28 19 28 C 14 28 12 33 12 39 C 12 45 18 50 25 50 C 31 50 34 43 36 35"
+          stroke="url(#kk-vt-ivory)" stroke-width="3.2" stroke-linecap="round" fill="none"/>
+    <path d="M 36 35 C 38 44 41 50 49 50"
+          stroke="url(#kk-vt-ivory)" stroke-width="3.2" stroke-linecap="round" fill="none"/>
+    <path d="M 49 22 L 49 50" stroke="url(#kk-vt-ivory)" stroke-width="3.8" stroke-linecap="round"/>
+    <path d="M 43 22 L 55 22" stroke="url(#kk-vt-ivory)" stroke-width="3" stroke-linecap="round"/>
+
+    <path d="M 36 14 L 41 22 L 39 30 L 33 30 L 31 22 Z" fill="url(#kk-vt-gold)" stroke="#540f0f" stroke-width="0.5"/>
+    <line x1="36" y1="15" x2="36" y2="25" stroke="#540f0f" stroke-width="0.7"/>
+    <circle cx="36" cy="25" r="0.8" fill="#540f0f"/>
+
+    <path d="M 58 13 Q 58 16 61 16 Q 58 16 58 19 Q 58 16 55 16 Q 58 16 58 13 Z" fill="url(#kk-vt-gold)"/>
+  </g>
+
+  <!-- Grand Bengali Masthead (Centered) -->
+  <text x="180" y="140" text-anchor="middle" font-family="'Noto Serif Bengali', 'SolaimanLipi', 'Kalpurush', Georgia, serif" font-weight="900" font-size="52" fill="#14171d" letter-spacing="-0.02em">
+    খবরাখবর
+  </text>
+
+  <!-- Editorial Subline Bar -->
+  <g transform="translate(40, 160)">
+    <line x1="0" y1="3" x2="45" y2="3" stroke="#c29547" stroke-width="1.2" opacity="0.7"/>
+    <polygon points="50,3 53,0 56,3 53,6" fill="#842323"/>
+    <text x="140" y="7" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="11" fill="#842323" letter-spacing="0.24em">
+      KHOBORAKHOBOR DIGITAL
+    </text>
+    <polygon points="224,3 227,0 230,3 227,6" fill="#842323"/>
+    <line x1="235" y1="3" x2="280" y2="3" stroke="#c29547" stroke-width="1.2" opacity="0.7"/>
+  </g>
+
+  <!-- Academic Motto -->
+  <text x="180" y="190" text-anchor="middle" font-family="'Noto Serif Bengali', Georgia, serif" font-weight="600" font-size="11.5" fill="#667085">
+    সত্য, বিশ্লেষণ ও শিক্ষণীয় তথ্যের আধার
+  </text>
+</svg>

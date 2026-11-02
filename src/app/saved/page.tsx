@@ -54,7 +54,7 @@ export default async function SavedNotebookPage() {
   ]);
 
   return (
-    <div className="min-h-screen bg-[#fbf9f5] flex flex-col font-sans print:bg-white pb-16 lg:pb-0">
+    <div className="min-h-screen bg-[#fbf9f5] flex flex-col font-sans print:bg-white pb-16 md:pb-0">
       <div className="no-print">
         <Header session={{ role: "student", student: student as any }} />
       </div>

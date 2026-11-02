@@ -1,0 +1,56 @@
+<svg width="512" height="512" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="kk-icon-crimson" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#9e1c1c"/>
+      <stop offset="45%" stop-color="#842323"/>
+      <stop offset="100%" stop-color="#540f0f"/>
+    </linearGradient>
+    <linearGradient id="kk-icon-gold" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#fde48b"/>
+      <stop offset="45%" stop-color="#d4af37"/>
+      <stop offset="100%" stop-color="#9a6e1a"/>
+    </linearGradient>
+    <linearGradient id="kk-icon-ivory" x1="20" y1="20" x2="80" y2="80" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f5eee4"/>
+    </linearGradient>
+    <filter id="kk-icon-shadow" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="2.5" stdDeviation="2.5" flood-opacity="0.32"/>
+    </filter>
+  </defs>
+
+  <!-- Editorial Squircle Base -->
+  <rect x="5" y="5" width="90" height="90" rx="22" fill="url(#kk-icon-crimson)" stroke="url(#kk-icon-gold)" stroke-width="2.5" filter="url(#kk-icon-shadow)"/>
+  
+  <!-- Subtle Inner Pinstripe Border -->
+  <rect x="9.5" y="9.5" width="81" height="81" rx="17" fill="none" stroke="url(#kk-icon-gold)" stroke-opacity="0.32" stroke-width="0.9"/>
+
+  <!-- Bengali 'খ' Calligraphic Broadsheet Monogram -->
+  <g filter="url(#kk-icon-shadow)">
+    <!-- 1. The Knot (কুঁড়ি) & Left Loop -->
+    <path d="M 33 46 C 33 42 30 39 26 39 C 20 39 17 46 17 54 C 17 63 24 69 35 69 C 43 69 48 62 50 49"
+          stroke="url(#kk-icon-ivory)" stroke-width="4.2" stroke-linecap="round" fill="none"/>
+    
+    <!-- 2. The Arch Descent to Baseline & Stem -->
+    <path d="M 50 49 C 52 61 58 69 68 69"
+          stroke="url(#kk-icon-ivory)" stroke-width="4.2" stroke-linecap="round" fill="none"/>
+
+    <!-- 3. The Vertical Stem (দাঁড়ি / Column) -->
+    <path d="M 68 30 L 68 69" stroke="url(#kk-icon-ivory)" stroke-width="4.8" stroke-linecap="round"/>
+
+    <!-- 4. Top Half-Matra (মাত্রা) -->
+    <path d="M 60 30 L 76 30" stroke="url(#kk-icon-ivory)" stroke-width="3.8" stroke-linecap="round"/>
+  </g>
+
+  <!-- 5. Golden Fountain Pen Nib (Central Apex of Truth & Scholarship) -->
+  <g filter="url(#kk-icon-shadow)">
+    <path d="M 50 20 L 56 31 L 53 43 L 47 43 L 44 31 Z" 
+          fill="url(#kk-icon-gold)" stroke="#540f0f" stroke-width="0.8"/>
+    <line x1="50" y1="21" x2="50" y2="35" stroke="#540f0f" stroke-width="0.9"/>
+    <circle cx="50" cy="35" r="1.1" fill="#540f0f"/>
+  </g>
+
+  <!-- 6. Golden Beacon Star of Truth (North Star of Knowledge) -->
+  <path d="M 80 18 Q 80 22 84 22 Q 80 22 80 26 Q 80 22 76 22 Q 80 22 80 18 Z" 
+        fill="url(#kk-icon-gold)" filter="url(#kk-icon-shadow)"/>
+</svg>

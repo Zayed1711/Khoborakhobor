@@ -1,4 +1,5 @@
 import Link from "next/link";
+import KhoborLogo from "./KhoborLogo";
 const FOOTER_CATEGORIES = [
   { name: "জাতীয় পরিক্রমা", slug: "national" },
   { name: "আন্তর্জাতিক সম্পর্ক", slug: "world" },
@@ -14,9 +15,12 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="md:col-span-1">
-            <h2 className="text-xl font-black text-white font-serif tracking-tight">
-              খবরাখবর
-            </h2>
+            <div className="mb-3">
+              <KhoborLogo variant="horizontal" size="sm" theme="dark" showTagline={true} />
+            </div>
+
+
+
             <p className="mt-2 text-xs text-[#9aa4b2] leading-relaxed">
               শিক্ষার্থী, গবেষক ও চিন্তাশীল পাঠকদের জন্য নিরপেক্ষ তথ্য ও বিশ্লেষণের ডিজিটাল প্ল্যাটফর্ম।
             </p>

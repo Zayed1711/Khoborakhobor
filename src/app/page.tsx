@@ -40,7 +40,7 @@ export default async function Home() {
   const dailyEnQuiz = getDailyChallengeQuiz({ mode: "en", articles });
 
   return (
-    <div className="min-h-screen bg-[#fbf9f5] flex flex-col font-sans pb-16 lg:pb-0">
+    <div className="min-h-screen bg-[#fbf9f5] flex flex-col font-sans pb-16 md:pb-0">
       {/* Header bar with Extended Search and Theme toggle */}
       <Header categories={categories} session={session} />
 

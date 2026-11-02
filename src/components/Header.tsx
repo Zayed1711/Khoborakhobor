@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import SearchModal from "./SearchModal";
 import ThemeSwitcher from "./ThemeSwitcher";
+import KhoborLogo from "./KhoborLogo";
 import { getCurrentSession, UserSession } from "@/actions/auth";
 import { useAppMode } from "@/context/LanguageContext";
 
@@ -111,16 +112,7 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
         {/* ======================================================== */}
         <div className="md:hidden flex items-center justify-between px-3.5 py-2.5 bg-white border-b border-[#ece7dc]">
           {/* Left: Mobile Brand Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <span className="text-2xl font-black font-serif text-[#17191d] tracking-tight">
-              খবরাখবর
-            </span>
-            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded tracking-wider uppercase font-mono ${
-              isEnglishMode ? "bg-blue-50 text-[#1e40af] border border-blue-200" : "bg-[#f5ebeb] text-[#842323] border border-[#ecd9d9]"
-            }`}>
-              {isEnglishMode ? "EN" : "বাংলা"}
-            </span>
-          </Link>
+          <KhoborLogo variant="compact" size="sm" showTagline={false} />
 
           {/* Right: Quick Ergonomic Controls */}
           <div className="flex items-center gap-1.5">
@@ -316,21 +308,8 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
           </div>
 
           {/* Center Column: KhoboraKhobor Digital Brand Logo */}
-          <div className="text-center justify-self-center">
-            <Link href="/" className="inline-block group">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#17191d] font-serif">
-                খবরাখবর
-              </h1>
-              <div className="flex items-center justify-center gap-2 mt-1">
-                <span className={`h-[1px] w-8 ${isEnglishMode ? "bg-[#1e40af]/40" : "bg-[#842323]/40"}`} />
-                <span className={`text-[10px] tracking-[0.24em] font-bold uppercase ${
-                  isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"
-                }`}>
-                  {isEnglishMode ? "ENGLISH LEARNING TRACK" : "KHOBORAKHOBOR DIGITAL"}
-                </span>
-                <span className={`h-[1px] w-8 ${isEnglishMode ? "bg-[#1e40af]/40" : "bg-[#842323]/40"}`} />
-              </div>
-            </Link>
+          <div className="text-center justify-self-center py-0.5">
+            <KhoborLogo variant="masthead" size="responsive" />
           </div>
 
           {/* Right Column: Search Box & Login Link */}

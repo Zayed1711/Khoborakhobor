@@ -297,7 +297,7 @@ export default function ArticleReaderView({
       : "text-base sm:text-[1.125rem] leading-[1.8]";
 
   return (
-    <div className="min-h-screen bg-[#fbf9f5] flex flex-col font-sans transition-all duration-300">
+    <div className="min-h-screen bg-[#fbf9f5] flex flex-col font-sans transition-all duration-300 pb-16 md:pb-0">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-[#17191d] text-white text-xs px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-2 border border-[#374151] animate-in fade-in slide-in-from-top-4">
@@ -733,10 +733,10 @@ export default function ArticleReaderView({
         }}
       />
 
-      {/* Floating Action Bubble Toggle (Ergonomic thumb reach above bottom bar) */}
+      {/* Floating Action Bubble Toggle (STRICTLY MOBILE ONLY: md:hidden) */}
       <button
         onClick={() => setIsNotebookOpen(!isNotebookOpen)}
-        className={`fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-40 w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 border hover:scale-110 active:scale-95 group ${
+        className={`md:hidden fixed bottom-20 right-4 z-40 w-12 h-12 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 border hover:scale-110 active:scale-95 group ${
           isNotebookOpen
             ? "bg-[#1f2733] hover:bg-[#121720] text-white border-[#384152]"
             : useEnglishLearningExperience

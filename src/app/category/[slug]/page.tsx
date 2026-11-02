@@ -35,7 +35,7 @@ export default async function CategoryPage({ params }: Props) {
   });
 
   return (
-    <div className="min-h-screen bg-[#fbf9f5] flex flex-col font-sans pb-16 lg:pb-0">
+    <div className="min-h-screen bg-[#fbf9f5] flex flex-col font-sans pb-16 md:pb-0">
       <Header categories={allCategories} session={session} />
 
       <main className="flex-1 max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-5 w-full flex gap-6 items-start justify-center">

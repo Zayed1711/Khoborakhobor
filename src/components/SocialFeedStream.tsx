@@ -139,9 +139,9 @@ export default function SocialFeedStream({
       {/* 1. Instagram / LinkedIn Style Story Capsules */}
       <CapsuleStoryPills capsuleArticles={filteredCapsules} />
 
-      {/* 2. Mobile Gamified Study Streak & Daily Challenge Card (Visible on screens < xl where desktop rail is hidden) */}
+      {/* 2. Mobile Gamified Study Streak & Daily Challenge Card (Strictly mobile only: md:hidden) */}
       {activeQuiz && (
-        <div className="xl:hidden bg-white border border-[#ded8cb] rounded-2xl p-3 sm:p-4 shadow-2xs space-y-2.5">
+        <div className="md:hidden bg-white border border-[#ded8cb] rounded-2xl p-3 sm:p-4 shadow-2xs space-y-2.5">
           {/* Header Row with Streak */}
           <div className="flex items-center justify-between pb-2 border-b border-[#f4efe4]">
             <div className="flex items-center gap-1.5 text-xs font-bold">

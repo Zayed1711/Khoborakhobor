@@ -3,6 +3,7 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import KhoborLogo from "@/components/KhoborLogo";
 import { studentLoginAction, studentSignupAction } from "@/actions/auth";
 import { 
   Lock, Mail, User, Eye, EyeOff, 
@@ -111,11 +112,9 @@ function AuthForm() {
     <div className="w-full max-w-md">
       {/* Brand Header */}
       <div className="text-center mb-8">
-        <Link href="/" className="inline-block group mb-3">
-          <span className="text-3xl sm:text-4xl font-black font-serif text-[#17191d] group-hover:text-[#842323] transition tracking-tight">
-            খবরাখবর
-          </span>
-        </Link>
+        <div className="flex justify-center mb-4">
+          <KhoborLogo variant="horizontal" size="md" />
+        </div>
         <h1 className="text-xl sm:text-2xl font-bold font-serif text-[#1c1d21]">
           {mode === "login" ? "অ্যাকাউন্টে প্রবেশ করুন" : "নতুন অ্যাকাউন্ট তৈরি করুন"}
         </h1>

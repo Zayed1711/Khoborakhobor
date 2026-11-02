@@ -133,18 +133,18 @@ export default function SideNotePanel({
     <>
       {/* Mobile Backdrop Overlay (Click outside to dismiss) */}
       <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 lg:hidden animate-in fade-in duration-200"
+        className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 md:hidden animate-in fade-in duration-200"
         onClick={onClose}
         aria-hidden="true"
       />
 
-      {/* Dual-Mode Container: Slide-Up Bottom Sheet on Mobile / Sticky Rail on Desktop */}
+      {/* Dual-Mode Container: Slide-Up Bottom Sheet on Mobile (< md) / Sticky Rail on Desktop (>= md) */}
       <aside className="
         fixed bottom-0 left-0 right-0 z-50 max-h-[85vh] rounded-t-3xl shadow-2xl bg-[#ffffff] border-t border-[#ded8cb] p-4 sm:p-5 flex flex-col gap-4 text-xs text-[#2a2d34] overflow-y-auto animate-in slide-in-from-bottom duration-300
-        lg:relative lg:inset-auto lg:z-30 lg:w-88 xl:w-96 lg:rounded-xl lg:border lg:border-[#e2dcd0] lg:shadow-lg lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:animate-none
+        md:relative md:inset-auto md:z-30 md:w-80 lg:w-88 xl:w-96 md:rounded-xl md:border md:border-[#e2dcd0] md:shadow-lg md:sticky md:top-6 md:max-h-[calc(100vh-3rem)] md:animate-none
       ">
         {/* Mobile Drag Indicator Handle */}
-        <div className="w-12 h-1.5 bg-[#d5cfc2] rounded-full mx-auto -mt-1 mb-1 lg:hidden shrink-0" />
+        <div className="w-12 h-1.5 bg-[#d5cfc2] rounded-full mx-auto -mt-1 mb-1 md:hidden shrink-0" />
 
         {/* Panel Header (Sticky within panel) */}
         <div className="flex items-center justify-between pb-3 border-b border-[#ece7dc] sticky top-0 bg-white z-10 -mt-1 pt-1">
