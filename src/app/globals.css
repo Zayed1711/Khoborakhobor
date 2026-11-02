@@ -64,6 +64,42 @@
 ::-webkit-scrollbar-thumb:hover {
   filter: brightness(0.9);
 }
+/* Firefox standard scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+/* Cross-browser root typography & rendering normalization */
+html, body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
+}
+
+/* Eliminate iOS Safari & Android tap gray highlight */
+button, a, input, select, textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Cross-browser WebKit backdrop-filter support (Safari / iOS) */
+.backdrop-blur-md {
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+.backdrop-blur-xs {
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+/* Cross-browser editorial text selection */
+::selection {
+  background-color: #f7dfa5;
+  color: #17191d;
+}
+
 
 /* Typography polish */
 .font-editorial-serif {

@@ -1,11 +1,20 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import "./globals.css";
 import { LanguageProvider } from "@/context/LanguageContext";
 import PomodoroWidget from "@/components/PomodoroWidget";
 import GamifiedOnboardingTour from "@/components/GamifiedOnboardingTour";
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover",
+  themeColor: "#842323",
+};
+
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.kkhobor.com"),
   title: "খবরাখবর | KhoboraKhobor - বস্তুনিষ্ঠ সংবাদ ও বিশ্লেষণ",
   description: "শিক্ষার্থী ও চিন্তাশীল পাঠকদের জন্য পরিচ্ছন্ন ও মননশীল ডিজিটাল পত্রিকা।",
   icons: {
