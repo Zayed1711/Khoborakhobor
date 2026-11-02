@@ -16,9 +16,10 @@ function safeParseJson<T>(value: any, fallback: T): T {
   }
 }
 
-export async function getPublishedArticles() {
+export async function getPublishedArticles(limit: number = 60) {
   try {
     const articles = await prisma.article.findMany({
+      take: limit,
       include: {
         category: true,
         vocabulary: true,

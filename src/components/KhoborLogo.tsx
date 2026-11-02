@@ -216,12 +216,12 @@ export default function KhoborLogo({
         {renderEmblem("w-12 h-12 sm:w-14 sm:h-14 mb-2.5", 56)}
 
         {/* Grand Masthead Bengali Typography */}
-        <h1
-          className={`${titleSize} font-black tracking-tight leading-none font-serif ${textColor} group-hover:opacity-95 transition-opacity`}
+        <span
+          className={`${titleSize} font-black tracking-tight leading-none font-serif ${textColor} group-hover:opacity-95 transition-opacity block`}
           style={{ fontFamily: "'Noto Serif Bengali', 'SolaimanLipi', Georgia, serif" }}
         >
           খবরাখবর
-        </h1>
+        </span>
 
         {/* Refined Subtitle Track */}
         {showTagline && (
