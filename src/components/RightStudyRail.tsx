@@ -105,7 +105,7 @@ export default function RightStudyRail({
   };
 
   return (
-    <aside className="w-80 shrink-0 hidden xl:flex flex-col gap-4 sticky top-20 h-[calc(100vh-6rem)] overflow-y-auto py-2 pr-1 select-none">
+    <aside className="w-80 shrink-0 hidden xl:flex flex-col gap-4 sticky top-[185px] h-[calc(100vh-12.5rem)] overflow-y-auto py-2 pr-1 select-none">
       {/* 1. Daily Study Streak Card */}
       <div className={`p-3 sm:p-3.5 rounded-2xl shadow-2xs space-y-1.5 border transition-all ${
         isEnglishMode

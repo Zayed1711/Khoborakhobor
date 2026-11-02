@@ -1,15 +1,15 @@
 "use client";
 
 import { 
-  Eye, EyeOff, Share2, 
-  Type, Edit3, Check, Volume2, BookOpen
+  Type, Eye, EyeOff, Edit3, Share2, 
+  Check, Volume2, BookOpen 
 } from "lucide-react";
 import ThemeSwitcher from "./ThemeSwitcher";
 
 interface ReaderToolbarProps {
   articleTitle: string;
-  onFontSizeChange: (size: "normal" | "large" | "xlarge") => void;
   fontSize: "normal" | "large" | "xlarge";
+  onFontSizeChange: (size: "normal" | "large" | "xlarge") => void;
   isFocusMode: boolean;
   onToggleFocusMode: () => void;
   isNotebookOpen: boolean;
@@ -18,16 +18,13 @@ interface ReaderToolbarProps {
   copied: boolean;
   onCopyLink: () => void;
   onOpenShare?: () => void;
-  // English Scaffolding props
   isEnglishArticle?: boolean;
-  showPhonics?: boolean;
-  onTogglePhonics?: () => void;
-  onOpenDictionary?: (initialWord?: string) => void;
+  onOpenDictionary?: (term?: string) => void;
 }
 
 export default function ReaderToolbar({
-  onFontSizeChange,
   fontSize,
+  onFontSizeChange,
   isFocusMode,
   onToggleFocusMode,
   isNotebookOpen,
@@ -42,68 +39,63 @@ export default function ReaderToolbar({
   return (
     <>
       {/* ======================================================== */}
-      {/* 1. DESKTOP READER TOOLBAR (Strictly md:flex, Zero Squeeze)*/}
+      {/* 1. DESKTOP READER TOOLBAR (Strictly md:flex, Balanced)   */}
       {/* ======================================================== */}
-      <div className="hidden md:flex flex-wrap items-center justify-between gap-3 p-3 px-4 mb-8 bg-[#ffffff] border border-[#e2dcd0] rounded-lg shadow-2xs text-xs text-[#525964]">
-        {/* Left: Typography & Utility Tools */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Font Size Adjusters */}
+      <div className="hidden md:flex flex-wrap items-center justify-between gap-y-2.5 gap-x-3 p-2.5 px-3.5 mb-8 bg-[#ffffff] border border-[#e2dcd0] rounded-xl shadow-2xs text-xs text-[#525964]">
+        {/* Left: Typography & Aesthetics */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Font Size Segmented Toggle */}
           <div className="flex items-center gap-1.5 shrink-0">
-            <span className="text-[11px] font-medium text-[#737b88] flex items-center gap-1">
-              <Type className="w-3.5 h-3.5 text-[#88909d]" />
-              <span>হরফ:</span>
-            </span>
-            <div className="inline-flex bg-[#f3efe6] p-0.5 rounded-md border border-[#ded8cb]">
+            <Type className="w-3.5 h-3.5 text-[#88909d]" />
+            <div className="inline-flex bg-[#f3efe6] p-0.5 rounded-lg border border-[#ded8cb] h-8 items-center">
               <button
                 type="button"
                 onClick={() => onFontSizeChange("normal")}
-                className={`px-2.5 py-1 rounded text-xs font-medium transition whitespace-nowrap ${
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition whitespace-nowrap ${
                   fontSize === "normal"
                     ? "bg-[#ffffff] text-[#1c1d21] shadow-2xs font-bold"
                     : "text-[#6b7280] hover:text-[#1c1d21]"
                 }`}
+                title="সাধারণ হরফ"
               >
                 সাধারণ
               </button>
               <button
                 type="button"
                 onClick={() => onFontSizeChange("large")}
-                className={`px-2.5 py-1 rounded text-xs font-medium transition whitespace-nowrap ${
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition whitespace-nowrap ${
                   fontSize === "large"
                     ? "bg-[#ffffff] text-[#1c1d21] shadow-2xs font-bold"
                     : "text-[#6b7280] hover:text-[#1c1d21]"
                 }`}
+                title="মাঝারি হরফ"
               >
                 মাঝারি
               </button>
               <button
                 type="button"
                 onClick={() => onFontSizeChange("xlarge")}
-                className={`px-2.5 py-1 rounded text-xs font-medium transition whitespace-nowrap ${
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition whitespace-nowrap ${
                   fontSize === "xlarge"
                     ? "bg-[#ffffff] text-[#1c1d21] shadow-2xs font-bold"
                     : "text-[#6b7280] hover:text-[#1c1d21]"
                 }`}
+                title="বড় হরফ"
               >
-                বড়
+                বড়
               </button>
             </div>
           </div>
 
-          {/* English Audio Speech Feature Badge (Never squashed) */}
-          {isEnglishArticle && (
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 text-blue-900 border border-blue-200/80 text-xs font-medium shadow-2xs whitespace-nowrap shrink-0">
-              <Volume2 className="w-3.5 h-3.5 text-blue-700 shrink-0" />
-              <span>শব্দে ক্লিক করে শুনুন</span>
-            </div>
-          )}
+          {/* Paper Theme Switcher */}
+          <ThemeSwitcher compact className="h-8 shrink-0" />
 
-          {/* Quick Dictionary Button */}
-          {onOpenDictionary && (
+          {/* Quick Dictionary Button (English Track) */}
+          {onOpenDictionary && isEnglishArticle && (
             <button
               type="button"
               onClick={() => onOpenDictionary()}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50/70 hover:bg-blue-100 text-blue-900 border border-blue-200 transition text-xs font-semibold shadow-2xs whitespace-nowrap shrink-0"
+              className="inline-flex items-center gap-1.5 px-2.5 h-8 rounded-lg bg-blue-50/80 hover:bg-blue-100 text-[#1e40af] border border-blue-200/90 transition text-xs font-semibold shadow-2xs whitespace-nowrap shrink-0"
               title="শব্দ অনুসন্ধান ও উচ্চারণ অভিধান খুলুন"
             >
               <BookOpen className="w-3.5 h-3.5 text-[#1e40af] shrink-0" />
@@ -111,10 +103,16 @@ export default function ReaderToolbar({
             </button>
           )}
 
-          {/* Paper Theme Switcher */}
-          <div className="flex items-center border-l border-[#ece7dc] pl-3 shrink-0">
-            <ThemeSwitcher compact />
-          </div>
+          {/* Audio helper pill (Wide screen >= 1280px only to prevent squeezing) */}
+          {isEnglishArticle && (
+            <div
+              className="hidden xl:inline-flex items-center gap-1.5 px-2.5 h-8 rounded-lg bg-blue-50/60 text-blue-900 border border-blue-200/60 text-[11px] font-medium whitespace-nowrap shrink-0"
+              title="ইংরেজি শব্দের উচ্চারণ শুনতে শব্দের ওপর ক্লিক করুন"
+            >
+              <Volume2 className="w-3.5 h-3.5 text-blue-700 shrink-0" />
+              <span>শব্দে ট্যাপ করে শুনুন</span>
+            </div>
+          )}
         </div>
 
         {/* Right: Reading Mode & Share Actions */}
@@ -123,7 +121,7 @@ export default function ReaderToolbar({
           <button
             type="button"
             onClick={onToggleFocusMode}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition text-xs border font-medium whitespace-nowrap ${
+            className={`inline-flex items-center gap-1.5 px-3 h-8 rounded-lg transition text-xs border font-medium whitespace-nowrap shrink-0 ${
               isFocusMode
                 ? "bg-[#1f2733] text-white border-[#1f2733] shadow-xs"
                 : "bg-[#faf8f4] text-[#3d4450] border-[#ded8cb] hover:bg-[#ede7da]"
@@ -131,14 +129,14 @@ export default function ReaderToolbar({
             title="সম্পূর্ণ একাগ্রতার সাথে পড়ার জন্য ফোকাস মোড"
           >
             {isFocusMode ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5 text-[#842323]" />}
-            <span>{isFocusMode ? "স্বাভাবিক দৃশ্য" : "ফোকাস মোড"}</span>
+            <span>{isFocusMode ? "স্বাভাবিক" : "ফোকাস"}</span>
           </button>
 
           {/* Active Side Note & Dictionary Panel Toggle */}
           <button
             type="button"
             onClick={onToggleNotebook}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition text-xs border font-medium whitespace-nowrap ${
+            className={`inline-flex items-center gap-1.5 px-3 h-8 rounded-lg transition text-xs border font-medium whitespace-nowrap shrink-0 ${
               isNotebookOpen
                 ? "bg-[#842323] text-white border-[#842323] shadow-xs"
                 : "bg-[#faf8f4] text-[#3d4450] border-[#ded8cb] hover:bg-[#ede7da]"
@@ -162,7 +160,7 @@ export default function ReaderToolbar({
           <button
             type="button"
             onClick={onOpenShare || onCopyLink}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#faf8f4] hover:bg-[#ede7da] text-[#3d4450] border border-[#ded8cb] transition text-xs font-medium whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-3 h-8 rounded-lg bg-[#faf8f4] hover:bg-[#ede7da] text-[#3d4450] border border-[#ded8cb] transition text-xs font-semibold whitespace-nowrap shrink-0"
             title="সহপাঠীদের সাথে শেয়ার করুন"
           >
             {copied ? <Check className="w-3.5 h-3.5 text-[#2e744a]" /> : <Share2 className="w-3.5 h-3.5 text-[#842323]" />}

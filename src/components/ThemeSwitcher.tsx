@@ -51,12 +51,12 @@ export default function ThemeSwitcher({ compact = false, className = "" }: Theme
 
   if (compact) {
     return (
-      <div className={`inline-flex items-center bg-[#f3efe6] p-0.5 rounded-md border border-[#ded8cb] ${className}`}>
+      <div className={`inline-flex items-center bg-[#f3efe6] p-0.5 rounded-lg border border-[#ded8cb] h-8 ${className}`}>
         <button
           type="button"
           onClick={() => handleSelect("parchment")}
           title="প্যাচমেন্ট কাগজ থিম (সংবাদপত্র ফিল)"
-          className={`px-2.5 py-1 rounded text-xs flex items-center gap-1.5 transition ${
+          className={`px-2.5 py-1 rounded-md text-xs flex items-center gap-1.5 transition whitespace-nowrap shrink-0 ${
             theme === "parchment"
               ? "bg-[#ffffff] text-[#1c1d21] shadow-2xs font-bold"
               : "text-[#6b7280] hover:text-[#1c1d21]"
@@ -70,7 +70,7 @@ export default function ThemeSwitcher({ compact = false, className = "" }: Theme
           type="button"
           onClick={() => handleSelect("sepia")}
           title="সেপিয়া থিম (বইয়ের পাতার মৃদু উষ্ণতা)"
-          className={`px-2.5 py-1 rounded text-xs flex items-center gap-1.5 transition ${
+          className={`px-2.5 py-1 rounded-md text-xs flex items-center gap-1.5 transition whitespace-nowrap shrink-0 ${
             theme === "sepia"
               ? "bg-[#faf4e6] text-[#332616] shadow-2xs font-bold border border-[#dfd1b8]"
               : "text-[#6b7280] hover:text-[#1c1d21]"
