@@ -22,7 +22,7 @@ import { extractVocabularyTableRows } from "@/lib/vocabulary-table-engine";
 import { generateScaffoldedEnglishQuiz } from "@/lib/quiz/scaffolded-english-quiz";
 import { generateContextualMicroQuiz } from "@/lib/quiz/generator";
 import Link from "next/link";
-import { Clock, ArrowLeft, Lightbulb, Highlighter, Check, Edit3, X, Globe, ExternalLink, BookOpen, Volume2 } from "lucide-react";
+import { Clock, ArrowLeft, Lightbulb, Highlighter, Check, Edit3, X, Globe, ExternalLink, BookOpen, Volume2, Share2 } from "lucide-react";
 import { useAppMode } from "@/context/LanguageContext";
 import { isBengaliText, translateTitleToBengali, translateSummaryToBengali, translateContentToBengaliHtml } from "@/lib/bilingual";
 import { getNewspaperSourceInfo } from "@/lib/sources";
@@ -486,9 +486,20 @@ export default function ArticleReaderView({
                     </>
                   )}
                 </div>
-                <div className="flex items-center gap-1 text-[#788191]">
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>{article.readTime} পাঠ</span>
+                <div className="flex items-center gap-2.5 shrink-0">
+                  <div className="flex items-center gap-1 text-[#788191]">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>{article.readTime} পাঠ</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsShareModalOpen(true)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#faf8f4] hover:bg-[#ede7da] text-[#842323] border border-[#ded8cb] text-xs font-semibold transition shadow-2xs hover:shadow-xs active:scale-95 shrink-0"
+                    title="সহপাঠীদের সাথে শেয়ার করুন"
+                  >
+                    <Share2 className="w-3.5 h-3.5 text-[#842323]" />
+                    <span>শেয়ার</span>
+                  </button>
                 </div>
               </div>
             </header>

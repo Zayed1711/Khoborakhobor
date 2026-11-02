@@ -55,18 +55,18 @@ export default function KhoborLogo({
       >
         <defs>
           <linearGradient id={`kk-crimson-${pixelSize}`} x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="#9e1c1c"/>
-            <stop offset="45%" stop-color="#842323"/>
-            <stop offset="100%" stop-color="#540f0f"/>
+            <stop offset="0%" stopColor="#9e1c1c"/>
+            <stop offset="45%" stopColor="#842323"/>
+            <stop offset="100%" stopColor="#540f0f"/>
           </linearGradient>
           <linearGradient id={`kk-gold-${pixelSize}`} x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="#fde48b"/>
-            <stop offset="45%" stop-color="#d4af37"/>
-            <stop offset="100%" stop-color="#9a6e1a"/>
+            <stop offset="0%" stopColor="#fde48b"/>
+            <stop offset="45%" stopColor="#d4af37"/>
+            <stop offset="100%" stopColor="#9a6e1a"/>
           </linearGradient>
           <linearGradient id={`kk-ivory-${pixelSize}`} x1="20" y1="20" x2="80" y2="80" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="#ffffff"/>
-            <stop offset="100%" stop-color="#f5eee4"/>
+            <stop offset="0%" stopColor="#ffffff"/>
+            <stop offset="100%" stopColor="#f5eee4"/>
           </linearGradient>
         </defs>
 

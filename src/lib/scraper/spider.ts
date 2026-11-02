@@ -274,6 +274,22 @@ export const PORTAL_CONFIGS: Record<
     title_selectors: ["h1", ".article-title"],
     body_selectors: [".article-text", ".story-text", "article"],
   },
+  "bbc.com": {
+    title_selectors: ["h1", "#main-heading", ".bbc-1151fp7"],
+    body_selectors: ["main[role='main']", "article", "[data-component='text-block']", ".bbc-1151fp7"],
+  },
+  "bbc.co.uk": {
+    title_selectors: ["h1", "#main-heading", ".bbc-1151fp7"],
+    body_selectors: ["main[role='main']", "article", "[data-component='text-block']", ".bbc-1151fp7"],
+  },
+  "ittefaq.com.bd": {
+    title_selectors: ["h1", ".title"],
+    body_selectors: [".news-details-content", ".article-content", "article"],
+  },
+  "samakal.com": {
+    title_selectors: ["h1", ".detail-title"],
+    body_selectors: [".description", ".news-content", "article"],
+  },
 };
 
 function identifyPortalConfig(url: string) {
@@ -781,18 +797,36 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
           continue;
         }
         
-        // High-fidelity extraction: If RSS only provides a brief teaser (<350 chars), fetch the webpage using semantic portal selectors
+        // High-fidelity extraction: Always attempt to fetch full web page if item.link is available,
+        // ensuring articles have complete 6-15 paragraphs rather than 2-line RSS teasers.
         let cleanContent = "";
         let imageUrl: string | undefined;
 
-        if (item.link && (rawContent.length < 350 || !rawContent.includes("<p>"))) {
+        if (item.link) {
           const pageParsed = await fetchAndParseArticlePage(item.link, rawContent);
-          cleanContent = pageParsed.cleanContent;
-          imageUrl = pageParsed.imageUrl;
+          if (pageParsed.cleanContent && pageParsed.cleanContent.length > (rawContent.length || 0)) {
+            cleanContent = pageParsed.cleanContent;
+            imageUrl = pageParsed.imageUrl;
+          } else if (pageParsed.cleanContent && pageParsed.cleanContent.length >= 400) {
+            cleanContent = pageParsed.cleanContent;
+            imageUrl = pageParsed.imageUrl;
+          } else {
+            const parsed = parseHtmlContent(rawContent);
+            cleanContent = parsed.cleanContent;
+            imageUrl = pageParsed.imageUrl || parsed.imageUrl;
+          }
         } else {
           const parsed = parseHtmlContent(rawContent);
           cleanContent = parsed.cleanContent;
           imageUrl = parsed.imageUrl;
+        }
+
+        // Quality Gate: Ensure article has sufficient analytical depth (> 250 characters of text)
+        const pureText = cleanContent.replace(/<[^>]+>/g, " ").trim();
+        if (pureText.length < 250) {
+          console.log(`[SQA GATEKEEPER] Skipped shallow news with only ${pureText.length} chars: "${title.slice(0, 45)}"`);
+          results.skipped++;
+          continue;
         }
 
         // Deep Exam Relevance Gatekeeper: re-check after extracting full article body

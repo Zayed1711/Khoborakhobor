@@ -139,9 +139,9 @@ export default function SocialFeedStream({
       {/* 1. Instagram / LinkedIn Style Story Capsules */}
       <CapsuleStoryPills capsuleArticles={filteredCapsules} />
 
-      {/* 2. Mobile Gamified Study Streak & Daily Challenge Card (Strictly mobile only: md:hidden) */}
+      {/* 2. Responsive Gamified Study Streak & Daily Challenge Card (Visible when Right Study Rail is hidden: xl:hidden) */}
       {activeQuiz && (
-        <div className="md:hidden bg-white border border-[#ded8cb] rounded-2xl p-3 sm:p-4 shadow-2xs space-y-2.5">
+        <div className="xl:hidden bg-white border border-[#ded8cb] rounded-2xl p-3 sm:p-4 shadow-2xs space-y-2.5">
           {/* Header Row with Streak */}
           <div className="flex items-center justify-between pb-2 border-b border-[#f4efe4]">
             <div className="flex items-center gap-1.5 text-xs font-bold">
@@ -230,7 +230,7 @@ export default function SocialFeedStream({
         className="bg-white border border-[#ded8cb] rounded-2xl p-2.5 sm:p-3 shadow-2xs space-y-2.5 transition-all"
       >
         {/* Mode Stream Switcher (Desktop and Tablet helper, compact on mobile) */}
-        <div className="flex items-center justify-between pb-2 border-b border-[#f4efe4] px-1">
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#f4efe4] px-1">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-[#404652]">
             {isEnglishMode ? (
               <>

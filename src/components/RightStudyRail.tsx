@@ -107,7 +107,7 @@ export default function RightStudyRail({
   return (
     <aside className="w-80 shrink-0 hidden xl:flex flex-col gap-4 sticky top-20 h-[calc(100vh-6rem)] overflow-y-auto py-2 pr-1 select-none">
       {/* 1. Daily Study Streak Card */}
-      <div className={`p-4 rounded-2xl shadow-2xs space-y-2 border transition-all ${
+      <div className={`p-3 sm:p-3.5 rounded-2xl shadow-2xs space-y-1.5 border transition-all ${
         isEnglishMode
           ? "bg-gradient-to-br from-blue-50 to-indigo-50/40 border-blue-200/80"
           : "bg-gradient-to-br from-amber-50 to-orange-50/40 border-amber-200/80"
@@ -137,8 +137,8 @@ export default function RightStudyRail({
       </div>
 
       {/* 2. Micro-Quiz of the Day Challenge */}
-      <div id="tutorial-daily-quiz" className="p-4 bg-white border border-[#ded8cb] rounded-2xl shadow-2xs space-y-3 transition-all">
-        <div className="flex items-center justify-between pb-2 border-b border-[#f4efe4]">
+      <div id="tutorial-daily-quiz" className="p-3 sm:p-3.5 bg-white border border-[#ded8cb] rounded-2xl shadow-2xs space-y-2.5 transition-all">
+        <div className="flex items-center justify-between pb-1.5 border-b border-[#f4efe4]">
           <div className="flex items-center gap-1.5 text-xs font-bold text-[#842323]">
             {isEnglishMode ? (
               <>
@@ -159,7 +159,7 @@ export default function RightStudyRail({
 
         {/* Source Citation & Context Sentence Box */}
         {(activeQuiz.sourceName || activeQuiz.articleTitle || activeQuiz.contextQuote) && (
-          <div className="p-2.5 bg-[#fbf9f5] border border-[#e2dcd0] rounded-xl space-y-2">
+          <div className="p-2 bg-[#fbf9f5] border border-[#e2dcd0] rounded-xl space-y-1.5">
             {/* Source Newspaper Badge & Article Link */}
             <div className="flex items-center justify-between text-[11px] gap-2 flex-wrap">
               <div className="flex items-center gap-1.5 min-w-0">

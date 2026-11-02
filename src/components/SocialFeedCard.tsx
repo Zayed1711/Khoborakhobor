@@ -364,6 +364,16 @@ export default function SocialFeedCard({
           >
             <Bookmark className={`w-4 h-4 ${isSaved ? "fill-current" : ""}`} />
           </button>
+
+          {/* Social Share Modal Trigger */}
+          <button
+            type="button"
+            onClick={() => setIsShareModalOpen(true)}
+            className="p-1.5 sm:p-2 rounded-lg transition shrink-0 text-[#717887] hover:bg-[#ece7dc] hover:text-[#1c1d21]"
+            title="সহপাঠীদের সাথে শেয়ার করুন"
+          >
+            <Share2 className="w-4 h-4" />
+          </button>
         </div>
 
         <div className="flex items-center shrink-0">
