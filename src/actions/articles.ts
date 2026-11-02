@@ -6,6 +6,16 @@ import { extractStudentTakeaways } from "@/lib/scraper/spider";
 import { generateContextualMicroQuiz, shuffleQuizOptions } from "@/lib/quiz/generator";
 import { extractFactTable } from "@/lib/scraper/examFilter";
 
+function safeParseJson<T>(value: any, fallback: T): T {
+  if (!value) return fallback;
+  if (typeof value !== "string") return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+}
+
 export async function getPublishedArticles() {
   try {
     const articles = await prisma.article.findMany({
@@ -22,12 +32,12 @@ export async function getPublishedArticles() {
     return articles.map((a) => ({
       ...a,
       createdAtIso: a.createdAt instanceof Date ? a.createdAt.toISOString() : new Date(a.createdAt).toISOString(),
-      keyTakeaways: a.keyTakeaways ? JSON.parse(a.keyTakeaways) : [],
-      factTable: (a as any).factTable ? JSON.parse((a as any).factTable) : [],
+      keyTakeaways: safeParseJson(a.keyTakeaways, []),
+      factTable: safeParseJson((a as any).factTable, []),
       examTagsList: a.examTags ? a.examTags.split(",").map((t) => t.trim()) : [],
       quizQuestions: a.quizQuestions.map((q) => ({
         ...q,
-        options: typeof q.options === "string" ? JSON.parse(q.options) : q.options,
+        options: safeParseJson(q.options, []),
       })),
     }));
   } catch (error) {
@@ -37,60 +47,74 @@ export async function getPublishedArticles() {
 }
 
 export async function getArticleBySlug(rawSlug: string) {
-  const decoded = decodeURIComponent(rawSlug);
-  let article = await prisma.article.findUnique({
-    where: { slug: decoded },
-    include: {
-      category: true,
-      vocabulary: true,
-      quizQuestions: true,
-    },
-  });
+  if (!rawSlug) return null;
 
-  if (!article && decoded !== rawSlug) {
-    article = await prisma.article.findUnique({
-      where: { slug: rawSlug },
+  try {
+    const decoded = decodeURIComponent(rawSlug);
+    let article = await prisma.article.findUnique({
+      where: { slug: decoded },
       include: {
         category: true,
         vocabulary: true,
         quizQuestions: true,
       },
     });
+
+    if (!article && decoded !== rawSlug) {
+      article = await prisma.article.findUnique({
+        where: { slug: rawSlug },
+        include: {
+          category: true,
+          vocabulary: true,
+          quizQuestions: true,
+        },
+      });
+    }
+
+    if (!article) return null;
+
+    return {
+      ...article,
+      keyTakeaways: safeParseJson(article.keyTakeaways, []),
+      factTable: safeParseJson((article as any).factTable, []),
+      examTagsList: article.examTags ? article.examTags.split(",").map((t) => t.trim()) : [],
+      quizQuestions: article.quizQuestions.map((q) => ({
+        ...q,
+        options: safeParseJson(q.options, []),
+      })),
+    };
+  } catch (err) {
+    console.error(`[ARTICLES] Error loading article by slug (${rawSlug}):`, err);
+    return null;
   }
-
-  if (!article) return null;
-
-  return {
-    ...article,
-    keyTakeaways: article.keyTakeaways ? JSON.parse(article.keyTakeaways) : [],
-    factTable: (article as any).factTable ? JSON.parse((article as any).factTable) : [],
-    examTagsList: article.examTags ? article.examTags.split(",").map((t) => t.trim()) : [],
-    quizQuestions: article.quizQuestions.map((q) => ({
-      ...q,
-      options: typeof q.options === "string" ? JSON.parse(q.options) : q.options,
-    })),
-  };
 }
 
 export async function getArticlesByCategory(categorySlug: string) {
-  const articles = await prisma.article.findMany({
-    where: {
-      category: {
-        slug: categorySlug,
-      },
-    },
-    include: {
-      category: true,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  if (!categorySlug) return [];
 
-  return articles.map((a) => ({
-    ...a,
-    keyTakeaways: a.keyTakeaways ? JSON.parse(a.keyTakeaways) : [],
-  }));
+  try {
+    const articles = await prisma.article.findMany({
+      where: {
+        category: {
+          slug: categorySlug,
+        },
+      },
+      include: {
+        category: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return articles.map((a) => ({
+      ...a,
+      keyTakeaways: safeParseJson(a.keyTakeaways, []),
+    }));
+  } catch (err) {
+    console.error(`[ARTICLES] Error loading articles for category (${categorySlug}):`, err);
+    return [];
+  }
 }
 
 // -------------------------------------------------------------

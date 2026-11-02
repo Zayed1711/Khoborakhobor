@@ -9,16 +9,9 @@ import { getArticlesByCategory } from "@/actions/articles";
 import { getCurrentSession } from "@/actions/auth";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, BookOpen, Layers } from "lucide-react";
+import { ArrowLeft, BookOpen } from "lucide-react";
 
 export const dynamic = "force-dynamic";
-
-export async function generateStaticParams() {
-  const categories = await prisma.category.findMany();
-  return categories.map((cat) => ({
-    slug: cat.slug,
-  }));
-}
 
 interface Props {
   params: Promise<{ slug: string }>;

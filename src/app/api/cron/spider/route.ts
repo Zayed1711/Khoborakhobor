@@ -11,9 +11,15 @@ export const dynamic = "force-dynamic";
 function isAuthorized(req: NextRequest): boolean {
   const cronSecret = process.env.CRON_SECRET;
 
-  // In development mode or if CRON_SECRET is not configured, permit requests with a notice
-  if (!cronSecret || process.env.NODE_ENV !== "production") {
+  // Permit bypass only during local development / testing environments
+  if (process.env.NODE_ENV !== "production") {
     return true;
+  }
+
+  // SQA Security Hardening: In production, CRON_SECRET must be configured
+  if (!cronSecret) {
+    console.error("[CRON_SECURITY] CRON_SECRET is not configured in production environment.");
+    return false;
   }
 
   // 1. Check Bearer Token (Standard Vercel Cron behavior)

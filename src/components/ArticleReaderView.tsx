@@ -135,14 +135,21 @@ export default function ArticleReaderView({
     return generateScaffoldedEnglishQuiz(article.title, article.content);
   }, [article.title, article.content]);
 
-  // Audio speech on word click
+  // Audio speech on word click with error safety
   const handlePlayWordAudio = (word: string) => {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(word);
-      utterance.lang = "en-US";
-      utterance.rate = 0.88;
-      window.speechSynthesis.speak(utterance);
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(word);
+        utterance.lang = "en-US";
+        utterance.rate = 0.88;
+        utterance.onerror = (e) => {
+          console.warn("[SPEECH] Speech utterance error:", e);
+        };
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        console.warn("[SPEECH] Speech synthesis unavailable:", err);
+      }
     }
   };
 

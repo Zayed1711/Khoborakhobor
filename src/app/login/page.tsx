@@ -13,7 +13,12 @@ function AuthForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab") === "signup" ? "signup" : "login";
-  const redirectUrl = searchParams.get("redirect") || "/";
+  const rawRedirect = searchParams.get("redirect") || "/";
+  // SQA Security Fix (CWE-601): Prevent Open Redirect vulnerability
+  const redirectUrl =
+    rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") && !rawRedirect.includes(":")
+      ? rawRedirect
+      : "/";
 
   const [mode, setMode] = useState<"login" | "signup">(initialTab);
   const [showPassword, setShowPassword] = useState(false);
