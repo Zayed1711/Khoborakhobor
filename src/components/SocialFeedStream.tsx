@@ -5,8 +5,7 @@ import SocialFeedCard from "./SocialFeedCard";
 import CapsuleStoryPills from "./CapsuleStoryPills";
 import DateArchiveStrip from "./DateArchiveStrip";
 import { 
-  Sparkles, Filter, BookOpen, Globe, Languages, GraduationCap, 
-  Flame, HelpCircle, CheckCircle2, XCircle, ArrowRight, ChevronDown, ChevronUp 
+  BookOpen, Flame, CheckCircle2, XCircle, ArrowRight, ChevronDown, ChevronUp 
 } from "lucide-react";
 import { useAppMode } from "@/context/LanguageContext";
 import { isBengaliText } from "@/lib/bilingual";
@@ -44,7 +43,7 @@ export default function SocialFeedStream({
   featuredQuiz,
   featuredEnglishQuiz,
 }: SocialFeedStreamProps) {
-  const { mode, setMode, isEnglishMode } = useAppMode();
+  const { setMode, isEnglishMode } = useAppMode();
   const [selectedCat, setSelectedCat] = useState("all");
   const [selectedDate, setSelectedDate] = useState("all");
 
@@ -80,17 +79,6 @@ export default function SocialFeedStream({
       ...categories.map((c) => ({ name: c.name.split("(")[0].trim(), slug: c.slug })),
     ];
   }, [categories, isEnglishMode]);
-
-  // Count articles by language for feedback
-  const { bnCount, enCount } = useMemo(() => {
-    let bn = 0;
-    let en = 0;
-    for (const a of articles) {
-      if (isBengaliText(a.title)) bn++;
-      else en++;
-    }
-    return { bnCount: bn, enCount: en };
-  }, [articles]);
 
   // Filter by category, platform mode, and selected archive date
   const filteredArticles = useMemo(() => {
@@ -224,57 +212,11 @@ export default function SocialFeedStream({
         onSelectDate={setSelectedDate}
       />
 
-      {/* 4. Platform Mode Stream Banner & Category Pills */}
+      {/* 4. Category Filter Pills Bar (Horizontal swipeable on mobile, streamlined) */}
       <div
         id="tutorial-feed-language"
-        className="bg-white border border-[#ded8cb] rounded-2xl p-2.5 sm:p-3 shadow-2xs space-y-2.5 transition-all"
+        className="bg-white border border-[#ded8cb] rounded-2xl p-2.5 sm:p-3 shadow-2xs transition-all"
       >
-        {/* Mode Stream Switcher (Desktop and Tablet helper, compact on mobile) */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#f4efe4] px-1">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-[#404652]">
-            {isEnglishMode ? (
-              <>
-                <BookOpen className="w-3.5 h-3.5 text-[#1e40af]" />
-                <span className="hidden sm:inline">Active Track: <strong className="text-[#1e40af]">English Learning</strong></span>
-                <span className="sm:hidden font-bold text-[#1e40af]">English Track</span>
-              </>
-            ) : (
-              <>
-                <GraduationCap className="w-3.5 h-3.5 text-[#842323]" />
-                <span className="hidden sm:inline">সক্রিয় মোড: <strong className="text-[#842323]">চাকরি ও বিসিএস</strong></span>
-                <span className="sm:hidden font-bold text-[#842323]">চাকরি ও বিসিএস</span>
-              </>
-            )}
-          </div>
-
-          <div className="inline-flex rounded-lg border border-[#ded8cc] bg-[#faf8f4] p-0.5 text-xs">
-            <button
-              type="button"
-              onClick={() => setMode("job_prep")}
-              className={`px-2.5 sm:px-3 py-1 rounded-md font-semibold transition flex items-center gap-1 sm:gap-1.5 ${
-                !isEnglishMode
-                  ? "bg-[#842323] text-white shadow-2xs"
-                  : "text-[#525a68] hover:text-[#1c1d21] hover:bg-[#ede7da]"
-              }`}
-            >
-              <span>চাকরি ও বিসিএস</span>
-              <span className="text-[10px] opacity-80 font-mono">({bnCount})</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("english_learning")}
-              className={`px-2.5 sm:px-3 py-1 rounded-md font-semibold transition flex items-center gap-1 sm:gap-1.5 ${
-                isEnglishMode
-                  ? "bg-[#1e40af] text-white shadow-2xs"
-                  : "text-[#525a68] hover:text-[#1c1d21] hover:bg-[#ede7da]"
-              }`}
-            >
-              <span>English Feed</span>
-              <span className="text-[10px] opacity-80 font-mono">({enCount})</span>
-            </button>
-          </div>
-        </div>
-
         {/* Category Pills Bar (Horizontal swipeable on mobile) */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
           {filterPills.map((pill) => {
