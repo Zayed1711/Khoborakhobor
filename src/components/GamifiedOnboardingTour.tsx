@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { 
   Sparkles, History, Globe, HelpCircle, 
   Timer, BookOpen, Award, ArrowRight, ArrowLeft, 
@@ -163,18 +164,24 @@ export default function GamifiedOnboardingTour() {
     }
   };
 
-  if (!isOpen) return null;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || !isOpen) return null;
 
   const step = TOUR_STEPS[currentStep];
   const Icon = step.icon;
   const isFinalStep = currentStep === TOUR_STEPS.length - 1;
   const isCenterModal = step.position === "center" || !targetRect;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       {/* 1. Translucent Backdrop */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-[1px] transition-opacity duration-300"
+        className="fixed inset-0 bg-black/65 backdrop-blur-md transition-opacity duration-300"
         onClick={completeTour}
       />
 
@@ -299,7 +306,8 @@ export default function GamifiedOnboardingTour() {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
