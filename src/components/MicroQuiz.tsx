@@ -146,15 +146,17 @@ export default function MicroQuiz({ questions, studentId, isEnglishMode = false,
                 </div>
               )}
 
-              <div className="flex items-start justify-between gap-2 mb-3">
-                <h5 className="text-xs sm:text-sm font-bold text-[#1c1d21] leading-snug">
-                  {idx + 1}. {q.question}
-                </h5>
+              <div className="mb-3 space-y-1.5">
                 {q.topicTag && (
-                  <span className="text-[10px] bg-slate-100 text-[#475569] px-2 py-0.5 rounded font-mono font-medium shrink-0">
-                    {q.topicTag}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="inline-flex items-center text-[9.5px] bg-[#f4efe4] text-[#842323] px-1.5 py-0.5 rounded font-medium border border-[#ded8cb]/80 uppercase tracking-wide">
+                      {q.topicTag}
+                    </span>
+                  </div>
                 )}
+                <h5 className="text-xs sm:text-sm font-bold text-[#1c1d21] leading-relaxed break-words">
+                  {idx + 1}. {q.question?.replace(/^\[.*?\]\s*/, "")}
+                </h5>
               </div>
 
               {/* Options */}
