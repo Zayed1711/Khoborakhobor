@@ -96,13 +96,18 @@ export default function MicroQuiz({ questions, studentId, isEnglishMode = false,
             </p>
           </div>
         </div>
-        <span className={`text-xs px-2.5 py-0.5 rounded font-semibold border ${
-          isEnglishMode
-            ? "bg-blue-50 text-[#1e40af] border-blue-200"
-            : "bg-[#f4efe4] text-[#842323] border-[#e4d9c7]"
-        }`}>
-          {questions.length}টি প্রশ্ন
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase bg-amber-500/10 text-amber-700 border border-amber-500/20 shrink-0">
+            PRO • FREE IN NOV
+          </span>
+          <span className={`text-xs px-2.5 py-0.5 rounded font-semibold border ${
+            isEnglishMode
+              ? "bg-blue-50 text-[#1e40af] border-blue-200"
+              : "bg-[#f4efe4] text-[#842323] border-[#e4d9c7]"
+          }`}>
+            {questions.length}টি প্রশ্ন
+          </span>
+        </div>
       </div>
 
       <div className="space-y-6">

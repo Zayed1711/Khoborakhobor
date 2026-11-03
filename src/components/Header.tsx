@@ -104,6 +104,10 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
   const primaryCategories = categories.slice(0, 5);
   const extraCategories = categories.slice(5);
 
+  const trialEnd = new Date("2026-12-02T23:59:59+06:00");
+  const diffTrialMs = trialEnd.getTime() - Date.now();
+  const trialDaysRemaining = Math.max(0, Math.ceil(diffTrialMs / (1000 * 60 * 60 * 24)));
+
   return (
     <>
       <header className="border-b border-[#e5e0d6] bg-[#ffffff] sticky top-0 z-40 shadow-[0_2px_8px_rgba(0,0,0,0.03)] select-none">
@@ -140,15 +144,15 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
               </button>
             </div>
 
-            {/* Logged-in Founding Pro Trial Badge (Mobile) */}
+            {/* Logged-in Reverse Trial Navbar Pill (Mobile) */}
             {isLoggedIn ? (
               <Link
                 href="/saved"
-                className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-linear-to-r from-amber-50 to-orange-50 border border-amber-300 text-amber-900 text-[10px] font-bold shadow-2xs"
-                title="ফাউন্ডিং প্রো ট্রায়াল: ২ ডিসেম্বর পর্যন্ত ফ্রি"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 text-[10px] font-medium border border-amber-500/20 shrink-0"
+                title={`Founding Pro Trial: Active (${trialDaysRemaining} Days Left)`}
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
-                <span>Pro</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                <span>Pro ({trialDaysRemaining}d)</span>
               </Link>
             ) : (
               <Link
@@ -356,18 +360,17 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
               </kbd>
             </button>
 
-            {/* Profile & Founding Pro Badge (Desktop) */}
+            {/* Profile & Reverse Trial Navbar Pill (Desktop) */}
             {isLoggedIn ? (
               <div className="flex items-center gap-2 shrink-0">
-                {/* Founding Pro Trial Navbar Badge */}
+                {/* Reverse Trial Navbar Pill */}
                 <Link
                   href="/saved"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-linear-to-r from-amber-50 to-orange-50 border border-amber-300 hover:border-amber-400 text-amber-900 text-xs font-bold shadow-2xs transition group"
-                  title="ফাউন্ডিং প্রো ট্রায়াল: ২ ডিসেম্বর পর্যন্ত সকল প্রো ফিচার বিনামূল্যে উপভোগ করুন"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 text-xs font-medium border border-amber-500/20 hover:bg-amber-500/15 transition shrink-0"
+                  title="Founding Pro Trial: Active"
                 >
-                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
-                  <span className="tracking-tight font-serif font-bold text-[#842323]">Founding Pro</span>
-                  <span className="text-[10px] text-amber-700 font-medium hidden lg:inline border-l border-amber-200 pl-1.5">Free until Dec 2</span>
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                  <span>Founding Pro Trial: Active ({trialDaysRemaining} Days Left)</span>
                 </Link>
 
                 {/* Student Profile / Hub Shortcut */}

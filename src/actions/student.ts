@@ -151,6 +151,7 @@ export async function submitQuizAnswerAction(
         where: { id: studentId },
         data: { quizzesTaken: { increment: 1 } },
       });
+      await syncTelemetryIncrement(studentId, "quizzesCompletedCount");
     } catch {
       // safe fallback
     }
@@ -294,6 +295,7 @@ export async function createStudyNoteAction(
       where: { id: studentId },
       data: { notesSaved: { increment: 1 } },
     });
+    await syncTelemetryIncrement(studentId, "highlightsSavedCount");
   } catch {
     // safe fallback
   }
@@ -440,6 +442,7 @@ export async function saveMarkerHighlightAction(
       where: { id: studentId },
       data: { notesSaved: { increment: 1 } },
     });
+    await syncTelemetryIncrement(studentId, "highlightsSavedCount");
   } catch {
     // safe fallback
   }
@@ -542,6 +545,29 @@ export async function getActiveStudent() {
 // -------------------------------------------------------------
 // 7. User Activity Counter & Marketing Analytics Engine
 // -------------------------------------------------------------
+async function syncTelemetryIncrement(
+  studentId: string,
+  field: "articlesReadCount" | "dictionaryLookupsCount" | "quizzesCompletedCount" | "highlightsSavedCount"
+) {
+  try {
+    await prisma.studyTelemetry.upsert({
+      where: { userId: studentId },
+      create: {
+        userId: studentId,
+        articlesReadCount: field === "articlesReadCount" ? 1 : 0,
+        dictionaryLookupsCount: field === "dictionaryLookupsCount" ? 1 : 0,
+        quizzesCompletedCount: field === "quizzesCompletedCount" ? 1 : 0,
+        highlightsSavedCount: field === "highlightsSavedCount" ? 1 : 0,
+      },
+      update: {
+        [field]: { increment: 1 },
+      },
+    });
+  } catch {
+    // Non-blocking telemetry sync
+  }
+}
+
 export async function trackArticleReadAction(articleSlug: string) {
   const student = await getActiveStudent();
   if (!student) return { tracked: false };
@@ -574,6 +600,7 @@ export async function trackArticleReadAction(articleSlug: string) {
         where: { id: student.id },
         data: { articlesRead: { increment: 1 } },
       });
+      await syncTelemetryIncrement(student.id, "articlesReadCount");
       return { tracked: true, isNew: true };
     }
   } catch {
@@ -592,6 +619,7 @@ export async function trackWordLookupAction(word: string) {
       where: { id: student.id },
       data: { wordsLookedUp: { increment: 1 } },
     });
+    await syncTelemetryIncrement(student.id, "dictionaryLookupsCount");
     return { tracked: true };
   } catch {
     return { tracked: false };
@@ -666,4 +694,62 @@ export async function getStudentActivityStatsAction(studentId?: string) {
     nov28EarlyBirdDate: "২৮ নভেম্বর ২০২৬",
     nov28DaysRemaining,
   };
+}
+
+/**
+ * 8. User Study Wrapped Telemetry Tracker (December 2 Wrap Campaign)
+ */
+export async function getStudentStudyWrappedAction(studentId?: string) {
+  let targetId = studentId;
+  if (!targetId) {
+    const active = await getActiveStudent();
+    targetId = active?.id;
+  }
+  if (!targetId) return null;
+
+  let telemetry = await prisma.studyTelemetry.findUnique({
+    where: { userId: targetId },
+    include: {
+      student: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          targetTrack: true,
+          streakDays: true,
+          createdAt: true,
+        },
+      },
+    },
+  });
+
+  if (!telemetry) {
+    const student = await prisma.student.findUnique({ where: { id: targetId } });
+    if (!student) return null;
+
+    telemetry = await prisma.studyTelemetry.create({
+      data: {
+        userId: targetId,
+        signupDate: student.createdAt,
+        articlesReadCount: student.articlesRead,
+        dictionaryLookupsCount: student.wordsLookedUp,
+        quizzesCompletedCount: student.quizzesTaken,
+        highlightsSavedCount: student.notesSaved,
+      },
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            targetTrack: true,
+            streakDays: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+  }
+
+  return telemetry;
 }

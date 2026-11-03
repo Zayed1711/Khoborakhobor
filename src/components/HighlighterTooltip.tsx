@@ -39,11 +39,14 @@ export default function HighlighterTooltip({
         <>
           <button
             onClick={() => onLookupDictionary(selectedText)}
-            className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold text-amber-300 hover:text-white hover:bg-white/10 transition border border-amber-300/40 shrink-0"
+            className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold text-amber-300 hover:text-white hover:bg-white/10 transition border border-amber-300/40 shrink-0"
             title="শব্দের অর্থ, উচ্চারণ ও সংজ্ঞা দেখুন (Dictionary Lookup)"
           >
             <BookOpen className="w-3 h-3 text-amber-400" />
             <span>অভিধান</span>
+            <span className="text-[8px] font-bold px-1 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30">
+              PRO
+            </span>
           </button>
           <div className="w-[1px] h-3.5 bg-white/20 mx-0.5 shrink-0" />
         </>

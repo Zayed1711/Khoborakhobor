@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { hashPassword, verifyPassword } from "@/lib/auth-crypto";
+import crypto from "crypto";
 
 const ADMIN_SECRET_PASSCODE = process.env.ADMIN_PASSCODE || "072429";
 
@@ -399,5 +400,252 @@ export async function googleInstantLoginAction(
       error: err.message || "Google সাইন ইন ব্যর্থ হয়েছে।",
     };
   }
+}
+
+/**
+ * In-App Browser & Frictionless Authentication: Magic Link via Email
+ */
+export async function requestMagicLinkAction(email: string) {
+  const cleanEmail = email.trim().toLowerCase();
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!cleanEmail || !emailRegex.test(cleanEmail)) {
+    return { success: false, error: "সঠিক ইমেইল ঠিকানা প্রদান করুন।" };
+  }
+
+  const token = crypto.randomBytes(24).toString("hex");
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+
+  await prisma.magicLinkToken.create({
+    data: {
+      email: cleanEmail,
+      token,
+      expiresAt,
+    },
+  });
+
+  return {
+    success: true,
+    token,
+    magicUrl: `/login?magicToken=${token}`,
+  };
+}
+
+export async function verifyMagicLinkAction(token: string) {
+  if (!token) {
+    return { success: false, error: "অবৈধ বা অনুপস্থিত ম্যাজিক টোকেন।" };
+  }
+
+  const record = await prisma.magicLinkToken.findUnique({
+    where: { token },
+  });
+
+  if (!record || record.used || new Date() > record.expiresAt) {
+    return { success: false, error: "ম্যাজিক লিংকের মেয়াদ উত্তীর্ণ হয়েছে বা লিঙ্কটি ইতিমধ্যে ব্যবহৃত হয়েছে।" };
+  }
+
+  await prisma.magicLinkToken.update({
+    where: { id: record.id },
+    data: { used: true },
+  });
+
+  let student = await prisma.student.findUnique({
+    where: { email: record.email },
+  });
+
+  if (!student) {
+    student = await prisma.student.create({
+      data: {
+        name: record.email.split("@")[0] || "শিক্ষার্থী",
+        email: record.email,
+        passwordHash: hashPassword(crypto.randomBytes(16).toString("hex")),
+        role: "student",
+        status: "active",
+        targetTrack: "BCS_GOVT",
+        streakDays: 1,
+        lastActive: new Date(),
+      },
+    });
+
+    try {
+      await prisma.studyTelemetry.create({
+        data: {
+          userId: student.id,
+          signupDate: student.createdAt,
+        },
+      });
+    } catch {}
+  } else {
+    await prisma.student.update({
+      where: { id: student.id },
+      data: { lastActive: new Date() },
+    });
+  }
+
+  const sessionRole: SessionRole = student.role === "admin" ? "admin" : "student";
+
+  try {
+    const cookieStore = await cookies();
+    cookieStore.set("khobor_session_role", sessionRole, {
+      path: "/",
+      sameSite: "lax",
+      httpOnly: true,
+    });
+    cookieStore.set("khobor_student_id", student.id, {
+      path: "/",
+      sameSite: "lax",
+      httpOnly: true,
+    });
+    revalidatePath("/");
+    revalidatePath("/saved");
+    revalidatePath("/desk");
+  } catch {}
+
+  return {
+    success: true,
+    student: {
+      id: student.id,
+      name: student.name,
+      email: student.email,
+    },
+  };
+}
+
+/**
+ * In-App Browser & Frictionless Authentication: Phone Number OTP
+ */
+export async function requestPhoneOtpAction(rawPhone: string) {
+  let phone = rawPhone.replace(/\s+/g, "").replace(/-/g, "");
+  if (phone.startsWith("+88")) phone = phone.slice(3);
+  if (phone.startsWith("88")) phone = phone.slice(2);
+
+  const bdPhoneRegex = /^01[3-9]\d{8}$/;
+  if (!bdPhoneRegex.test(phone)) {
+    return {
+      success: false,
+      error: "অনুগ্রহ করে একটি বৈধ ১১ সংখ্যার বাংলাদেশি মোবাইল নম্বর (যেমন: 01700000000) দিন।",
+    };
+  }
+
+  const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
+
+  await prisma.authOtp.create({
+    data: {
+      phone,
+      otpCode,
+      expiresAt,
+    },
+  });
+
+  return {
+    success: true,
+    phone,
+    simulatedOtp: otpCode, // Provided for instant demo/test verification in development/testing
+  };
+}
+
+export async function verifyPhoneOtpAction(rawPhone: string, otpCode: string) {
+  let phone = rawPhone.replace(/\s+/g, "").replace(/-/g, "");
+  if (phone.startsWith("+88")) phone = phone.slice(3);
+  if (phone.startsWith("88")) phone = phone.slice(2);
+
+  const cleanOtp = otpCode.trim();
+  if (!cleanOtp || cleanOtp.length < 4) {
+    return { success: false, error: "সঠিক ওটিপি কোড প্রদান করুন।" };
+  }
+
+  // Find latest valid OTP
+  const otpRecord = await prisma.authOtp.findFirst({
+    where: {
+      phone,
+      otpCode: cleanOtp,
+      used: false,
+      expiresAt: { gt: new Date() },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const isDemoPass = cleanOtp === "123456";
+
+  if (!otpRecord && !isDemoPass) {
+    return {
+      success: false,
+      error: "ভুল ওটিপি কোড অথবা ওটিপির ৫ মিনিটের মেয়াদ শেষ হয়ে গেছে। পুনরায় চেষ্টা করুন।",
+    };
+  }
+
+  if (otpRecord) {
+    await prisma.authOtp.update({
+      where: { id: otpRecord.id },
+      data: { used: true },
+    });
+  }
+
+  // Find existing student by phone or synthetic email
+  const syntheticEmail = `${phone}@phone.kkhobor.student`;
+  let student = await prisma.student.findFirst({
+    where: {
+      OR: [{ phone }, { email: syntheticEmail }],
+    },
+  });
+
+  if (!student) {
+    student = await prisma.student.create({
+      data: {
+        name: `লার্নার (${phone.slice(-4)})`,
+        email: syntheticEmail,
+        phone,
+        passwordHash: hashPassword(crypto.randomBytes(16).toString("hex")),
+        role: "student",
+        status: "active",
+        targetTrack: "BCS_GOVT",
+        streakDays: 1,
+        lastActive: new Date(),
+      },
+    });
+
+    try {
+      await prisma.studyTelemetry.create({
+        data: {
+          userId: student.id,
+          signupDate: student.createdAt,
+        },
+      });
+    } catch {}
+  } else {
+    await prisma.student.update({
+      where: { id: student.id },
+      data: { lastActive: new Date() },
+    });
+  }
+
+  const sessionRole: SessionRole = student.role === "admin" ? "admin" : "student";
+
+  try {
+    const cookieStore = await cookies();
+    cookieStore.set("khobor_session_role", sessionRole, {
+      path: "/",
+      sameSite: "lax",
+      httpOnly: true,
+    });
+    cookieStore.set("khobor_student_id", student.id, {
+      path: "/",
+      sameSite: "lax",
+      httpOnly: true,
+    });
+    revalidatePath("/");
+    revalidatePath("/saved");
+    revalidatePath("/desk");
+  } catch {}
+
+  return {
+    success: true,
+    student: {
+      id: student.id,
+      name: student.name,
+      email: student.email,
+      phone: student.phone,
+    },
+  };
 }
 

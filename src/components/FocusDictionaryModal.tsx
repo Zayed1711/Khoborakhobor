@@ -121,6 +121,9 @@ export default function FocusDictionaryModal({
             <h3 className="text-sm font-bold tracking-wide">
               স্মার্ট অভিধান ও উচ্চারণ (Smart Lexicon)
             </h3>
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase bg-amber-500/20 text-amber-300 border border-amber-400/30 shrink-0">
+              PRO • FREE IN NOV
+            </span>
           </div>
 
           <button

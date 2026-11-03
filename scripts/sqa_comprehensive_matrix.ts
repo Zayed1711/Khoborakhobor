@@ -595,15 +595,15 @@ async function runTestSuite() {
     }
   }
 
-  // 10.3 Founding Pro Trial Navbar Badge in Header
+  // 10.3 Founding Pro Reverse Trial Navbar Pill in Header
   {
     const t0 = performance.now();
     const fs = await import('fs');
     const headerContent = fs.readFileSync('src/components/Header.tsx', 'utf-8');
-    const hasTrialBadge = headerContent.includes('ফাউন্ডিং প্রো ট্রায়াল') || headerContent.includes('ফাউন্ডিং প্রো');
-    const hasDec2Date = headerContent.includes('২ ডিসেম্বর পর্যন্ত ফ্রি');
-    const passed = hasTrialBadge && hasDec2Date;
-    recordTest('Marketing & Auth Gate', 'Navbar Branding: Founding Pro Trial Badge (Free until Dec 2)', passed, performance.now() - t0);
+    const hasReverseTrialPill = headerContent.includes('Founding Pro Trial: Active') &&
+      headerContent.includes('Days Left') &&
+      headerContent.includes('bg-amber-500 animate-pulse');
+    recordTest('Marketing & Auth Gate', 'Navbar Branding: Reverse Trial Pill (Founding Pro Trial: Active XX Days Left)', hasReverseTrialPill, performance.now() - t0);
   }
 
   // 10.4 Student Dashboard Progress & Conversion Card Hook
@@ -614,6 +614,74 @@ async function runTestSuite() {
     const hasConversionCard = (hubContent.includes('Founding Pro Progress') || hubContent.includes('ফাউন্ডিং প্রো')) &&
       hubContent.includes('২৮ নভেম্বর');
     recordTest('Marketing & Auth Gate', 'Personalized Dashboard Progress Card & Nov 28 Early-Bird Hook', hasConversionCard, performance.now() - t0);
+  }
+
+  // 10.5 Premium Feature Badging (PRO • FREE IN NOV)
+  {
+    const t0 = performance.now();
+    const fs = await import('fs');
+    const toolbarContent = fs.readFileSync('src/components/ReaderToolbar.tsx', 'utf-8');
+    const dictContent = fs.readFileSync('src/components/FocusDictionaryModal.tsx', 'utf-8');
+    const quizContent = fs.readFileSync('src/components/RightStudyRail.tsx', 'utf-8');
+    const hasToolbarPro = toolbarContent.includes('PRO • FREE IN NOV');
+    const hasDictPro = dictContent.includes('PRO • FREE IN NOV');
+    const hasQuizPro = quizContent.includes('PRO • FREE IN NOV');
+    const passed = hasToolbarPro && hasDictPro && hasQuizPro;
+    recordTest('Marketing & Auth Gate', 'Feature Tagging: PRO • FREE IN NOV (Dictionary, Notebook & Quiz Badging)', passed, performance.now() - t0);
+  }
+
+  // 10.6 Meta / In-App Browser Phone OTP Authentication
+  {
+    const t0 = performance.now();
+    try {
+      const { requestPhoneOtpAction, verifyPhoneOtpAction } = await import('../src/actions/auth');
+      const testPhone = '01799887766';
+      const otpRes = await requestPhoneOtpAction(testPhone);
+      const hasSimulatedOtp = otpRes.success && typeof otpRes.simulatedOtp === 'string';
+      const verifyRes = await verifyPhoneOtpAction(testPhone, otpRes.simulatedOtp || '123456');
+      const passed = hasSimulatedOtp && verifyRes.success && verifyRes.student?.phone === testPhone;
+      recordTest('Marketing & Auth Gate', 'In-App Webview Fix: Phone Number OTP Generation & Verification', passed, performance.now() - t0);
+    } catch (e: any) {
+      recordTest('Marketing & Auth Gate', 'In-App Webview Fix: Phone Number OTP Generation & Verification', false, performance.now() - t0, e.message);
+    }
+  }
+
+  // 10.7 Meta / In-App Browser Magic Link via Email Authentication
+  {
+    const t0 = performance.now();
+    try {
+      const { requestMagicLinkAction, verifyMagicLinkAction } = await import('../src/actions/auth');
+      const testEmail = `magic.student.${Date.now()}@gmail.com`;
+      const magicRes = await requestMagicLinkAction(testEmail);
+      const hasToken = magicRes.success && typeof magicRes.token === 'string';
+      const verifyRes = await verifyMagicLinkAction(magicRes.token || '');
+      const passed = hasToken && verifyRes.success && verifyRes.student?.email === testEmail;
+      recordTest('Marketing & Auth Gate', 'In-App Webview Fix: Email Magic Link Generation & 1-Click Verification', passed, performance.now() - t0);
+    } catch (e: any) {
+      recordTest('Marketing & Auth Gate', 'In-App Webview Fix: Email Magic Link Generation & 1-Click Verification', false, performance.now() - t0, e.message);
+    }
+  }
+
+  // 10.8 User Study Wrapped Telemetry Tracker (December 2 Campaign)
+  {
+    const t0 = performance.now();
+    try {
+      const { getStudentStudyWrappedAction } = await import('../src/actions/student');
+      const student = await prisma.student.findFirst({ where: { role: 'student' } });
+      let passed = false;
+      if (student) {
+        const telemetry = await getStudentStudyWrappedAction(student.id);
+        passed = telemetry !== null && 
+          typeof telemetry.articlesReadCount === 'number' &&
+          typeof telemetry.dictionaryLookupsCount === 'number' &&
+          typeof telemetry.quizzesCompletedCount === 'number' &&
+          typeof telemetry.highlightsSavedCount === 'number' &&
+          telemetry.userId === student.id;
+      }
+      recordTest('Marketing & Auth Gate', 'Database Schema: StudyTelemetry Tracker for Dec 2 Personal Wrapped', passed, performance.now() - t0);
+    } catch (e: any) {
+      recordTest('Marketing & Auth Gate', 'Database Schema: StudyTelemetry Tracker for Dec 2 Personal Wrapped', false, performance.now() - t0, e.message);
+    }
   }
 
   // ========================================================================

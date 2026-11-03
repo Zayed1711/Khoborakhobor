@@ -37,6 +37,7 @@ model Student {
   quizAttempts  QuizAttempt[]
   wordBank      SavedWord[]
   readHistory   ArticleRead[]
+  telemetry     StudyTelemetry?
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -177,4 +178,45 @@ model ArticleRead {
   createdAt   DateTime  @default(now())
 
   @@unique([studentId, articleId])
+}
+
+// -------------------------------------------------------------
+// 7. Frictionless Authentication (In-App Browser & Webview Fix)
+// -------------------------------------------------------------
+model AuthOtp {
+  id        String   @id @default(cuid())
+  phone     String
+  otpCode   String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([phone, otpCode])
+}
+
+model MagicLinkToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([token])
+}
+
+// -------------------------------------------------------------
+// 8. User Study Wrapped Telemetry Tracker (December 2 Campaign)
+// -------------------------------------------------------------
+model StudyTelemetry {
+  id                     String   @id @default(cuid())
+  userId                 String   @unique
+  student                Student  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  signupDate             DateTime @default(now())
+  articlesReadCount      Int      @default(0)
+  dictionaryLookupsCount Int      @default(0)
+  quizzesCompletedCount  Int      @default(0)
+  highlightsSavedCount   Int      @default(0)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 }

@@ -177,9 +177,14 @@ export default function RightStudyRail({
               </>
             )}
           </div>
-          <span className="text-[10px] text-[#717887]">
-            {isEnglishMode ? "শব্দার্থ ও প্রয়োগ" : "একটিভ রিকল"}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase bg-amber-500/10 text-amber-700 border border-amber-500/20 shrink-0">
+              PRO • FREE IN NOV
+            </span>
+            <span className="text-[10px] text-[#717887]">
+              {isEnglishMode ? "শব্দার্থ ও প্রয়োগ" : "একটিভ রিকল"}
+            </span>
+          </div>
         </div>
 
         {/* Source Citation & Context Sentence Box */}
