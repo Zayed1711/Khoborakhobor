@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
@@ -68,10 +69,10 @@ export default function ProAuthGateModal({
   const FeatureIcon = meta.icon;
   const redirectTarget = encodeURIComponent(pathname || "/");
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/65 backdrop-blur-md animate-in fade-in duration-200">
       <div 
-        className="relative w-full max-w-md bg-[#ffffff] border border-[#e2dcd0] rounded-3xl shadow-2xl overflow-hidden p-6 sm:p-7 text-[#1c1d21] animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-md bg-[#ffffff] border border-[#e2dcd0] rounded-3xl shadow-2xl overflow-hidden p-6 sm:p-7 text-[#1c1d21] animate-in zoom-in-95 duration-200 z-10"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
@@ -158,7 +159,8 @@ export default function ProAuthGateModal({
           <span>২ ডিসেম্বর পর্যন্ত ফাউন্ডিং প্রো সম্পূর্ণ ফ্রি • ১ ক্লিকে শুরু</span>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

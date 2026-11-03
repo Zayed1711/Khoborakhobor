@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Search, X, ArrowRight, Loader2 } from "lucide-react";
 import { searchArticlesAction } from "@/actions/search";
@@ -23,6 +24,11 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isPending, startTransition] = useTransition();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Keyboard shortcut listener (Ctrl+K or Cmd+K to toggle, Esc to close)
   useEffect(() => {
@@ -58,10 +64,10 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
     });
   };
 
-  if (!isOpen) return null;
+  if (!mounted || !isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-3 sm:pt-20 px-2.5 sm:px-4 bg-black/50 backdrop-blur-xs">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-3 sm:pt-20 px-2.5 sm:px-4 bg-black/65 backdrop-blur-md animate-in fade-in duration-150">
       <div
         className="fixed inset-0"
         onClick={onClose}
@@ -144,6 +150,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
           ) : null}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

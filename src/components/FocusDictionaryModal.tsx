@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { lookupConceptDictionary, DictionaryEntry } from "@/lib/dictionary-engine";
 import { getBanglaPronunciation } from "@/lib/phonetics/en-to-bn";
 import { saveCustomDictionaryTermAction, trackWordLookupAction } from "@/actions/student";
@@ -32,6 +33,11 @@ export default function FocusDictionaryModal({
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (initialWord && initialWord.trim().length > 0) {
@@ -40,7 +46,7 @@ export default function FocusDictionaryModal({
     }
   }, [initialWord]);
 
-  if (!isOpen) return null;
+  if (!mounted || !isOpen) return null;
 
   const handleLookup = async (word: string) => {
     const q = word.trim();
@@ -108,10 +114,10 @@ export default function FocusDictionaryModal({
   const cleanQuery = entry ? entry.query || entry.term.split("(")[0].trim() : searchTerm;
   const banglaPhonetic = getBanglaPronunciation(cleanQuery);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/65 backdrop-blur-md animate-in fade-in duration-200">
       <div 
-        className="relative w-full max-w-lg bg-[#ffffff] border border-[#ded8cb] rounded-2xl shadow-2xl overflow-hidden select-text animate-in zoom-in-95 duration-150"
+        className="relative w-full max-w-lg bg-[#ffffff] border border-[#ded8cb] rounded-2xl shadow-2xl overflow-hidden select-text animate-in zoom-in-95 duration-150 z-10"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header & Search Bar */}
@@ -269,6 +275,7 @@ export default function FocusDictionaryModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { 
   X, Copy, Check, Share2, MessageCircle, Send, 
   ExternalLink, Sparkles, BookOpen 
@@ -26,8 +27,13 @@ export default function ShareStudyModal({
 }: ShareStudyModalProps) {
   const [copiedNote, setCopiedNote] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || !isOpen) return null;
 
   // Generate public article URL
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://khoborakhobor.com";
@@ -80,10 +86,10 @@ export default function ShareStudyModal({
     window.open(tgUrl, "_blank", "noopener,noreferrer");
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/65 backdrop-blur-md animate-fade-in">
       <div 
-        className="relative w-full max-w-lg bg-white border border-[#ded8cb] rounded-xl shadow-2xl overflow-hidden text-[#1c1d21]"
+        className="relative w-full max-w-lg bg-white border border-[#ded8cb] rounded-xl shadow-2xl overflow-hidden text-[#1c1d21] z-10"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
@@ -181,7 +187,8 @@ export default function ShareStudyModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
