@@ -560,6 +560,63 @@ async function runTestSuite() {
   }
 
   // ========================================================================
+  // 10. MARKETING & CONVERSION ARCHITECTURE (FOUNDING PRO TRIAL)
+  // ========================================================================
+  console.log('\n--- 10. MARKETING & CONVERSION ARCHITECTURE ---');
+
+  // 10.1 Pro Gate Modal & 3-Utility Coverage (Dictionary, Quiz, Notebook)
+  {
+    const t0 = performance.now();
+    const fs = await import('fs');
+    const proGateContent = fs.readFileSync('src/components/ProAuthGateModal.tsx', 'utf-8');
+    const hasDict = proGateContent.includes('দ্বিভাষিক ধারণাগত অভিধান');
+    const hasQuiz = proGateContent.includes('অ্যাক্টিভ রিকল মাইক্রো-কুইজ');
+    const hasNotebook = proGateContent.includes('ক্লাউড স্টাডি নোটবুক');
+    const hasDec2 = proGateContent.includes('২ ডিসেম্বর পর্যন্ত ফ্রি');
+    const passed = hasDict && hasQuiz && hasNotebook && hasDec2;
+    recordTest('Marketing & Auth Gate', 'Pro Gate Modal Configuration (3-Utility Coverage & Dec 2 Trial Framing)', passed, performance.now() - t0);
+  }
+
+  // 10.2 Student Activity Counters Schema & Action Persistence
+  {
+    const t0 = performance.now();
+    try {
+      const student = await prisma.student.findFirst({
+        where: { role: 'student' }
+      });
+      const hasCounters = student !== null && 
+        typeof student.articlesRead === 'number' &&
+        typeof student.wordsLookedUp === 'number' &&
+        typeof student.quizzesTaken === 'number' &&
+        typeof student.notesSaved === 'number';
+      recordTest('Marketing & Auth Gate', 'Database Schema: Student Activity Counter Fields Verification', hasCounters, performance.now() - t0, `articlesRead: ${student?.articlesRead}, wordsLookedUp: ${student?.wordsLookedUp}`);
+    } catch (e: any) {
+      recordTest('Marketing & Auth Gate', 'Database Schema: Student Activity Counter Fields Verification', false, performance.now() - t0, e.message);
+    }
+  }
+
+  // 10.3 Founding Pro Trial Navbar Badge in Header
+  {
+    const t0 = performance.now();
+    const fs = await import('fs');
+    const headerContent = fs.readFileSync('src/components/Header.tsx', 'utf-8');
+    const hasTrialBadge = headerContent.includes('ফাউন্ডিং প্রো ট্রায়াল') || headerContent.includes('ফাউন্ডিং প্রো');
+    const hasDec2Date = headerContent.includes('২ ডিসেম্বর পর্যন্ত ফ্রি');
+    const passed = hasTrialBadge && hasDec2Date;
+    recordTest('Marketing & Auth Gate', 'Navbar Branding: Founding Pro Trial Badge (Free until Dec 2)', passed, performance.now() - t0);
+  }
+
+  // 10.4 Student Dashboard Progress & Conversion Card Hook
+  {
+    const t0 = performance.now();
+    const fs = await import('fs');
+    const hubContent = fs.readFileSync('src/components/StudentHubView.tsx', 'utf-8');
+    const hasConversionCard = (hubContent.includes('Founding Pro Progress') || hubContent.includes('ফাউন্ডিং প্রো')) &&
+      hubContent.includes('২৮ নভেম্বর');
+    recordTest('Marketing & Auth Gate', 'Personalized Dashboard Progress Card & Nov 28 Early-Bird Hook', hasConversionCard, performance.now() - t0);
+  }
+
+  // ========================================================================
   // SUMMARY REPORT & CERTIFICATION
   // ========================================================================
   console.log('\n========================================================================');

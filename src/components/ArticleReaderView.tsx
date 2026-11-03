@@ -14,9 +14,10 @@ import FactSheetTable from "@/components/FactSheetTable";
 import VocabularyTable from "@/components/VocabularyTable";
 import InterlinearArticleBody from "@/components/InterlinearArticleBody";
 import FocusDictionaryModal from "@/components/FocusDictionaryModal";
+import ProAuthGateModal, { ProGateFeature } from "@/components/ProAuthGateModal";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import { Article, StudyNote, Student } from "@/types";
-import { createStudyNoteAction, saveMarkerHighlightAction } from "@/actions/student";
+import { createStudyNoteAction, saveMarkerHighlightAction, trackArticleReadAction } from "@/actions/student";
 import { applyHighlightsToHtml } from "@/lib/highlighter";
 import { extractVocabularyTableRows } from "@/lib/vocabulary-table-engine";
 import { generateScaffoldedEnglishQuiz } from "@/lib/quiz/scaffolded-english-quiz";
@@ -56,6 +57,26 @@ export default function ArticleReaderView({
   // Focus Mode & Quick Dictionary State
   const [isDictModalOpen, setIsDictModalOpen] = useState(false);
   const [dictLookupWord, setDictLookupWord] = useState("");
+
+  // Pro Feature Auth Gate State
+  const [proGateOpen, setProGateOpen] = useState(false);
+  const [proGateFeature, setProGateFeature] = useState<ProGateFeature>("dictionary");
+
+  const requireAuthFor = (feature: ProGateFeature): boolean => {
+    if (!student) {
+      setProGateFeature(feature);
+      setProGateOpen(true);
+      return false;
+    }
+    return true;
+  };
+
+  // Track article read for logged-in students (marketing activity counter)
+  useEffect(() => {
+    if (student && article?.slug) {
+      trackArticleReadAction(article.slug).catch(() => {});
+    }
+  }, [student, article?.slug]);
 
   const { mode, isEnglishMode } = useAppMode();
   const isEnglish = !isBengaliText(article.title);
@@ -154,8 +175,9 @@ export default function ArticleReaderView({
     }
   };
 
-  // Open Dictionary Modal with word
+  // Open Dictionary Modal with word (Auth-gated for Pro conversion)
   const handleOpenDictionary = (term?: string) => {
+    if (!requireAuthFor("dictionary")) return;
     if (term) {
       setDictLookupWord(term);
     }
@@ -222,14 +244,11 @@ export default function ArticleReaderView({
 
   const handleApplyHighlight = async (colorName: "হলুদ মার্কার" | "সবুজ মার্কার" | "বেগুনি মার্কার") => {
     if (!selectedSnippet) return;
-    if (!student) {
-      alert("ব্যক্তিগত ক্লাউড নোটবুকে হাইলাইট সংরক্ষণ করতে অনুগ্রহ করে লগইন করুন।");
-      return;
-    }
+    if (!requireAuthFor("notebook")) return;
 
     try {
       const newNote = await saveMarkerHighlightAction(
-        student.id,
+        student!.id,
         article.slug,
         selectedSnippet,
         colorName
@@ -247,14 +266,12 @@ export default function ArticleReaderView({
 
   const handleAddMemoNote = async () => {
     if (!selectedSnippet) return;
-    if (!student) {
-      alert("ব্যক্তিগত স্টাডি নোট সংরক্ষণ করতে অনুগ্রহ করে লগইন করুন।");
-      return;
-    }
+    if (!requireAuthFor("notebook")) return;
+
     setIsSavingNote(true);
     try {
       const newNote = await createStudyNoteAction(
-        student.id,
+        student!.id,
         article.slug,
         selectedSnippet,
         personalMemo || undefined
@@ -678,10 +695,15 @@ export default function ArticleReaderView({
                 questions={englishQuizzes}
                 studentId={student?.id || ""}
                 isEnglishMode
+                onAuthRequired={() => requireAuthFor("quiz")}
               />
             ) : (
               jobPrepQuizzes.length > 0 && (
-                <MicroQuiz questions={jobPrepQuizzes} studentId={student?.id || ""} />
+                <MicroQuiz
+                  questions={jobPrepQuizzes}
+                  studentId={student?.id || ""}
+                  onAuthRequired={() => requireAuthFor("quiz")}
+                />
               )
             )}
 
@@ -742,6 +764,13 @@ export default function ArticleReaderView({
           setToastMessage(msg);
           setTimeout(() => setToastMessage(""), 2800);
         }}
+      />
+
+      {/* Founding Pro Feature Auth Gate Modal */}
+      <ProAuthGateModal
+        isOpen={proGateOpen}
+        onClose={() => setProGateOpen(false)}
+        feature={proGateFeature}
       />
 
       {/* Floating Action Bubble Toggle (STRICTLY MOBILE ONLY: md:hidden) */}

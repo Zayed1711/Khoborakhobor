@@ -2,7 +2,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import StudentHubView from "@/components/StudentHubView";
-import { getActiveStudent, getStudentQuizAnalytics } from "@/actions/student";
+import { getActiveStudent, getStudentQuizAnalytics, getStudentActivityStatsAction } from "@/actions/student";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
@@ -15,7 +15,7 @@ export default async function SavedNotebookPage() {
     redirect("/login?redirect=/saved");
   }
 
-  const [notes, savedWords, quizAnalytics] = await Promise.all([
+  const [notes, savedWords, quizAnalytics, activityStats] = await Promise.all([
     prisma.studyNote.findMany({
       where: { studentId: student.id },
       include: {
@@ -51,6 +51,7 @@ export default async function SavedNotebookPage() {
       orderBy: { createdAt: "desc" },
     }),
     getStudentQuizAnalytics(student.id),
+    getStudentActivityStatsAction(student.id),
   ]);
 
   return (
@@ -65,6 +66,7 @@ export default async function SavedNotebookPage() {
           notes={notes}
           savedWords={savedWords}
           quizAnalytics={quizAnalytics}
+          activityStats={activityStats}
         />
       </main>
 

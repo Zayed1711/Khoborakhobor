@@ -4,10 +4,10 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import KhoborLogo from "@/components/KhoborLogo";
-import { studentLoginAction, studentSignupAction } from "@/actions/auth";
+import { studentLoginAction, studentSignupAction, googleInstantLoginAction } from "@/actions/auth";
 import { 
   Lock, Mail, User, Eye, EyeOff, 
-  ArrowRight, ShieldCheck, GraduationCap, Phone
+  ArrowRight, ShieldCheck, GraduationCap, Phone, Sparkles
 } from "lucide-react";
 
 function AuthForm() {
@@ -37,6 +37,24 @@ function AuthForm() {
   const [phone, setPhone] = useState("");
   const [targetTrack, setTargetTrack] = useState("BCS_GOVT");
   const [institution, setInstitution] = useState("");
+
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await googleInstantLoginAction();
+      if (res.success) {
+        router.push(redirectUrl);
+        router.refresh();
+      } else {
+        setError(res.error || "Google সাইন ইন সম্পন্ন করা যায়নি।");
+      }
+    } catch (err: any) {
+      setError(err.message || "সার্ভার সংযোগে ত্রুটি দেখা দিয়েছে।");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,7 +142,61 @@ function AuthForm() {
       </div>
 
       {/* Main Card */}
-      <div className="bg-white border border-[#ded8cb] rounded-2xl shadow-sm p-6 sm:p-8 space-y-6">
+      <div className="bg-white border border-[#ded8cb] rounded-2xl shadow-sm p-6 sm:p-8 space-y-5">
+        {/* Founding Pro Trial Header Banner */}
+        <div className="bg-[#fcfaf6] border border-[#ebd8b0] rounded-xl p-3 flex items-center justify-between gap-3 shadow-2xs">
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+              <span className="text-[11px] font-bold text-amber-950 uppercase tracking-wide">
+                ফাউন্ডিং প্রো ট্রায়াল (Founding Pro)
+              </span>
+            </div>
+            <p className="text-[11px] text-[#656d7b] mt-0.5">
+              অভিধান, কুইজ ও ক্লাউড নোটবুক ২ ডিসেম্বর পর্যন্ত ১০০% ফ্রি
+            </p>
+          </div>
+          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold text-[#842323] bg-[#fbf5f5] border border-[#eddada] shrink-0">
+            FREE TRIAL
+          </span>
+        </div>
+
+        {/* 1-Click Google Sign-In */}
+        <button
+          type="button"
+          onClick={handleGoogleSignIn}
+          disabled={loading}
+          className="w-full py-2.5 px-4 bg-white hover:bg-[#faf7f2] border border-[#d9d2c5] text-[#1c1d21] text-xs font-bold rounded-xl transition shadow-2xs flex items-center justify-center gap-2.5 disabled:opacity-50 active:scale-[0.99] cursor-pointer"
+        >
+          <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+            <path
+              fill="#4285F4"
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+            />
+            <path
+              fill="#34A853"
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+            />
+            <path
+              fill="#FBBC05"
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+            />
+            <path
+              fill="#EA4335"
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+            />
+          </svg>
+          <span>{loading ? "সংযোগ স্থাপন হচ্ছে..." : "Google দিয়ে ১-ক্লিক সাইন ইন"}</span>
+        </button>
+
+        {/* Divider */}
+        <div className="relative flex items-center justify-center my-1">
+          <div className="border-t border-[#ece6d8] w-full"></div>
+          <span className="bg-white px-3 text-[10px] text-[#8e95a2] uppercase tracking-wider font-semibold absolute">
+            অথবা ইমেইল দিয়ে
+          </span>
+        </div>
+
         {/* Clean Segmented Tab Toggle */}
         <div className="flex rounded-xl bg-[#f5f1e8] p-1 border border-[#e8e2d4]">
           <button

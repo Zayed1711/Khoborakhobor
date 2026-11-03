@@ -145,6 +145,16 @@ export async function submitQuizAnswerAction(
         isCorrect,
       },
     });
+
+    try {
+      await prisma.student.update({
+        where: { id: studentId },
+        data: { quizzesTaken: { increment: 1 } },
+      });
+    } catch {
+      // safe fallback
+    }
+
     revalidatePath("/saved");
   }
 
@@ -278,6 +288,15 @@ export async function createStudyNoteAction(
       memo: memo || null,
     },
   });
+
+  try {
+    await prisma.student.update({
+      where: { id: studentId },
+      data: { notesSaved: { increment: 1 } },
+    });
+  } catch {
+    // safe fallback
+  }
 
   revalidatePath(`/article/${articleSlug}`);
   revalidatePath("/saved");
@@ -416,6 +435,15 @@ export async function saveMarkerHighlightAction(
     },
   });
 
+  try {
+    await prisma.student.update({
+      where: { id: studentId },
+      data: { notesSaved: { increment: 1 } },
+    });
+  } catch {
+    // safe fallback
+  }
+
   revalidatePath(`/article/${articleSlug}`);
   revalidatePath("/saved");
   return note;
@@ -509,4 +537,133 @@ export async function getActiveStudent() {
   }
 
   return null;
+}
+
+// -------------------------------------------------------------
+// 7. User Activity Counter & Marketing Analytics Engine
+// -------------------------------------------------------------
+export async function trackArticleReadAction(articleSlug: string) {
+  const student = await getActiveStudent();
+  if (!student) return { tracked: false };
+
+  const article = await prisma.article.findUnique({
+    where: { slug: articleSlug },
+    select: { id: true },
+  });
+  if (!article) return { tracked: false };
+
+  try {
+    const existing = await prisma.articleRead.findUnique({
+      where: {
+        studentId_articleId: {
+          studentId: student.id,
+          articleId: article.id,
+        },
+      },
+    });
+
+    if (!existing) {
+      await prisma.articleRead.create({
+        data: {
+          studentId: student.id,
+          articleId: article.id,
+        },
+      });
+
+      await prisma.student.update({
+        where: { id: student.id },
+        data: { articlesRead: { increment: 1 } },
+      });
+      return { tracked: true, isNew: true };
+    }
+  } catch {
+    // safe fallback
+  }
+
+  return { tracked: true, isNew: false };
+}
+
+export async function trackWordLookupAction(word: string) {
+  const student = await getActiveStudent();
+  if (!student) return { tracked: false };
+
+  try {
+    await prisma.student.update({
+      where: { id: student.id },
+      data: { wordsLookedUp: { increment: 1 } },
+    });
+    return { tracked: true };
+  } catch {
+    return { tracked: false };
+  }
+}
+
+export async function getStudentActivityStatsAction(studentId?: string) {
+  let targetId = studentId;
+  if (!targetId) {
+    const active = await getActiveStudent();
+    targetId = active?.id;
+  }
+  if (!targetId) return null;
+
+  const student = await prisma.student.findUnique({
+    where: { id: targetId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      articlesRead: true,
+      wordsLookedUp: true,
+      quizzesTaken: true,
+      notesSaved: true,
+      streakDays: true,
+    },
+  });
+
+  if (!student) return null;
+
+  const [actualNotes, actualWords, actualAttempts, actualReads] = await Promise.all([
+    prisma.studyNote.count({ where: { studentId: targetId } }),
+    prisma.savedWord.count({ where: { studentId: targetId } }),
+    prisma.quizAttempt.count({ where: { studentId: targetId } }),
+    prisma.articleRead.count({ where: { studentId: targetId } }),
+  ]);
+
+  const effectiveArticlesRead = Math.max(student.articlesRead, actualReads);
+  const effectiveWordsLookedUp = Math.max(student.wordsLookedUp, actualWords);
+  const effectiveQuizzesTaken = Math.max(student.quizzesTaken, actualAttempts);
+  const effectiveNotesSaved = Math.max(student.notesSaved, actualNotes);
+
+  const totalMinutesSaved =
+    effectiveArticlesRead * 15 +
+    effectiveWordsLookedUp * 2 +
+    effectiveQuizzesTaken * 3 +
+    effectiveNotesSaved * 5;
+  const hoursSavedEstimate = Math.max(1, Math.round(totalMinutesSaved / 60));
+
+  const now = new Date();
+  const trialEnd = new Date("2026-12-02T23:59:59+06:00");
+  const nov28EarlyBird = new Date("2026-11-28T00:00:00+06:00");
+
+  const diffTrialMs = trialEnd.getTime() - now.getTime();
+  const trialDaysRemaining = Math.max(0, Math.ceil(diffTrialMs / (1000 * 60 * 60 * 24)));
+
+  const diffNov28Ms = nov28EarlyBird.getTime() - now.getTime();
+  const nov28DaysRemaining = Math.max(0, Math.ceil(diffNov28Ms / (1000 * 60 * 60 * 24)));
+
+  return {
+    studentId: student.id,
+    name: student.name,
+    email: student.email,
+    articlesRead: effectiveArticlesRead,
+    wordsLookedUp: effectiveWordsLookedUp,
+    quizzesTaken: effectiveQuizzesTaken,
+    notesSaved: effectiveNotesSaved,
+    streakDays: student.streakDays,
+    hoursSavedEstimate,
+    trialEndDate: "২ ডিসেম্বর ২০২৬",
+    trialDaysRemaining,
+    nov28EarlyBirdDate: "২৮ নভেম্বর ২০২৬",
+    nov28DaysRemaining,
+  };
 }

@@ -26,10 +26,17 @@ model Student {
   streakDays    Int       @default(1)
   lastActive    DateTime  @default(now())
   
+  // Activity counters for marketing & conversion analytics
+  articlesRead  Int       @default(0)
+  wordsLookedUp Int       @default(0)
+  quizzesTaken  Int       @default(0)
+  notesSaved    Int       @default(0)
+
   notes         StudyNote[]
   savedArticles SavedArticle[]
   quizAttempts  QuizAttempt[]
   wordBank      SavedWord[]
+  readHistory   ArticleRead[]
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -73,6 +80,7 @@ model Article {
   quizQuestions QuizQuestion[]
   savedBy       SavedArticle[]
   notes         StudyNote[]
+  readHistory   ArticleRead[]
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -155,4 +163,18 @@ model StudyNote {
   quoteText   String    // The highlighted excerpt from the article
   memo        String?   // Personal notes or reflections written by the student
   createdAt   DateTime  @default(now())
+}
+
+// -------------------------------------------------------------
+// 6. User Activity History & Conversion Tracking
+// -------------------------------------------------------------
+model ArticleRead {
+  id          String    @id @default(cuid())
+  studentId   String
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  articleId   String
+  article     Article   @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@unique([studentId, articleId])
 }

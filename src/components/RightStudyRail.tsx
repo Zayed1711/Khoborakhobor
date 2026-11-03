@@ -7,6 +7,8 @@ import {
   CheckCircle2, XCircle, ArrowRight, ShieldCheck, BookOpen, GraduationCap 
 } from "lucide-react";
 import ThemeSwitcher from "./ThemeSwitcher";
+import ProAuthGateModal from "./ProAuthGateModal";
+import { getCurrentSession } from "@/actions/auth";
 import { useAppMode } from "@/context/LanguageContext";
 
 export interface DailyFeaturedQuizItem {
@@ -87,6 +89,7 @@ export default function RightStudyRail({
   const { isEnglishMode } = useAppMode();
   const [selectedOpt, setSelectedOpt] = useState<number | null>(null);
   const [answered, setAnswered] = useState(false);
+  const [isProGateOpen, setIsProGateOpen] = useState(false);
 
   const activeQuiz =
     (isEnglishMode ? featuredEnglishQuiz : featuredQuiz) ||
@@ -98,8 +101,17 @@ export default function RightStudyRail({
     setAnswered(false);
   }, [isEnglishMode, activeQuiz?.question]);
 
-  const handleSelect = (idx: number) => {
+  const handleSelect = async (idx: number) => {
     if (answered) return;
+    try {
+      const session = await getCurrentSession();
+      if (!session.student) {
+        setIsProGateOpen(true);
+        return;
+      }
+    } catch {
+      // safe fallback
+    }
     setSelectedOpt(idx);
     setAnswered(true);
   };
@@ -306,6 +318,13 @@ export default function RightStudyRail({
           {isEnglishMode ? "Dual-Track Academic Edition" : "সর্বস্বত্ব সংরক্ষিত।"}
         </p>
       </div>
+
+      {/* Pro Auth Gate Modal for Daily Quiz */}
+      <ProAuthGateModal
+        isOpen={isProGateOpen}
+        onClose={() => setIsProGateOpen(false)}
+        feature="quiz"
+      />
     </aside>
   );
 }

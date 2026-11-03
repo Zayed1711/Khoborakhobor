@@ -52,6 +52,7 @@ interface StudentHubViewProps {
     categoryBreakdown: { name: string; total: number; correct: number; percent: number }[];
     mistakes: any[];
   };
+  activityStats?: any;
 }
 
 export default function StudentHubView({
@@ -59,6 +60,7 @@ export default function StudentHubView({
   notes,
   savedWords,
   quizAnalytics,
+  activityStats,
 }: StudentHubViewProps) {
   const router = useRouter();
   const { mode, isEnglishMode } = useAppMode();
@@ -335,6 +337,106 @@ export default function StudentHubView({
             <Edit3 className="w-3.5 h-3.5 text-[#842323]" />
             <span className="hidden sm:inline">প্রোফাইল সেটিংস</span>
           </button>
+        </div>
+      </div>
+
+      {/* ======================================================== */}
+      {/* FOUNDING PRO PROGRESS & CONVERSION CARD (Marketing Asset) */}
+      {/* ======================================================== */}
+      <div className="bg-linear-to-br from-[#ffffff] via-[#fffdf9] to-[#fbf7ee] border-2 border-[#e6c989] rounded-2xl p-5 sm:p-6 shadow-xs space-y-4 no-print relative overflow-hidden">
+        {/* Subtle background decoration */}
+        <div className="absolute top-0 right-0 w-48 h-48 bg-linear-to-bl from-amber-100/40 to-transparent rounded-full -mr-16 -mt-16 pointer-events-none"></div>
+
+        {/* Header with trial expiry countdown */}
+        <div className="flex flex-wrap items-center justify-between gap-3 relative z-10">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-[#842323] to-[#591414] text-white flex items-center justify-center shadow-xs">
+              <Sparkles className="w-5 h-5 text-amber-300" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm sm:text-base font-bold text-[#1c1d21] font-serif">
+                  আপনার ফাউন্ডিং প্রো অগ্রগতি ও বিশ্লেষণ (Founding Pro Progress)
+                </h3>
+                <span className="text-[10px] uppercase tracking-wider font-extrabold bg-amber-400 text-neutral-950 px-2 py-0.5 rounded-full shadow-2xs">
+                  Active Pro Trial
+                </span>
+              </div>
+              <p className="text-xs text-[#717887]">
+                বিনামূল্যে প্রো ট্রায়াল সক্রিয় রয়েছে <strong className="text-[#842323]">২ ডিসেম্বর ২০২৬</strong> পর্যন্ত
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white/90 backdrop-blur-xs border border-amber-300 px-3.5 py-1.5 rounded-xl text-right shadow-2xs">
+            <span className="text-[11px] text-[#717887] block font-medium">ট্রায়াল অবশিষ্ট</span>
+            <span className="text-sm font-extrabold text-[#842323] font-mono">
+              {activityStats?.trialDaysRemaining ?? 29} দিন
+            </span>
+          </div>
+        </div>
+
+        {/* 4 Core User Activity Counters */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 relative z-10 pt-1">
+          {/* 1. Articles Read */}
+          <div className="p-3.5 bg-white border border-[#e8dfcf] rounded-xl shadow-2xs">
+            <span className="text-[11px] text-[#717887] font-medium block">পঠিত বিশ্লেষণ</span>
+            <div className="flex items-baseline gap-1 mt-1">
+              <span className="text-xl sm:text-2xl font-black text-[#1c1d21] font-mono">
+                {activityStats?.articlesRead ?? (student?.articlesRead || 0)}
+              </span>
+              <span className="text-xs text-[#8e95a2]">টি</span>
+            </div>
+          </div>
+
+          {/* 2. Words Looked Up */}
+          <div className="p-3.5 bg-white border border-[#e8dfcf] rounded-xl shadow-2xs">
+            <span className="text-[11px] text-[#717887] font-medium block">শব্দ অনুসন্ধান</span>
+            <div className="flex items-baseline gap-1 mt-1">
+              <span className="text-xl sm:text-2xl font-black text-[#1e40af] font-mono">
+                {activityStats?.wordsLookedUp ?? (student?.wordsLookedUp || 0)}
+              </span>
+              <span className="text-xs text-[#8e95a2]">টি</span>
+            </div>
+          </div>
+
+          {/* 3. Quizzes Taken */}
+          <div className="p-3.5 bg-white border border-[#e8dfcf] rounded-xl shadow-2xs">
+            <span className="text-[11px] text-[#717887] font-medium block">কুইজ সম্পন্ন</span>
+            <div className="flex items-baseline gap-1 mt-1">
+              <span className="text-xl sm:text-2xl font-black text-[#842323] font-mono">
+                {activityStats?.quizzesTaken ?? (student?.quizzesTaken || 0)}
+              </span>
+              <span className="text-xs text-[#8e95a2]">টি</span>
+            </div>
+          </div>
+
+          {/* 4. Notes Saved */}
+          <div className="p-3.5 bg-white border border-[#e8dfcf] rounded-xl shadow-2xs">
+            <span className="text-[11px] text-[#717887] font-medium block">সংরক্ষিত নোট</span>
+            <div className="flex items-baseline gap-1 mt-1">
+              <span className="text-xl sm:text-2xl font-black text-emerald-700 font-mono">
+                {activityStats?.notesSaved ?? (student?.notesSaved || notes.length)}
+              </span>
+              <span className="text-xs text-[#8e95a2]">টি</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Personalized Value Statement & Nov 28 Conversion Hook */}
+        <div className="bg-[#faf5eb] border border-[#ecdac2] p-3.5 sm:p-4 rounded-xl text-xs sm:text-sm text-[#453e34] leading-relaxed relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="space-y-1">
+            <p className="font-semibold text-[#1c1d21]">
+              আপনি ফাউন্ডিং প্রো-এর মাধ্যমে ইতোমধ্যে আনুমানিক <span className="text-[#842323] font-bold underline font-mono">{activityStats?.hoursSavedEstimate ?? 12} ঘণ্টা</span> পড়ার সময় বাঁচিয়েছেন।
+            </p>
+            <p className="text-[12px] text-[#6d665b]">
+              আপনার বিনামূল্যে ফাউন্ডিং প্রো সুবিধা ২ ডিসেম্বর পর্যন্ত সক্রিয় থাকবে। আগামী <strong className="text-[#842323]">২৮ নভেম্বর</strong> বিশেষ আর্লি-বার্ড অফারে প্রো সাবস্ক্রিপশন নিশ্চিত করতে প্রস্তুত থাকুন!
+            </p>
+          </div>
+
+          <div className="shrink-0 bg-[#842323] text-white px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-2xs">
+            ২৮ নভেম্বর আর্লি-বার্ড
+          </div>
         </div>
       </div>
 

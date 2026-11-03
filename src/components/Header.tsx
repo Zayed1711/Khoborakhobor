@@ -140,6 +140,26 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
               </button>
             </div>
 
+            {/* Logged-in Founding Pro Trial Badge (Mobile) */}
+            {isLoggedIn ? (
+              <Link
+                href="/saved"
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-linear-to-r from-amber-50 to-orange-50 border border-amber-300 text-amber-900 text-[10px] font-bold shadow-2xs"
+                title="ফাউন্ডিং প্রো ট্রায়াল: ২ ডিসেম্বর পর্যন্ত ফ্রি"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
+                <span>Pro</span>
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#faf8f4] border border-[#ded8cb] text-[#842323] text-[10px] font-bold"
+                title="লগইন বা সাইন আপ"
+              >
+                <span>লগইন</span>
+              </Link>
+            )}
+
             {/* Eye-Care Theme Switcher */}
             <ThemeSwitcher compact />
 
@@ -336,8 +356,33 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
               </kbd>
             </button>
 
-            {/* Profile & Login Link */}
-            {!isLoggedIn && (
+            {/* Profile & Founding Pro Badge (Desktop) */}
+            {isLoggedIn ? (
+              <div className="flex items-center gap-2 shrink-0">
+                {/* Founding Pro Trial Navbar Badge */}
+                <Link
+                  href="/saved"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-linear-to-r from-amber-50 to-orange-50 border border-amber-300 hover:border-amber-400 text-amber-900 text-xs font-bold shadow-2xs transition group"
+                  title="ফাউন্ডিং প্রো ট্রায়াল: ২ ডিসেম্বর পর্যন্ত সকল প্রো ফিচার বিনামূল্যে উপভোগ করুন"
+                >
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
+                  <span className="tracking-tight font-serif font-bold text-[#842323]">Founding Pro</span>
+                  <span className="text-[10px] text-amber-700 font-medium hidden lg:inline border-l border-amber-200 pl-1.5">Free until Dec 2</span>
+                </Link>
+
+                {/* Student Profile / Hub Shortcut */}
+                <Link
+                  href="/saved"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#ded8cb] bg-[#faf8f4] hover:bg-[#ede7da] text-xs font-semibold text-[#1c1d21] transition shadow-2xs"
+                  title="শিক্ষার্থী ড্যাশবোর্ড ও ব্যক্তিগত স্টাডি হাব"
+                >
+                  <UserCheck className={`w-3.5 h-3.5 ${isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"}`} />
+                  <span className="max-w-[70px] sm:max-w-[90px] truncate">
+                    {sessionState?.student?.name ? sessionState.student.name.split(" ")[0] : "প্রোফাইল"}
+                  </span>
+                </Link>
+              </div>
+            ) : (
               <Link
                 href="/login"
                 className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-lg border border-[#ded8cb] bg-[#faf8f4] hover:bg-[#ede7da] text-xs font-semibold text-[#1c1d21] transition shadow-2xs shrink-0"

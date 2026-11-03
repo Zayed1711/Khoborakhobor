@@ -79,7 +79,13 @@ export interface Student {
   id: string;
   name: string;
   email: string;
+  phone?: string | null;
   targetTrack: string;
   institution?: string | null;
   streakDays: number;
+  avatar?: string | null;
+  articlesRead?: number;
+  wordsLookedUp?: number;
+  quizzesTaken?: number;
+  notesSaved?: number;
 }

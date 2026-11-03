@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { lookupConceptDictionary, DictionaryEntry } from "@/lib/dictionary-engine";
 import { getBanglaPronunciation } from "@/lib/phonetics/en-to-bn";
-import { saveCustomDictionaryTermAction } from "@/actions/student";
+import { saveCustomDictionaryTermAction, trackWordLookupAction } from "@/actions/student";
 import { Student } from "@/types";
 import { 
   Search, Volume2, BookmarkPlus, Check, X, 
@@ -51,6 +51,9 @@ export default function FocusDictionaryModal({
     try {
       const res = await lookupConceptDictionary(q);
       setEntry(res);
+      if (res && student) {
+        trackWordLookupAction(q).catch(() => {});
+      }
     } catch (err) {
       console.error(err);
     } finally {

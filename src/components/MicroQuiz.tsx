@@ -9,9 +9,10 @@ interface MicroQuizProps {
   questions: any[];
   studentId: string;
   isEnglishMode?: boolean;
+  onAuthRequired?: () => void;
 }
 
-export default function MicroQuiz({ questions, studentId, isEnglishMode = false }: MicroQuizProps) {
+export default function MicroQuiz({ questions, studentId, isEnglishMode = false, onAuthRequired }: MicroQuizProps) {
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, number>>({});
   const [results, setResults] = useState<
     Record<string, { isCorrect: boolean; correctOption: number; explanation?: string | null }>
@@ -21,11 +22,19 @@ export default function MicroQuiz({ questions, studentId, isEnglishMode = false 
   if (!questions || questions.length === 0) return null;
 
   const handleSelect = (questionId: string, optionIdx: number) => {
+    if (!studentId && onAuthRequired) {
+      onAuthRequired();
+      return;
+    }
     if (results[questionId]) return; // already evaluated
     setSelectedAnswers((prev) => ({ ...prev, [questionId]: optionIdx }));
   };
 
   const handleVerify = async (q: any) => {
+    if (!studentId && onAuthRequired) {
+      onAuthRequired();
+      return;
+    }
     const chosen = selectedAnswers[q.id];
     if (chosen === undefined) return;
 

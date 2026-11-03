@@ -328,3 +328,76 @@ export async function getCurrentSession(): Promise<UserSession> {
     student: null,
   };
 }
+
+/**
+ * Instant 1-Click Login / Register for Google Auth & Demo Flow
+ */
+export async function googleInstantLoginAction(
+  email?: string, 
+  name?: string
+): Promise<{ success: true; student: { id: string; name: string; email: string } } | { success: false; error: string }> {
+  try {
+    const targetEmail = (email || "student.founding@gmail.com").trim().toLowerCase();
+    const targetName = name || "ফাউন্ডিং প্রো লার্নার";
+
+    let student = await prisma.student.findUnique({
+      where: { email: targetEmail },
+    });
+
+    if (!student) {
+      student = await prisma.student.create({
+        data: {
+          name: targetName,
+          email: targetEmail,
+          passwordHash: hashPassword("khobor_pro_trial_2026"),
+          role: "student",
+          status: "active",
+          targetTrack: "BCS_GOVT",
+          streakDays: 1,
+          lastActive: new Date(),
+        },
+      });
+    } else {
+      await prisma.student.update({
+        where: { id: student.id },
+        data: { lastActive: new Date() },
+      });
+    }
+
+    const sessionRole: SessionRole = student.role === "admin" ? "admin" : "student";
+
+    try {
+      const cookieStore = await cookies();
+      cookieStore.set("khobor_session_role", sessionRole, {
+        path: "/",
+        sameSite: "lax",
+        httpOnly: true,
+      });
+      cookieStore.set("khobor_student_id", student.id, {
+        path: "/",
+        sameSite: "lax",
+        httpOnly: true,
+      });
+      revalidatePath("/");
+      revalidatePath("/saved");
+      revalidatePath("/desk");
+    } catch {
+      // Graceful fallback for CLI/script runs
+    }
+
+    return {
+      success: true,
+      student: {
+        id: student.id,
+        name: student.name,
+        email: student.email,
+      },
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err.message || "Google সাইন ইন ব্যর্থ হয়েছে।",
+    };
+  }
+}
+
