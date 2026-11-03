@@ -104,8 +104,21 @@ export default function RightStudyRail({
     setAnswered(true);
   };
 
+  const cleanSourceName =
+    activeQuiz.sourceName?.split("(")[0]?.trim() ||
+    (isEnglishMode ? "Editorial Desk" : "উৎস সংবাদ");
+
+  // Extract topic tag if present in [Topic] format for clean presentation
+  const rawQ = activeQuiz.question || "";
+  const topicMatch = rawQ.match(/^\[(.*?)\]\s*(.*)$/);
+  const topicBadge = topicMatch ? topicMatch[1] : (activeQuiz.topicTag || null);
+  const questionBody = topicMatch ? topicMatch[2] : rawQ;
+
+  const OPTION_PREFIX_BN = ["(ক)", "(খ)", "(গ)", "(ঘ)"];
+  const OPTION_PREFIX_EN = ["(A)", "(B)", "(C)", "(D)"];
+
   return (
-    <aside className="w-72 xl:w-80 shrink-0 hidden min-[1140px]:flex flex-col gap-4 sticky top-[185px] h-[calc(100vh-12.5rem)] overflow-y-auto py-2 pr-1 select-none">
+    <aside className="w-72 xl:w-80 shrink-0 hidden min-[1140px]:flex flex-col gap-4 sticky top-[185px] h-[calc(100vh-12.5rem)] overflow-y-auto overflow-x-hidden py-2 pr-1 pl-0.5 select-none">
       {/* 1. Daily Study Streak Card */}
       <div className={`p-3 sm:p-3.5 rounded-2xl shadow-2xs space-y-1.5 border transition-all ${
         isEnglishMode
@@ -137,7 +150,7 @@ export default function RightStudyRail({
       </div>
 
       {/* 2. Micro-Quiz of the Day Challenge */}
-      <div id="tutorial-daily-quiz" className="p-3 sm:p-3.5 bg-white border border-[#ded8cb] rounded-2xl shadow-2xs space-y-2.5 transition-all">
+      <div id="tutorial-daily-quiz" className="p-3 sm:p-3.5 bg-white border border-[#ded8cb] rounded-2xl shadow-2xs space-y-2.5 transition-all overflow-hidden">
         <div className="flex items-center justify-between pb-1.5 border-b border-[#f4efe4]">
           <div className="flex items-center gap-1.5 text-xs font-bold text-[#842323]">
             {isEnglishMode ? (
@@ -164,7 +177,7 @@ export default function RightStudyRail({
             <div className="flex items-center justify-between text-[11px] gap-2 flex-wrap">
               <div className="flex items-center gap-1.5 min-w-0">
                 <span className="font-bold text-[#842323] uppercase tracking-wide text-[10px] bg-[#f0eae1] px-1.5 py-0.5 rounded border border-[#ded8cb] shrink-0 font-serif">
-                  {activeQuiz.sourceName || (isEnglishMode ? "Editorial Desk" : "উৎস সংবাদ")}
+                  {cleanSourceName}
                 </span>
                 {activeQuiz.paragraphRef && (
                   <span className="text-[10px] text-[#717887] font-mono shrink-0">
@@ -196,9 +209,16 @@ export default function RightStudyRail({
           </div>
         )}
 
-        <p className="text-xs font-bold text-[#1c1d21] leading-snug">
-          {activeQuiz.question}
-        </p>
+        <div className="space-y-1">
+          {topicBadge && (
+            <span className="inline-block px-1.5 py-0.5 rounded bg-[#f4efe4] text-[#842323] text-[9.5px] font-semibold border border-[#ded8cb]/80 uppercase tracking-wide">
+              {topicBadge}
+            </span>
+          )}
+          <p className="text-xs font-bold text-[#1c1d21] leading-relaxed break-words">
+            {questionBody}
+          </p>
+        </div>
 
         <div className="space-y-1.5">
           {activeQuiz.options.map((opt, idx) => {
@@ -217,14 +237,19 @@ export default function RightStudyRail({
                 type="button"
                 disabled={answered}
                 onClick={() => handleSelect(idx)}
-                className={`w-full text-left p-2.5 rounded-lg border text-xs transition flex items-center justify-between ${btnStyle}`}
+                className={`w-full text-left p-2.5 rounded-lg border text-xs transition flex items-start justify-between gap-2 overflow-hidden ${btnStyle}`}
               >
-                <span>{opt}</span>
+                <div className="flex items-start gap-1.5 flex-1 min-w-0">
+                  <span className="font-mono font-semibold text-[#717887] text-[11px] shrink-0 mt-0.5">
+                    {isEnglishMode ? OPTION_PREFIX_EN[idx] || `(${idx + 1})` : OPTION_PREFIX_BN[idx] || `(${idx + 1})`}
+                  </span>
+                  <span className="flex-1 min-w-0 break-words leading-relaxed text-[11.5px]">{opt}</span>
+                </div>
                 {answered && idx === activeQuiz.correctOption && (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                 )}
                 {answered && selectedOpt === idx && idx !== activeQuiz.correctOption && (
-                  <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <XCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                 )}
               </button>
             );

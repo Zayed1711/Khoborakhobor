@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import SocialFeedCard from "./SocialFeedCard";
 import CapsuleStoryPills from "./CapsuleStoryPills";
-import DateArchiveStrip from "./DateArchiveStrip";
+import DateArchiveDropdown from "./DateArchiveDropdown";
 import { 
   BookOpen, Flame, CheckCircle2, XCircle, ArrowRight, ChevronDown, ChevronUp 
 } from "lucide-react";
@@ -157,7 +157,7 @@ export default function SocialFeedStream({
           {/* Expandable Daily Challenge Body */}
           {isMobileQuizExpanded && (
             <div className="space-y-2.5 pt-0.5">
-              <p className="text-xs font-bold text-[#1c1d21] leading-snug">
+              <p className="text-xs font-bold text-[#1c1d21] leading-relaxed break-words">
                 {activeQuiz.question}
               </p>
 
@@ -180,14 +180,14 @@ export default function SocialFeedStream({
                       type="button"
                       disabled={mobileQuizAnswered}
                       onClick={() => handleMobileQuizSelect(idx)}
-                      className={`w-full text-left p-2.5 rounded-xl border text-xs transition flex items-center justify-between ${btnStyle}`}
+                      className={`w-full text-left p-2.5 rounded-xl border text-xs transition flex items-start justify-between gap-2 overflow-hidden ${btnStyle}`}
                     >
-                      <span>{opt}</span>
+                      <span className="flex-1 min-w-0 break-words leading-relaxed">{opt}</span>
                       {mobileQuizAnswered && idx === activeQuiz.correctOption && (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                       )}
                       {mobileQuizAnswered && mobileQuizSelected === idx && idx !== activeQuiz.correctOption && (
-                        <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                        <XCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                       )}
                     </button>
                   );
@@ -205,11 +205,12 @@ export default function SocialFeedStream({
         </div>
       )}
 
-      {/* 3. Past 7-Day Date Archive Strip */}
-      <DateArchiveStrip
+      {/* 3. Date Selection Dropdown Menu (In the middle of daily capsule & categories) */}
+      <DateArchiveDropdown
         articles={articles}
         selectedDate={selectedDate}
         onSelectDate={setSelectedDate}
+        isEnglishMode={isEnglishMode}
       />
 
       {/* 4. Category Filter Pills Bar (Horizontal swipeable on mobile, streamlined) */}
