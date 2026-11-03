@@ -39,6 +39,23 @@ import {
   Loader2,
 } from "lucide-react";
 
+function formatSignupTime(dateInput: any) {
+  if (!dateInput) return "-";
+  const d = new Date(dateInput);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffMins = Math.floor(diffMs / (60 * 1000));
+  const diffHours = Math.floor(diffMs / (60 * 60 * 1000));
+
+  if (diffMins < 60) {
+    return diffMins <= 1 ? "এইমাত্র" : `${diffMins} মিনিট আগে`;
+  }
+  if (diffHours < 24 && d.getDate() === now.getDate()) {
+    return `আজ, ${d.toLocaleTimeString("bn-BD", { hour: "numeric", minute: "2-digit" })}`;
+  }
+  return d.toLocaleDateString("bn-BD", { year: "numeric", month: "short", day: "numeric" });
+}
+
 export default function UserManagementTab({
   showNotify,
 }: {
@@ -148,8 +165,16 @@ export default function UserManagementTab({
 
   useEffect(() => {
     loadStats();
-    loadUsers(1);
-  }, [track, status, role]);
+    loadUsers(currentPage);
+
+    // 30-second live polling to automatically stream incoming signups to admin
+    const pollTimer = setInterval(() => {
+      loadStats();
+      loadUsers(currentPage);
+    }, 30000);
+
+    return () => clearInterval(pollTimer);
+  }, [track, status, role, currentPage]);
 
   // Debounced auto-search as user types
   const handleSearchChange = (val: string) => {
@@ -610,6 +635,9 @@ export default function UserManagementTab({
                     : "U";
 
                   const isRowUpdating = updatingRowId === u.id;
+                  const isNewSignup = u.createdAt && (Date.now() - new Date(u.createdAt).getTime()) < 24 * 60 * 60 * 1000;
+                  const isPhoneSignup = u.email && u.email.endsWith("@phone.kkhobor.student");
+                  const isMagicSignup = u.email && u.email.startsWith("magic.student.");
 
                   return (
                     <tr key={u.id} className="hover:bg-[#1a2330]/60 transition">
@@ -620,11 +648,16 @@ export default function UserManagementTab({
                             {initials}
                           </div>
                           <div>
-                            <div className="font-semibold text-white">
-                              {u.name}
+                            <div className="font-semibold text-white flex items-center gap-1.5 flex-wrap">
+                              <span>{u.name}</span>
+                              {isNewSignup && (
+                                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 animate-pulse">
+                                  নতুন
+                                </span>
+                              )}
                             </div>
-                            <span className="text-[10px] text-[#64748b]">
-                              যুক্ত: {u.createdAt ? new Date(u.createdAt).toLocaleDateString("bn-BD") : "-"}
+                            <span className="text-[10px] text-[#8e9aa8]">
+                              যুক্ত: {formatSignupTime(u.createdAt)}
                             </span>
                           </div>
                         </div>
@@ -632,17 +665,43 @@ export default function UserManagementTab({
 
                       {/* Email & Phone */}
                       <td className="px-4 py-3">
-                        <div className="font-mono text-white flex items-center gap-1">
-                          <Mail className="w-3 h-3 text-[#38bdf8]" />
-                          <span>{u.email}</span>
-                        </div>
-                        {u.phone ? (
-                          <div className="text-[11px] text-[#94a3b8] flex items-center gap-1 mt-0.5">
-                            <Phone className="w-3 h-3 text-[#4ade80]" />
-                            <span>{u.phone}</span>
+                        {isPhoneSignup ? (
+                          <div className="space-y-0.5">
+                            <div className="font-mono text-emerald-300 font-bold flex items-center gap-1.5">
+                              <Phone className="w-3 h-3 text-[#4ade80]" />
+                              <span>{u.phone || u.email.split("@")[0]}</span>
+                              <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800/80">
+                                ফোন ওটিপি
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-[#64748b]">মোবাইল নম্বর যাচাইকৃত</span>
+                          </div>
+                        ) : isMagicSignup ? (
+                          <div className="space-y-0.5">
+                            <div className="font-mono text-white flex items-center gap-1.5">
+                              <Mail className="w-3 h-3 text-[#38bdf8]" />
+                              <span>{u.email}</span>
+                              <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800/80">
+                                ওয়ান-ট্যাপ
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-[#64748b]">ম্যাজিক লিংক ভেরিফাইড</span>
                           </div>
                         ) : (
-                          <span className="text-[10px] text-[#64748b]">ফোন নম্বর নেই</span>
+                          <div className="space-y-0.5">
+                            <div className="font-mono text-white flex items-center gap-1">
+                              <Mail className="w-3 h-3 text-[#38bdf8]" />
+                              <span>{u.email}</span>
+                            </div>
+                            {u.phone ? (
+                              <div className="text-[11px] text-[#94a3b8] flex items-center gap-1">
+                                <Phone className="w-3 h-3 text-[#4ade80]" />
+                                <span>{u.phone}</span>
+                              </div>
+                            ) : (
+                              <span className="text-[10px] text-[#64748b]">ইমেইল ও পাসওয়ার্ড</span>
+                            )}
+                          </div>
                         )}
                       </td>
 

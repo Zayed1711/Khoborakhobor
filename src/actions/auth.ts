@@ -382,6 +382,7 @@ export async function googleInstantLoginAction(
       revalidatePath("/");
       revalidatePath("/saved");
       revalidatePath("/desk");
+      revalidatePath("/admin");
     } catch {
       // Graceful fallback for CLI/script runs
     }
@@ -498,6 +499,7 @@ export async function verifyMagicLinkAction(token: string) {
     revalidatePath("/");
     revalidatePath("/saved");
     revalidatePath("/desk");
+    revalidatePath("/admin");
   } catch {}
 
   return {
@@ -636,6 +638,7 @@ export async function verifyPhoneOtpAction(rawPhone: string, otpCode: string) {
     revalidatePath("/");
     revalidatePath("/saved");
     revalidatePath("/desk");
+    revalidatePath("/admin");
   } catch {}
 
   return {

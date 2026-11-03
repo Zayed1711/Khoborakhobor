@@ -177,6 +177,20 @@ export default function AdminDashboardClient() {
 
   useEffect(() => {
     refreshAllData();
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab");
+      if (
+        tabParam === "users" ||
+        tabParam === "spider" ||
+        tabParam === "sources" ||
+        tabParam === "history" ||
+        tabParam === "articles" ||
+        tabParam === "scheduler"
+      ) {
+        setActiveTab(tabParam as any);
+      }
+    }
   }, []);
 
   const showNotify = (type: "success" | "error" | "info", msg: string) => {
@@ -409,7 +423,7 @@ export default function AdminDashboardClient() {
       {/* Main Container */}
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-8 py-6 space-y-6">
         {/* KPI Cards Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
           <div className="bg-[#141b24] border border-[#212936] p-4 rounded-xl shadow-xs">
             <div className="flex items-center justify-between text-[#8e9aa8] text-xs">
               <span>সংযুক্ত সংবাদ উৎস (Sources)</span>
@@ -435,6 +449,24 @@ export default function AdminDashboardClient() {
                 {stats?.articleCount ?? articles.length}
               </span>
               <span className="text-[11px] text-[#94a3b8]">ডেটাবেজে সংরক্ষিত</span>
+            </div>
+          </div>
+
+          {/* Dedicated Registered Users / Students KPI Card */}
+          <div 
+            onClick={() => setActiveTab("users")}
+            className="bg-[#141b24] border border-[#212936] hover:border-[#f5c66b]/60 p-4 rounded-xl shadow-xs cursor-pointer transition group"
+            title="শিক্ষার্থী ও ব্যবহারকারী তালিকা দেখতে ক্লিক করুন"
+          >
+            <div className="flex items-center justify-between text-[#8e9aa8] text-xs">
+              <span className="group-hover:text-[#f5c66b] transition">নিবন্ধিত শিক্ষার্থী (Users)</span>
+              <Users className="w-4 h-4 text-[#38bdf8] group-hover:scale-110 transition-transform" />
+            </div>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-2xl font-bold font-mono text-white">
+                {stats?.studentCount ?? 0}
+              </span>
+              <span className="text-[11px] text-[#38bdf8] group-hover:underline">তালিকা দেখুন →</span>
             </div>
           </div>
 
@@ -509,7 +541,7 @@ export default function AdminDashboardClient() {
             }`}
           >
             <Users className="w-4 h-4" />
-            <span>ব্যবহারকারী ও অ্যাকাউন্ট ব্যবস্থাপনা (Users & Accounts)</span>
+            <span>ব্যবহারকারী ও অ্যাকাউন্ট ব্যবস্থাপনা ({stats?.studentCount ?? 0})</span>
           </button>
 
           <button
