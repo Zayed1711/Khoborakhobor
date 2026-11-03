@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { 
   Search, Globe, Bookmark, Calendar, UserCheck, 
   ChevronDown, Menu, X, Zap, GraduationCap, BookOpen
@@ -315,37 +316,28 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
           </div>
         </div>
 
-        {/* Masthead / Brand Centerpiece (Desktop) */}
-        <div className="hidden md:grid max-w-7xl mx-auto px-4 sm:px-8 py-5 grid-cols-1 md:grid-cols-3 items-center gap-4 lg:gap-6">
-          {/* Left Column: Academic Motto / Tagline */}
-          <div className="flex flex-col justify-center text-left w-full max-w-[260px] sm:max-w-[280px]">
-            <span className="text-xs tracking-wider text-[#68707f] font-serif uppercase font-semibold block">
-              {isEnglishMode
-                ? "Editorial English & Active Recall"
-                : "সত্য, বিশ্লেষণ ও শিক্ষণীয় তথ্যের আধার"}
-            </span>
-            <span className="text-[11px] text-[#939ba8] mt-0.5 block">
-              {isEnglishMode
-                ? "Curated Journalism for English Fluency"
-                : "শিক্ষার্থী ও গবেষক কেন্দ্রিক ডিজিটাল পত্রিকা"}
-            </span>
+        {/* Brand Header Navigation (Desktop: Left Logo with Motto, Center Search, Right Pro Badge & Profile) */}
+        <div className="hidden md:flex max-w-7xl mx-auto px-4 sm:px-8 py-3.5 items-center justify-between gap-4 lg:gap-8">
+          {/* Left Column: Original Brand Logo with Motto */}
+          <div className="shrink-0 flex items-center justify-start">
+            <Link href="/" className="inline-block group" aria-label="খবরাখবর ডিজিটাল — প্রচ্ছদ">
+              <Image
+                src="/brand-logo-motto.png"
+                alt="খবরাখবর ডিজিটাল — KHOBORAKHOBOR DIGITAL"
+                width={912}
+                height={312}
+                priority
+                className="h-12 lg:h-14 w-auto object-contain transition-transform duration-300 group-hover:scale-[1.02]"
+              />
+            </Link>
           </div>
 
-          {/* Center Column: KhoboraKhobor Digital Brand Logo */}
-          <div className="text-center justify-self-center py-0.5">
-            <KhoborLogo variant="masthead" size="responsive" />
-          </div>
-
-          {/* Right Column: Search Box & Login Link */}
-          <div className="flex justify-end items-center gap-2 sm:gap-3 justify-self-end w-full">
+          {/* Center Column: Search Box */}
+          <div className="flex-1 max-w-md mx-auto px-2">
             <button
               onClick={() => setIsSearchOpen(true)}
               aria-label="অনুসন্ধান করুন"
-              className={`flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-lg border border-[#ded8cb] bg-[#fbf9f5] hover:bg-[#ede7da] text-[#4b5260] text-xs font-medium transition shadow-2xs group cursor-pointer ${
-                isLoggedIn
-                  ? "w-full max-w-[250px] sm:max-w-[270px]"
-                  : "w-full max-w-[160px] sm:max-w-[180px]"
-              }`}
+              className="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-lg border border-[#ded8cb] bg-[#fbf9f5] hover:bg-[#ede7da] text-[#4b5260] text-xs font-medium transition shadow-2xs group cursor-pointer"
             >
               <div className="flex items-center gap-2 truncate">
                 <Search className={`w-4 h-4 group-hover:scale-110 transition-transform shrink-0 ${
@@ -359,36 +351,37 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
                 Ctrl K
               </kbd>
             </button>
+          </div>
 
-            {/* Profile & Reverse Trial Navbar Pill (Desktop) */}
+          {/* Right Column: Founding Pro Badge & Profile / Login */}
+          <div className="shrink-0 flex items-center gap-2.5 justify-end">
+            {/* Reverse Trial Navbar Pill (Visible to all users, highlighting Founding Pro Free until Dec 2) */}
+            <Link
+              href={isLoggedIn ? "/saved" : "/login"}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-700 text-xs font-medium border border-amber-500/30 hover:bg-amber-500/15 transition shrink-0"
+              title={isLoggedIn ? `Founding Pro Trial: Active (${trialDaysRemaining} Days Left)` : "Founding Pro: Free until Dec 2"}
+            >
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+              <span className="font-semibold">Founding Pro</span>
+              <span className="text-[11px] text-amber-800/80 font-normal">| Free until Dec 2</span>
+            </Link>
+
+            {/* Profile or Login Action Button */}
             {isLoggedIn ? (
-              <div className="flex items-center gap-2 shrink-0">
-                {/* Reverse Trial Navbar Pill */}
-                <Link
-                  href="/saved"
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 text-xs font-medium border border-amber-500/20 hover:bg-amber-500/15 transition shrink-0"
-                  title="Founding Pro Trial: Active"
-                >
-                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                  <span>Founding Pro Trial: Active ({trialDaysRemaining} Days Left)</span>
-                </Link>
-
-                {/* Student Profile / Hub Shortcut */}
-                <Link
-                  href="/saved"
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#ded8cb] bg-[#faf8f4] hover:bg-[#ede7da] text-xs font-semibold text-[#1c1d21] transition shadow-2xs"
-                  title="শিক্ষার্থী ড্যাশবোর্ড ও ব্যক্তিগত স্টাডি হাব"
-                >
-                  <UserCheck className={`w-3.5 h-3.5 ${isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"}`} />
-                  <span className="max-w-[70px] sm:max-w-[90px] truncate">
-                    {sessionState?.student?.name ? sessionState.student.name.split(" ")[0] : "প্রোফাইল"}
-                  </span>
-                </Link>
-              </div>
+              <Link
+                href="/saved"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#ded8cb] bg-[#faf8f4] hover:bg-[#ede7da] text-xs font-semibold text-[#1c1d21] transition shadow-2xs shrink-0"
+                title="শিক্ষার্থী ড্যাশবোর্ড ও ব্যক্তিগত স্টাডি হাব"
+              >
+                <UserCheck className={`w-3.5 h-3.5 ${isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"}`} />
+                <span className="max-w-[70px] sm:max-w-[90px] truncate">
+                  {sessionState?.student?.name ? sessionState.student.name.split(" ")[0] : "প্রোফাইল"}
+                </span>
+              </Link>
             ) : (
               <Link
                 href="/login"
-                className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-lg border border-[#ded8cb] bg-[#faf8f4] hover:bg-[#ede7da] text-xs font-semibold text-[#1c1d21] transition shadow-2xs shrink-0"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#ded8cb] bg-[#faf8f4] hover:bg-[#ede7da] text-xs font-semibold text-[#1c1d21] transition shadow-2xs shrink-0"
                 title="লগইন বা শিক্ষার্থী সাইন আপ"
               >
                 <UserCheck className={`w-3.5 h-3.5 ${isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"}`} />
