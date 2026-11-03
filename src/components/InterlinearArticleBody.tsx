@@ -15,6 +15,19 @@ interface WordToken {
   isPunctuationOnly: boolean;
 }
 
+function extractParagraphs(htmlContent: string): string[] {
+  if (!htmlContent) return [];
+
+  const normalized = htmlContent
+    .replace(/<\/p>|<\/div>|<\/h[1-6]>|<\/li>|<br\s*\/?>/gi, "\n\n")
+    .replace(/<[^>]+>/g, "");
+
+  return normalized
+    .split(/\n+/)
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0);
+}
+
 export default function InterlinearArticleBody({
   htmlContent,
   fontSize,
@@ -22,26 +35,7 @@ export default function InterlinearArticleBody({
 }: InterlinearArticleBodyProps) {
   // Parse HTML into clean text blocks (paragraphs)
   const paragraphs = useMemo(() => {
-    if (!htmlContent) return [];
-
-    // Strip wrapping tags while extracting paragraphs
-    const tempDiv = typeof document !== "undefined" ? document.createElement("div") : null;
-    if (tempDiv) {
-      tempDiv.innerHTML = htmlContent;
-      const pElements = Array.from(tempDiv.querySelectorAll("p, h2, h3, blockquote, li"));
-      if (pElements.length > 0) {
-        return pElements
-          .map((el) => el.textContent?.trim() || "")
-          .filter((t) => t.length > 0);
-      }
-    }
-
-    // Fallback: split by newlines or <p> tags
-    return htmlContent
-      .replace(/<[^>]+>/g, "\n")
-      .split("\n")
-      .map((p) => p.trim())
-      .filter((p) => p.length > 0);
+    return extractParagraphs(htmlContent);
   }, [htmlContent]);
 
   // Tokenize paragraph into words
