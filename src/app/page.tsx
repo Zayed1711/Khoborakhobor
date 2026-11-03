@@ -45,12 +45,12 @@ export default async function Home() {
       <Header categories={categories} session={session} />
 
       {/* 3-Column Social Architecture */}
-      <main className="flex-1 max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-5 w-full flex gap-4 lg:gap-6 items-start justify-center">
+      <main className="flex-1 max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-5 w-full flex gap-3.5 lg:gap-5 items-start justify-center">
         {/* Left Column: Navigation & Profile Rail */}
         <LeftNavSidebar session={session} />
 
         {/* Center Column: Social Media Newsfeed Stream */}
-        <div className="flex-1 max-w-2xl w-full">
+        <div className="flex-1 max-w-2xl min-w-0 w-full">
           <SocialFeedStream
             articles={articles}
             capsuleArticles={capsuleArticles}

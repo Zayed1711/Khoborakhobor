@@ -48,7 +48,7 @@ export default function LeftNavSidebar({ session }: LeftNavSidebarProps) {
   return (
     <aside
       data-digital-signature="KK-SIDEBAR-AUTH-2026"
-      className="w-56 lg:w-64 shrink-0 hidden md:flex flex-col justify-between sticky top-[185px] h-[calc(100vh-12.5rem)] py-2 select-none"
+      className="w-52 min-[1280px]:w-60 shrink-0 hidden md:flex flex-col justify-between sticky top-[185px] h-[calc(100vh-12.5rem)] py-2 select-none"
     >
       {/* Top Section: Navigation Links */}
       <div className="space-y-4">
