@@ -4,6 +4,19 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 
+function safeParseJson<T>(value: any, fallback: T): T {
+  if (!value) return fallback;
+  if (typeof value !== "string") return value;
+  try {
+    const trimmed = value.trim();
+    if (!trimmed) return fallback;
+    return JSON.parse(trimmed);
+  } catch {
+    return fallback;
+  }
+}
+
+
 // -------------------------------------------------------------
 // 1. Vocabulary & Word Bank Service
 // -------------------------------------------------------------
@@ -104,7 +117,7 @@ export async function getArticleQuiz(articleSlug: string) {
 
   return questions.map((q) => ({
     ...q,
-    options: JSON.parse(q.options),
+    options: safeParseJson<string[]>(q.options, []),
   }));
 }
 
@@ -435,7 +448,7 @@ export async function getDailyCapsuleArticles() {
 
   return articles.map((a) => ({
     ...a,
-    keyTakeaways: a.keyTakeaways ? JSON.parse(a.keyTakeaways) : [],
+    keyTakeaways: safeParseJson<string[]>(a.keyTakeaways, []),
   }));
 }
 

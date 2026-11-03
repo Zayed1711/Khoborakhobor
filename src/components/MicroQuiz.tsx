@@ -100,11 +100,16 @@ export default function MicroQuiz({ questions, studentId, isEnglishMode = false 
         {questions.map((q, idx) => {
           const res = results[q.id];
           const chosen = selectedAnswers[q.id];
-          const optionsList: string[] = Array.isArray(q.options)
-            ? q.options
-            : typeof q.options === "string"
-            ? JSON.parse(q.options)
-            : [];
+          let optionsList: string[] = [];
+          if (Array.isArray(q.options)) {
+            optionsList = q.options;
+          } else if (typeof q.options === "string") {
+            try {
+              optionsList = JSON.parse(q.options);
+            } catch {
+              optionsList = [];
+            }
+          }
 
           return (
             <div key={q.id} className="p-4 bg-[#fbf9f5] rounded-xl border border-[#eee9df]">

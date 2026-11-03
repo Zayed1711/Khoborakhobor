@@ -81,13 +81,18 @@ export default function SocialFeedCard({
 
   // Quiz interactive state
   const firstQuiz = article.quizQuestions?.[0];
-  const parsedOptions: string[] = firstQuiz
-    ? Array.isArray(firstQuiz.options)
-      ? firstQuiz.options
-      : typeof firstQuiz.options === "string"
-      ? JSON.parse(firstQuiz.options)
-      : []
-    : [];
+  const parsedOptions: string[] = (() => {
+    if (!firstQuiz) return [];
+    if (Array.isArray(firstQuiz.options)) return firstQuiz.options;
+    if (typeof firstQuiz.options === "string") {
+      try {
+        return JSON.parse(firstQuiz.options);
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  })();
 
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [quizAnswered, setQuizAnswered] = useState(false);
