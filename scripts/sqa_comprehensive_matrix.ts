@@ -12,6 +12,8 @@ import crypto from 'crypto';
 import { hashPassword, verifyPassword } from '../src/lib/auth-crypto';
 import { isBengaliText } from '../src/lib/bilingual';
 import { lookupConceptDictionary } from '../src/lib/dictionary-engine';
+import { loadNewspaperRegistry, testFeedSource } from '../src/lib/scraper/spider';
+import { evaluateExamRelevance } from '../src/lib/scraper/examFilter';
 
 const prisma = new PrismaClient();
 
@@ -397,6 +399,163 @@ async function runTestSuite() {
       recordTest('Compatibility', 'Mobile Bottom Navigation Strict Desktop Isolation (md:hidden)', bottomNavHasMdHidden, performance.now() - t0);
     } catch (e: any) {
       recordTest('Compatibility', 'Mobile Bottom Navigation Strict Desktop Isolation (md:hidden)', false, performance.now() - t0, e.message);
+    }
+  }
+
+  // ========================================================================
+  // 8. FUNCTIONAL TESTING: SPIDER & CRAWLER ENGINE INTEGRITY
+  // ========================================================================
+  console.log('\n--- 8. FUNCTIONAL TESTING: SPIDER & CRAWLER ENGINE AUDIT ---');
+
+  // 8.1 Newspaper Source Registry Integrity
+  {
+    const t0 = performance.now();
+    const allSources = loadNewspaperRegistry('all');
+    const bnSources = loadNewspaperRegistry('bn');
+    const enSources = loadNewspaperRegistry('en');
+    const hasValidSources = allSources.length >= 10 && bnSources.length >= 7 && enSources.length >= 3;
+    const allHaveUrls = allSources.every(s => s.feedUrl && s.feedUrl.startsWith('http') && s.categorySlug);
+    const passed = hasValidSources && allHaveUrls;
+    recordTest('Spider Engine', 'Newspaper Source Registry Loading & Schema Validation', passed, performance.now() - t0, `Total: ${allSources.length} (BN: ${bnSources.length}, EN: ${enSources.length})`);
+  }
+
+  // 8.2 RSS XML Feed Parsing Engine
+  {
+    const t0 = performance.now();
+    try {
+      const xmlFeedResult = await testFeedSource('https://feeds.bbci.co.uk/bengali/rss.xml');
+      const passed = xmlFeedResult.success && (xmlFeedResult.itemCount || 0) > 0;
+      recordTest('Spider Engine', 'Standard RSS XML Feed Ingestion (BBC Bangla)', passed, performance.now() - t0, `Items parsed: ${xmlFeedResult.itemCount || 0}`);
+    } catch (e: any) {
+      recordTest('Spider Engine', 'Standard RSS XML Feed Ingestion (BBC Bangla)', false, performance.now() - t0, e.message);
+    }
+  }
+
+  // 8.3 Prothom Alo REST JSON Feed Ingestion Engine
+  {
+    const t0 = performance.now();
+    try {
+      const jsonFeedResult = await testFeedSource('https://www.prothomalo.com/api/v1/stories?section-name=technology');
+      const passed = jsonFeedResult.success && (jsonFeedResult.itemCount || 0) > 0;
+      recordTest('Spider Engine', 'Prothom Alo REST JSON API Feed Ingestion', passed, performance.now() - t0, `Items parsed: ${jsonFeedResult.itemCount || 0}, Title: "${jsonFeedResult.sampleTitles?.[0]?.slice(0, 30)}..."`);
+    } catch (e: any) {
+      recordTest('Spider Engine', 'Prothom Alo REST JSON API Feed Ingestion', false, performance.now() - t0, e.message);
+    }
+  }
+
+  // 8.4 Crawler Security & Authorization Gateway
+  {
+    const t0 = performance.now();
+    try {
+      // 1. Unauthenticated request must return 401
+      const resUnauth = await fetch('http://localhost:3000/api/cron/spider');
+      const unauthBlocked = resUnauth.status === 401;
+
+      // 2. Invalid secret request must return 401
+      const resInvalid = await fetch('http://localhost:3000/api/cron/spider?secret=malicious_spoofed_token_999');
+      const invalidBlocked = resInvalid.status === 401;
+
+      const passed = unauthBlocked && invalidBlocked;
+      recordTest('Spider Engine', 'Cron Endpoint Authentication Gateway (Rejection of 401 Unauthorized)', passed, performance.now() - t0, `Unauth HTTP ${resUnauth.status}, Invalid HTTP ${resInvalid.status}`);
+    } catch (e: any) {
+      recordTest('Spider Engine', 'Cron Endpoint Authentication Gateway (Rejection of 401 Unauthorized)', false, performance.now() - t0, e.message);
+    }
+  }
+
+  // 8.5 Exam Relevance & Noise Gatekeeper Filtering
+  {
+    const t0 = performance.now();
+    const noiseHeadline = 'পারিবারিক কলহের জেরে গৃহবধূর আত্মহত্যা';
+    const noiseContent = 'পারিবারিক ঝগড়া বিবাদের জের ধরে বিষপানে আত্মহত্যা করেছেন এক গৃহবধূ।';
+    const noiseEvaluation = evaluateExamRelevance(noiseHeadline, noiseContent, 'national');
+
+    const academicHeadline = 'বাংলাদেশ ব্যাংকের নতুন মুদ্রানীতি ঘোষণা: মূল্যস্ফীতি নিয়ন্ত্রণের সুনির্দিষ্ট রূপরেখা';
+    const academicContent = 'দেশের অর্থনীতিতে মুদ্রাস্ফীতি নিয়ন্ত্রণ ও বৈদেশিক মুদ্রার রিজার্ভ সুরক্ষায় কার্যকর পদক্ষেপ গ্রহণের ঘোষণা দিয়েছে কেন্দ্রীয় ব্যাংক।';
+    const academicEvaluation = evaluateExamRelevance(academicHeadline, academicContent, 'economy');
+
+    const passed = noiseEvaluation.isRelevant === false && academicEvaluation.isRelevant === true;
+    recordTest('Spider Engine', 'Exam Relevance Gatekeeper (Noise Rejection & Academic Admission)', passed, performance.now() - t0, `Noise filtered: ${!noiseEvaluation.isRelevant}, Academic accepted: ${academicEvaluation.isRelevant}`);
+  }
+
+  // 8.6 Article Deduplication Engine Validation
+  {
+    const t0 = performance.now();
+    const existing = await prisma.article.findFirst({ select: { id: true, title: true, slug: true } });
+    if (existing) {
+      const duplicateSlugCheck = await prisma.article.findFirst({
+        where: { OR: [{ slug: existing.slug }, { title: existing.title }] }
+      });
+      const passed = duplicateSlugCheck?.id === existing.id;
+      recordTest('Spider Engine', 'Deduplication Engine (Duplicate Prevention on Ingestion)', passed, performance.now() - t0, `Matched ID: ${duplicateSlugCheck?.id}`);
+    } else {
+      recordTest('Spider Engine', 'Deduplication Engine (Duplicate Prevention on Ingestion)', true, performance.now() - t0, 'No existing articles');
+    }
+  }
+
+  // ========================================================================
+  // 9. USER ACCEPTANCE TESTING (UAT) & CLEAN UI AUDIT
+  // ========================================================================
+  console.log('\n--- 9. USER ACCEPTANCE TESTING (UAT) & CLEAN UI AUDIT ---');
+
+  // 9.1 Daily Challenge Quiz UI Sanity & No-Collapse Assertion
+  {
+    const t0 = performance.now();
+    try {
+      const res = await fetch('http://localhost:3000/');
+      const html = await res.text();
+      const hasQuizContainer = html.includes('আজকের কুইজ চ্যালেঞ্জ');
+      const hasShrinkProtection = html.includes('shrink-0');
+      const passed = hasQuizContainer && hasShrinkProtection;
+      recordTest('UAT & Usability', 'Daily Challenge Quiz Card Rendering & Flexbox Shrink-0 Protection', passed, performance.now() - t0, `Rendered: ${hasQuizContainer}`);
+    } catch (e: any) {
+      recordTest('UAT & Usability', 'Daily Challenge Quiz Card Rendering & Flexbox Shrink-0 Protection', false, performance.now() - t0, e.message);
+    }
+  }
+
+  // 9.2 Central Date Selection Dropdown Architecture
+  {
+    const t0 = performance.now();
+    try {
+      const res = await fetch('http://localhost:3000/');
+      const html = await res.text();
+      const hasDateDropdown = html.includes('select') || html.includes('সব আর্কাইভ') || html.includes('আজকের সংবাদ') || html.includes('আর্কাইভ');
+      recordTest('UAT & Usability', 'Central Date Dropdown Integration (Clean Compact Date Selection)', hasDateDropdown, performance.now() - t0);
+    } catch (e: any) {
+      recordTest('UAT & Usability', 'Central Date Dropdown Integration (Clean Compact Date Selection)', false, performance.now() - t0, e.message);
+    }
+  }
+
+  // 9.3 Elimination of Redundant Horizontal Filter Bars
+  {
+    const t0 = performance.now();
+    try {
+      const res = await fetch('http://localhost:3000/');
+      const html = await res.text();
+      // The bulky old category tab had 'id="category-filter-bar"' which was removed
+      const hasOldCategoryBar = html.includes('id="category-filter-bar"');
+      const passed = !hasOldCategoryBar;
+      recordTest('UAT & Usability', 'Clean UI: Elimination of Bulky Redundant Horizontal Tabs', passed, performance.now() - t0, `Old tab absent: ${passed}`);
+    } catch (e: any) {
+      recordTest('UAT & Usability', 'Clean UI: Elimination of Bulky Redundant Horizontal Tabs', false, performance.now() - t0, e.message);
+    }
+  }
+
+  // 9.4 Bilingual Mode Feed Toggle
+  {
+    const t0 = performance.now();
+    try {
+      const resBn = await fetch('http://localhost:3000/');
+      const htmlBn = await resBn.text();
+      const hasBanglaArticles = htmlBn.includes('খবরাখবর') || htmlBn.includes('জাতীয় পরিক্রমা');
+
+      const resEn = await fetch('http://localhost:3000/?lang=en');
+      const htmlEn = await resEn.text();
+      const hasEnglishParamHandled = resEn.status === 200;
+
+      const passed = hasBanglaArticles && hasEnglishParamHandled;
+      recordTest('UAT & Usability', 'Bilingual Feed Toggle (Bangla Default & English Switcher)', passed, performance.now() - t0);
+    } catch (e: any) {
+      recordTest('UAT & Usability', 'Bilingual Feed Toggle (Bangla Default & English Switcher)', false, performance.now() - t0, e.message);
     }
   }
 

@@ -11,30 +11,30 @@ export const dynamic = "force-dynamic";
 function isAuthorized(req: NextRequest): boolean {
   const cronSecret = process.env.CRON_SECRET;
 
-  // Permit bypass only during local development / testing environments
-  if (process.env.NODE_ENV !== "production") {
-    return true;
-  }
+  // SQA Security Hardening: If CRON_SECRET is set or in production, enforce strict authorization
+  if (cronSecret || process.env.NODE_ENV === "production") {
+    if (!cronSecret) {
+      console.error("[CRON_SECURITY] CRON_SECRET is not configured in production environment.");
+      return false;
+    }
 
-  // SQA Security Hardening: In production, CRON_SECRET must be configured
-  if (!cronSecret) {
-    console.error("[CRON_SECURITY] CRON_SECRET is not configured in production environment.");
+    // 1. Check Bearer Token (Standard Vercel Cron behavior)
+    const authHeader = req.headers.get("authorization");
+    if (authHeader && authHeader === `Bearer ${cronSecret}`) {
+      return true;
+    }
+
+    // 2. Check query parameter ?secret=
+    const secretParam = req.nextUrl.searchParams.get("secret");
+    if (secretParam && secretParam === cronSecret) {
+      return true;
+    }
+
     return false;
   }
 
-  // 1. Check Bearer Token (Standard Vercel Cron behavior)
-  const authHeader = req.headers.get("authorization");
-  if (authHeader && authHeader === `Bearer ${cronSecret}`) {
-    return true;
-  }
-
-  // 2. Check query parameter ?secret=
-  const secretParam = req.nextUrl.searchParams.get("secret");
-  if (secretParam && secretParam === cronSecret) {
-    return true;
-  }
-
-  return false;
+  // Permit bypass only during local development if CRON_SECRET is not set at all
+  return true;
 }
 
 export async function GET(req: NextRequest) {

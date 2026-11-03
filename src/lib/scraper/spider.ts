@@ -192,6 +192,27 @@ export function removeSourceFromRegistry(feedUrl: string, language: "bn" | "en")
  */
 export async function testFeedSource(feedUrl: string) {
   try {
+    if (feedUrl.includes("/api/v1/stories") || feedUrl.includes("format=json") || feedUrl.endsWith(".json")) {
+      const res = await fetch(feedUrl, {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) KhoboraKhoborEdTechSpider/1.0 (+http://localhost:3000)",
+          Accept: "application/json",
+        },
+        signal: AbortSignal.timeout(12000),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+      const json = await res.json();
+      const stories = Array.isArray(json.stories) ? json.stories : (Array.isArray(json) ? json : []);
+      return {
+        success: true,
+        title: "Prothom Alo JSON API Feed",
+        description: `Stories REST endpoint (${stories.length} items)`,
+        itemCount: stories.length,
+        latestItemDate: stories[0]?.["published-at"] || stories[0]?.["last-published-at"] || "N/A",
+        sampleTitles: stories.slice(0, 3).map((s: any) => s.headline || s.title || "Untitled"),
+      };
+    }
     const feed = await parser.parseURL(feedUrl);
     return {
       success: true,
@@ -744,10 +765,64 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
   for (const source of sources) {
     try {
       console.log(`[FEED] Fetching: ${source.name} [${source.feedUrl}]`);
-      const feed = await parser.parseURL(source.feedUrl);
+      let feedItems: any[] = [];
+
+      if (
+        source.feedUrl.includes("/api/v1/stories") ||
+        source.feedUrl.includes("format=json") ||
+        source.feedUrl.endsWith(".json")
+      ) {
+        const res = await fetch(source.feedUrl, {
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) KhoboraKhoborEdTechSpider/1.0 (+http://localhost:3000)",
+            Accept: "application/json",
+          },
+          signal: AbortSignal.timeout(15000),
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status} ${res.statusText}`);
+        }
+
+        const jsonData = await res.json();
+        const stories = Array.isArray(jsonData.stories)
+          ? jsonData.stories
+          : Array.isArray(jsonData)
+          ? jsonData
+          : [];
+
+        feedItems = stories.map((s: any) => {
+          const pubTime = s["published-at"] || s["last-published-at"];
+          const pubDate = pubTime
+            ? new Date(typeof pubTime === "number" ? pubTime : pubTime).toISOString()
+            : new Date().toISOString();
+
+          let link = s.url || "";
+          if (!link && s.slug) {
+            link = s.slug.startsWith("http") ? s.slug : `https://www.prothomalo.com/${s.slug}`;
+          }
+
+          return {
+            title: s.headline || s.title || "",
+            link,
+            pubDate,
+            isoDate: pubDate,
+            summary: s.subheadline || "",
+            content: s.subheadline || "",
+            categories: Array.isArray(s.sections)
+              ? s.sections.map((sec: any) => sec.name || sec["display-name"] || sec.slug)
+              : [],
+          };
+        });
+      } else {
+        const feed = await parser.parseURL(source.feedUrl);
+        feedItems = feed.items || [];
+      }
+
       let countFromThisSource = 0;
 
-      for (const item of feed.items) {
+      for (const item of feedItems) {
         if (countFromThisSource >= limitPerSource) break;
 
         results.crawled++;
