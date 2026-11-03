@@ -120,7 +120,7 @@ export default function RightStudyRail({
   return (
     <aside className="w-72 xl:w-80 shrink-0 hidden min-[1140px]:flex flex-col gap-4 sticky top-[185px] h-[calc(100vh-12.5rem)] overflow-y-auto overflow-x-hidden py-2 pr-1 pl-0.5 select-none">
       {/* 1. Daily Study Streak Card */}
-      <div className={`p-3 sm:p-3.5 rounded-2xl shadow-2xs space-y-1.5 border transition-all ${
+      <div className={`shrink-0 p-3 sm:p-3.5 rounded-2xl shadow-2xs space-y-1.5 border transition-all ${
         isEnglishMode
           ? "bg-gradient-to-br from-blue-50 to-indigo-50/40 border-blue-200/80"
           : "bg-gradient-to-br from-amber-50 to-orange-50/40 border-amber-200/80"
@@ -150,7 +150,7 @@ export default function RightStudyRail({
       </div>
 
       {/* 2. Micro-Quiz of the Day Challenge */}
-      <div id="tutorial-daily-quiz" className="p-3 sm:p-3.5 bg-white border border-[#ded8cb] rounded-2xl shadow-2xs space-y-2.5 transition-all overflow-hidden">
+      <div id="tutorial-daily-quiz" className="shrink-0 p-3 sm:p-3.5 bg-white border border-[#ded8cb] rounded-2xl shadow-2xs space-y-2.5 transition-all">
         <div className="flex items-center justify-between pb-1.5 border-b border-[#f4efe4]">
           <div className="flex items-center gap-1.5 text-xs font-bold text-[#842323]">
             {isEnglishMode ? (
@@ -265,7 +265,7 @@ export default function RightStudyRail({
       </div>
 
       {/* 3. Trending Topics & Hashtags */}
-      <div className="p-4 bg-white border border-[#ded8cb] rounded-2xl shadow-2xs space-y-2.5">
+      <div className="shrink-0 p-4 bg-white border border-[#ded8cb] rounded-2xl shadow-2xs space-y-2.5">
         <div className="flex items-center gap-1.5 text-xs font-bold text-[#1c1d21] pb-2 border-b border-[#f4efe4]">
           <TrendingUp className={`w-4 h-4 ${isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"}`} />
           <span>{isEnglishMode ? "Trending English Topics" : "আজকের ট্রেন্ডিং বিষয়বস্তু"}</span>
@@ -289,7 +289,7 @@ export default function RightStudyRail({
       </div>
 
       {/* 4. Eye-Care Reading Themes */}
-      <div className="p-4 bg-white border border-[#ded8cb] rounded-2xl shadow-2xs space-y-2">
+      <div className="shrink-0 p-4 bg-white border border-[#ded8cb] rounded-2xl shadow-2xs space-y-2">
         <span className="text-[11px] font-bold uppercase tracking-wider text-[#737b88] block">
           কাগজের আভা ও চোখের প্রশান্তি:
         </span>
@@ -299,7 +299,7 @@ export default function RightStudyRail({
       {/* 5. Copyright Notice */}
       <div 
         data-digital-signature="KK-RAIL-AUTH-2026"
-        className="p-3 text-[10px] text-[#8e95a2] space-y-1 leading-relaxed font-sans"
+        className="shrink-0 p-3 text-[10px] text-[#8e95a2] space-y-1 leading-relaxed font-sans"
       >
         <p>&copy; ২০২৬ খবরাখবর (KhoboraKhobor)</p>
         <p className="text-[9px] text-[#a0a8b5]">

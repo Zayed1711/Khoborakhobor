@@ -21,19 +21,6 @@ interface SocialFeedStreamProps {
   featuredEnglishQuiz?: any;
 }
 
-const ENGLISH_CATEGORY_NAMES: Record<string, string> = {
-  national: "National & Policy",
-  world: "Global Affairs",
-  economy: "Business & Economy",
-  tech: "Tech & Science",
-  entertainment: "Culture & Arts",
-  sports: "Sports & Fitness",
-  politics: "Governance & Law",
-  opinion: "Editorials & Opinions",
-  lifestyle: "Lifestyle & Learning",
-  "exam-prep": "Vocabulary & Exams",
-};
-
 export default function SocialFeedStream({
   articles,
   capsuleArticles,
@@ -44,7 +31,6 @@ export default function SocialFeedStream({
   featuredEnglishQuiz,
 }: SocialFeedStreamProps) {
   const { setMode, isEnglishMode } = useAppMode();
-  const [selectedCat, setSelectedCat] = useState("all");
   const [selectedDate, setSelectedDate] = useState("all");
 
   // Mobile Streak & Quiz Interactive State
@@ -64,23 +50,7 @@ export default function SocialFeedStream({
     setMobileQuizAnswered(true);
   };
 
-  const filterPills = useMemo(() => {
-    if (isEnglishMode) {
-      return [
-        { name: "All English Feed", slug: "all" },
-        ...categories.map((c) => ({
-          name: ENGLISH_CATEGORY_NAMES[c.slug] || c.name.split("(")[0].trim(),
-          slug: c.slug,
-        })),
-      ];
-    }
-    return [
-      { name: "সব খবর (All Feed)", slug: "all" },
-      ...categories.map((c) => ({ name: c.name.split("(")[0].trim(), slug: c.slug })),
-    ];
-  }, [categories, isEnglishMode]);
-
-  // Filter by category, platform mode, and selected archive date
+  // Filter by platform mode and selected archive date
   const filteredArticles = useMemo(() => {
     let list = articles;
 
@@ -96,20 +66,15 @@ export default function SocialFeedStream({
       });
     }
 
-    // 2. Category filter
-    if (selectedCat !== "all") {
-      list = list.filter((a) => a.category?.slug === selectedCat);
-    }
-
-    // 3. Mode filter:
+    // 2. Mode filter:
     if (isEnglishMode) {
       const enOnly = list.filter((a) => !isBengaliText(a.title));
-      return enOnly.length > 0 ? enOnly : (selectedDate === "all" && selectedCat === "all" ? enOnly : list);
+      return enOnly.length > 0 ? enOnly : (selectedDate === "all" ? enOnly : list);
     } else {
       const bnOnly = list.filter((a) => isBengaliText(a.title));
-      return bnOnly.length > 0 ? bnOnly : (selectedDate === "all" && selectedCat === "all" ? bnOnly : list);
+      return bnOnly.length > 0 ? bnOnly : (selectedDate === "all" ? bnOnly : list);
     }
-  }, [articles, selectedCat, isEnglishMode, selectedDate]);
+  }, [articles, isEnglishMode, selectedDate]);
 
   // Filter capsule stories by mode so English learners see English capsules
   const filteredCapsules = useMemo(() => {
@@ -213,36 +178,6 @@ export default function SocialFeedStream({
         isEnglishMode={isEnglishMode}
       />
 
-      {/* 4. Category Filter Pills Bar (Horizontal swipeable on mobile, streamlined) */}
-      <div
-        id="tutorial-feed-language"
-        className="bg-white border border-[#ded8cb] rounded-2xl p-2.5 sm:p-3 shadow-2xs transition-all"
-      >
-        {/* Category Pills Bar (Horizontal swipeable on mobile) */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
-          {filterPills.map((pill) => {
-            const isSelected = selectedCat === pill.slug;
-
-            return (
-              <button
-                key={pill.slug}
-                type="button"
-                onClick={() => setSelectedCat(pill.slug)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition shrink-0 ${
-                  isSelected
-                    ? isEnglishMode
-                      ? "bg-[#1e40af] text-white shadow-2xs font-bold"
-                      : "bg-[#842323] text-white shadow-2xs font-bold"
-                    : "bg-[#faf8f4] hover:bg-[#ece7da] text-[#404652] border border-[#ded8cb]"
-                }`}
-              >
-                {pill.name}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       {/* 5. Main Social Newsfeed Stream */}
       <div className="space-y-3 sm:space-y-4">
         {filteredArticles.length > 0 ? (
@@ -262,9 +197,9 @@ export default function SocialFeedStream({
             <BookOpen className="w-8 h-8 text-[#8e9aa8] mx-auto" />
             <h4 className="text-sm font-bold text-[#1c1d21]">
               {selectedDate !== "all"
-                ? `${selectedDate} তারিখে নির্বাচিত ক্যাটাগরিতে কোনো প্রতিবেদন পাওয়া যায়নি`
+                ? `${selectedDate} তারিখে কোনো প্রতিবেদন পাওয়া যায়নি`
                 : isEnglishMode
-                ? "No English learning articles found in this category"
+                ? "No English learning articles found for this date"
                 : "এই ফিল্টারে বর্তমানে কোনো বাংলা প্রতিবেদন পাওয়া যায়নি"}
             </h4>
             <p className="text-xs text-[#717887]">
@@ -282,17 +217,6 @@ export default function SocialFeedStream({
                   }`}
                 >
                   {isEnglishMode ? "View All Dates" : "সব তারিখের খবর দেখুন"}
-                </button>
-              )}
-              {selectedCat !== "all" && (
-                <button
-                  type="button"
-                  onClick={() => setSelectedCat("all")}
-                  className={`px-4 py-2 text-white rounded-lg text-xs font-bold ${
-                    isEnglishMode ? "bg-[#1e40af]" : "bg-[#842323]"
-                  }`}
-                >
-                  {isEnglishMode ? "All Categories" : "সকল বিভাগে ফিরুন"}
                 </button>
               )}
               <button

@@ -35,7 +35,7 @@ const TOUR_STEPS: TourStep[] = [
     position: "bottom",
   },
   {
-    targetId: "tutorial-feed-language",
+    targetId: "platform-mode-switcher",
     badge: "ফিচার ২: দ্বিভাষিক পড়াশোনা",
     title: "বাংলা সংবাদ ও English Studies",
     description:
