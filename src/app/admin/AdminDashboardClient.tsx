@@ -216,7 +216,15 @@ export default function AdminDashboardClient() {
         }),
       });
 
-      const res = await response.json();
+      let res: any;
+      try {
+        res = await response.json();
+      } catch {
+        res = {
+          success: false,
+          message: `সার্ভারে প্রসেসিং সম্পন্ন হচ্ছে (HTTP ${response.status})। কয়েক সেকেন্ড পর রিফ্রেশ করুন।`,
+        };
+      }
 
       if (res.success && res.data) {
         setRunResult(res.data);
@@ -227,7 +235,12 @@ export default function AdminDashboardClient() {
       }
     } catch (err: any) {
       const errMsg = err?.message || "";
-      if (errMsg.includes("unexpected response") || errMsg.includes("504") || errMsg.includes("timeout")) {
+      if (
+        errMsg.includes("unexpected response") ||
+        errMsg.includes("504") ||
+        errMsg.includes("timeout") ||
+        errMsg.includes("Failed to fetch")
+      ) {
         showNotify("info", "সার্ভারে স্পাইডার ক্রলিং সম্পন্ন হচ্ছে। কয়েক মুহূর্ত পর রিফ্রেশ করুন।");
       } else {
         showNotify("error", errMsg || "স্পাইডার চালাতে ত্রুটি হয়েছে।");

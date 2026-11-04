@@ -254,6 +254,9 @@ export async function parseRobustFeed(feedUrl: string, timeoutMs: number = 8000)
     const $ = cheerio.load(rawText, { xmlMode: true });
     const feedTitle = $("channel > title, feed > title").first().text().trim() || "Unknown Feed";
     const feedDesc = $("channel > description, feed > subtitle").first().text().trim() || "";
+    const channelDate =
+      $("channel > lastBuildDate, channel > pubDate, feed > updated").first().text().trim() ||
+      new Date().toISOString();
 
     const xmlItems: any[] = [];
     const elements = $("item, entry");
@@ -266,11 +269,21 @@ export async function parseRobustFeed(feedUrl: string, timeoutMs: number = 8000)
         if (!link) {
           link = node.find("link").attr("href") || node.find("guid").text().trim() || "";
         }
-        const pubDate =
+        const rawDate =
           node.find("pubDate").text().trim() ||
           node.find("dc\\:date").text().trim() ||
           node.find("published").text().trim() ||
-          node.find("updated").text().trim();
+          node.find("updated").text().trim() ||
+          channelDate;
+
+        let isoDate: string | undefined;
+        try {
+          const parsed = new Date(rawDate);
+          if (!isNaN(parsed.getTime())) {
+            isoDate = parsed.toISOString();
+          }
+        } catch {}
+
         const summary = node.find("description").text().trim() || node.find("summary").text().trim();
         const contentEncoded = node.find("content\\:encoded").text().trim() || node.find("content").text().trim();
         const enclosureUrl =
@@ -282,8 +295,8 @@ export async function parseRobustFeed(feedUrl: string, timeoutMs: number = 8000)
           xmlItems.push({
             title,
             link,
-            pubDate,
-            isoDate: pubDate ? new Date(pubDate).toISOString() : undefined,
+            pubDate: rawDate,
+            isoDate: isoDate || (rawDate ? new Date().toISOString() : undefined),
             summary,
             content: contentEncoded || summary,
             "content:encoded": contentEncoded,
@@ -387,8 +400,12 @@ export const PORTAL_CONFIGS: Record<
     body_selectors: [".story-body", "#article_body", ".article-details"],
   },
   "dhakatribune.com": {
-    title_selectors: ["h1.title", "h1"],
-    body_selectors: [".story-element-text", ".article-content", ".report-content"],
+    title_selectors: ["h1.title", "h1", "h1.headline"],
+    body_selectors: [".story-element-text", ".article-content", ".report-content", ".content-details", "article"],
+  },
+  "jagonews24.com": {
+    title_selectors: ["h1", ".news-details h1", ".details-title"],
+    body_selectors: [".news-details-content", ".content-details", ".news-content", "article"],
   },
   "bd-pratidin.com": {
     title_selectors: ["h1", "h2.title"],
@@ -419,8 +436,8 @@ export const PORTAL_CONFIGS: Record<
     body_selectors: ["main[role='main']", "article", "[data-component='text-block']", ".bbc-1151fp7"],
   },
   "ittefaq.com.bd": {
-    title_selectors: ["h1", ".title"],
-    body_selectors: [".news-details-content", ".article-content", "article"],
+    title_selectors: ["h1", "h1.title", ".news-title"],
+    body_selectors: [".jw_article_body", ".news-details-content", ".article-content", "article"],
   },
   "samakal.com": {
     title_selectors: ["h1", ".detail-title"],
@@ -453,7 +470,7 @@ export async function fetchAndParseArticlePage(
 
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3500);
+    const timeout = setTimeout(() => controller.abort(), 7000);
 
     const res = await fetch(url, {
       signal: controller.signal,
@@ -500,17 +517,19 @@ export async function fetchAndParseArticlePage(
       text.startsWith("©") ||
       text.startsWith("Share") ||
       text.startsWith("Follow us") ||
+      text.startsWith("jwARI.") ||
       text.includes("বিজ্ঞাপন") ||
       text.includes("Advertisement") ||
+      text.includes("আরও পড়ুন") ||
       text.length < 20;
 
     let bodyFound = false;
 
     if (config?.body_selectors) {
       for (const sel of config.body_selectors) {
-        const container = $(sel).first();
-        if (container.length > 0) {
-          const pElements = container.find("p");
+        const matching = $(sel);
+        if (matching.length > 0) {
+          const pElements = matching.find("p");
           if (pElements.length > 0) {
             pElements.each((_, el) => {
               const text = $(el).text().trim();
@@ -518,16 +537,18 @@ export async function fetchAndParseArticlePage(
                 paragraphs.push(`<p>${text}</p>`);
               }
             });
-            bodyFound = true;
-            break;
+            if (paragraphs.length > 0) {
+              bodyFound = true;
+              break;
+            }
           } else {
-            const lines = container
-              .text()
-              .split("\n")
-              .map((l) => l.trim())
-              .filter((l) => !isBoilerplate(l));
-            if (lines.length > 0) {
-              lines.forEach((l) => paragraphs.push(`<p>${l}</p>`));
+            matching.each((_, el) => {
+              const text = $(el).text().trim();
+              if (!isBoilerplate(text)) {
+                paragraphs.push(`<p>${text}</p>`);
+              }
+            });
+            if (paragraphs.length > 0) {
               bodyFound = true;
               break;
             }
@@ -894,8 +915,8 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
   // Process sources in concurrent batches of 4 to maximize throughput and minimize latency
   const BATCH_SIZE = 4;
   for (let b = 0; b < sources.length; b += BATCH_SIZE) {
-    if (Date.now() - startTime > 35000) {
-      console.log(`[SPIDER] 35s execution safety threshold reached before batch ${b}.`);
+    if (Date.now() - startTime > 55000) {
+      console.log(`[SPIDER] 55s execution safety threshold reached before batch ${b}.`);
       break;
     }
 
@@ -911,8 +932,8 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
       let countFromThisSource = 0;
 
       for (const item of feedItems) {
-        if (Date.now() - startTime > 35000) {
-          console.log(`[SPIDER] 35s hard deadline reached inside article loop.`);
+        if (Date.now() - startTime > 55000) {
+          console.log(`[SPIDER] 55s hard deadline reached inside article loop.`);
           break;
         }
 

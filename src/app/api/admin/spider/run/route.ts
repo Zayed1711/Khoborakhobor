@@ -3,7 +3,7 @@ import { runNewsSpiderWithDateFilter, SpiderOptions } from "@/lib/scraper/spider
 import { getCurrentSession } from "@/actions/auth";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 export async function POST(req: NextRequest) {
   try {
@@ -47,3 +47,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+

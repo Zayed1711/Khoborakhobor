@@ -1,10 +1,5 @@
 name,feed_url,category_slug,exam_track,article_selector,date_format
-প্রথম আলো (শীর্ষ সংবাদ ও জাতীয়),https://www.prothomalo.com/feed,national,জাতীয় পরিক্রমা ও বিসিএস,article .story-element,YYYY-MM-DD
+প্রথম আলো (শীর্ষ সংবাদ ও জাতীয়),https://www.prothomalo.com/feed,national,জাতীয় পরিক্রমা ও বিসিএস,.story-element-text,YYYY-MM-DD
+দৈনিক ইত্তেফাক (রাজনীতি ও সুশাসন),https://www.ittefaq.com.bd/feed/,politics,রাজনীতি সংসদ ও সুশাসন,.jw_article_body,YYYY-MM-DD
+ঢাকা ট্রিবিউন বাংলা (জাতীয় ও নীতি),https://bangla.dhakatribune.com/feed/,national,জাতীয় নীতি ও সমকালীন বাংলাদেশ,article,YYYY-MM-DD
 বিবিসি বাংলা (আন্তর্জাতিক ও বিজ্ঞান),https://feeds.bbci.co.uk/bengali/rss.xml,world,আন্তর্জাতিক সম্পর্ক ও গবেষণা,.story-body,YYYY-MM-DD
-The Business Standard (বাণিজ্য ও অর্থনীতি),https://www.tbsnews.net/rss.xml,economy,অর্থনীতি ব্যাংকিং ও উন্নয়ন,.section-content,YYYY-MM-DD
-ডেইলি স্টার বাংলা (রাজনীতি ও সুশাসন),https://bangla.thedailystar.net/rss.xml,politics,রাজনীতি ও সুশাসন,article .story-element,YYYY-MM-DD
-প্রথম আলো বিজ্ঞান ও প্রযুক্তি,https://www.prothomalo.com/api/v1/stories?section-name=technology,tech,বিজ্ঞান প্রযুক্তি ও উদ্ভাবন,article,YYYY-MM-DD
-প্রথম আলো শিল্প ও সাহিত্য,https://www.prothomalo.com/api/v1/stories?section-name=literature,entertainment,শিল্পকলা সাহিত্য ও সংস্কৃতি,article,YYYY-MM-DD
-প্রথম আলো খেলাধুলা,https://www.prothomalo.com/api/v1/stories?section-name=sports,sports,বিশ্ব ক্রীড়াঙ্গন ও বাংলাদেশ,article,YYYY-MM-DD
-প্রথম আলো মতামত ও কলাম,https://www.prothomalo.com/api/v1/stories?section-name=opinion,opinion,সমকালীন বিশ্লেষণ ও মুক্তমত,article,YYYY-MM-DD
-প্রথম আলো শিক্ষা ও বিসিএস,https://www.prothomalo.com/api/v1/stories?section-name=education,exam-prep,বিসিএস প্রিলি ও ভর্তি প্রস্তুতি,article,YYYY-MM-DD
