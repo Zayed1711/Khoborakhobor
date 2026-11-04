@@ -19,15 +19,14 @@ export interface ExamRelevanceResult {
 // -------------------------------------------------------------
 
 export const DOMESTIC_AND_PETTY_CRIME_PATTERNS = [
-  // Murders, killings, corpses
+  // Murders, killings, corpses (specific petty/domestic crime phrases)
   /কুপিয়ে\s*হত্যা/i,
   /গুলি\s*করে\s*হত্যা/i,
   /নেতা\s*(?:খুন|হত্যা)/i,
   /কর্মী\s*(?:খুন|হত্যা)/i,
   /ছাত্রদল\s*নেতা/i,
   /খুনের\s*দায়ে/i,
-  /খুন/i,
-  /হত্যা/i,
+  /ছুরিকাঘাতে\s*হত্যা/i,
   /ছুরিকাঘাত/i,
   /কুপিয়ে\s*জখম/i,
   /অজ্ঞাত\s*(?:লাশ|মরদেহ)/i,
@@ -35,15 +34,10 @@ export const DOMESTIC_AND_PETTY_CRIME_PATTERNS = [
   /লাশ\s*উদ্ধার/i,
   /ঝুলন্ত\s*লাশ/i,
   /গলায়\s*ফাঁস/i,
-  /বিষপান/i,
-  /তাহসিফ/i,
-  /সাউরি/i,
-  /দীপ/i,
+  /বিষপানে?\s*(?:আত্মহত্যা|মৃত্যু)?/i,
   /পুতুলের\s*মতো\s*মেয়েটা/i,
   /মরদেহ\s*আসছে/i,
-  /tahsif/i,
-  /dwip/i,
-  /police\s*custody/i,
+  /পুলিশ\s*হেফাজতে\s*মৃত্যু/i,
   /jumped\s*into\s*river/i,
   /dies\s*beforehand/i,
   /bodies\s*of\s*five/i,
@@ -59,21 +53,22 @@ export const DOMESTIC_AND_PETTY_CRIME_PATTERNS = [
   /স্ত্রীর\s*হাতে\s*স্বামী/i,
   /বিয়েতে\s*রাজি\s*না\s*হওয়ায়/i,
   /মাটির\s*ব্যবসা\s*নিয়ে\s*বিরোধ/i,
-  /ব্যবসা\s*নিয়ে\s*বিরোধ/i,
-  /দোকানে\s*হামলা/i,
-  /হামলা-লুটপাট/i,
-  /লুটপাট/i,
-  /রেকি/i,
-  /ডাকাতি/i,
-  /ছিনতাই/i,
-  /চুরির\s*অভিযোগ/i,
-  /চুরি/i,
-  /মারধর/i,
-  /মারপিট/i,
-  /ধর্ষণ/i,
-  /অস্ত্র\s*ধরে\s*ডাকাতি/i,
+  /প্রেমের\s*জেরে\s*(?:খুন|হত্যা)/i,
+  /দোকানে\s*হামলা-?লুটপাট/i,
+  /ছিনতাইকারীর\s*কবলে/i,
+  /ছিনতাইকালে\s*আটক/i,
+  /মোবাইল\s*ছিনতাই/i,
   /আইফোন\s*ছিনিয়ে/i,
   /আইফোন\s*ছিনিয়ে/i,
+  /অস্ত্র\s*ধরে\s*ডাকাতি/i,
+  /গরু\s*চুরি/i,
+  /মোটরসাইকেল\s*চুরি/i,
+  /ব্যাটারি\s*চুরি/i,
+  /চুরির\s*অভিযোগে\s*পিটিয়ে/i,
+  /চুরির\s*অভিযোগে\s*আটক/i,
+  /মারধরের\s*অভিযোগ/i,
+  /মারপিটের\s*ঘটনা/i,
+  /ধর্ষণের\s*অভিযোগ/i,
 ];
 
 export const CELEBRITY_TABLOID_PATTERNS = [
@@ -92,42 +87,34 @@ export const CELEBRITY_TABLOID_PATTERNS = [
   /অনন্ত\s*জলিল/i,
   /হিরো\s*আলম/i,
   /জায়েদ\s*খান/i,
-  /শাহরুখ/i,
+  /শাহরুখ\s*খান/i,
   /সালমান\s*খান/i,
   /প্যাট্রিক\s*স্টুয়ার্ট/i,
   /প্যাট্রিক\s*স্টুয়ার্ট/i,
-  /shakib/i,
+  /shakib\s*khan/i,
   /bubly/i,
   /porimoni/i,
   /mehazabien/i,
   /jesia/i,
   /puja\s*cherry/i,
-  /shahrukh/i,
+  /shahrukh\s*khan/i,
 
   // Showbiz, cinema, actors & television
-  /অভিনেত্রী/i,
-  /অভিনেতা/i,
-  /নায়িকা/i,
-  /নায়ক/i,
-  /সেলিব্রিটি/i,
-  /শোবিজ/i,
-  /গ্ল্যামার/i,
+  /শোবিজ\s*(?:তারকা|জগতের|সংবাদ)/i,
+  /নায়ক-নায়িকা/i,
+  /গ্ল্যামার\s*জগৎ/i,
   /বিগ\s*বস/i,
   /সিনেমার\s*পোস্টার/i,
-  /নাটকের/i,
-  /ওটিটি/i,
-  /ট্রেলার/i,
-  /টিজার/i,
+  /নাটকের\s*শুটিং/i,
   /নতুন\s*মুখের\s*অভিষেক/i,
   /চার\s*জুটির\s*চার\s*রকম\s*প্রেম/i,
   /নায়িকা\s*আমার\s*মা/i,
 
   // Relationships, gossip & divorces
   /প্রেমের\s*গুঞ্জন/i,
-  /বিচ্ছেদের\s*পর/i,
-  /বিচ্ছেদ/i,
+  /বিচ্ছেদের\s*(?:পর|গুঞ্জন|খবর)/i,
   /বিয়ে\s*করলেন/i,
-  /তালাক/i,
+  /তালাকের\s*(?:পর|ঘোষণা)/i,
   /দ্বিতীয়\s*স্ত্রী/i,
   /পরকীয়া/i,
 
@@ -266,10 +253,12 @@ export function evaluateExamRelevance(
   content: string = "",
   categorySlug: string = "national"
 ): ExamRelevanceResult {
-  const text = `${title} ${content}`.trim();
+  const fullText = `${title} ${content}`.trim();
+  // Negative filters evaluate on headline and primary lead paragraph to prevent noise in scraped sidebars/footers from discarding valid news
+  const primaryText = `${title} ${content.slice(0, 450)}`.trim();
 
   // 1. High-Profile Institutional and Historical Commission Exemption
-  if (isExemptInstitutional(title, text)) {
+  if (isExemptInstitutional(title, fullText)) {
     return {
       isRelevant: true,
       reason: "INSTITUTIONAL_EXEMPTION",
@@ -278,46 +267,22 @@ export function evaluateExamRelevance(
     };
   }
 
-  // 2. Check Negative Crime & Tabloid Triggers (Highest Priority: Purges Noise!)
-  if (CELEBRITY_TABLOID_PATTERNS.some((rx) => rx.test(text))) {
-    return {
-      isRelevant: false,
-      reason: "CELEBRITY_TABLOID_OR_GOSSIP",
-      examPhase: "PRELIM",
-      suggestedExamTrack: "",
-    };
-  }
+  // 2. Positive Macro-Institutional Check (If article clearly covers macro economics, diplomacy, constitution or state policy, prioritize it)
+  const isMacroInstitutional = MACRO_INSTITUTIONAL_SIGNALS.some((rx) => rx.test(fullText));
+  const hasMacroKeywords = /মন্ত্রণালয়|মন্ত্রণালয়|বাংলাদেশ\s*ব্যাংক|অর্থনীতি|মুদ্রানীতি|রিজার্ভ|বাজেট|রাজস্ব|এনবিআর|জিডিপি|আইএমএফ|পোশাকশিল্প|মজুরি|পররাষ্ট্র|কূটনীতি|জাতিসংঘ|হোয়াইট\s*হাউস|নির্বাচন\s*কমিশন|পারমাণবিক|সংসদ|হাইকোর্ট|সুপ্রিম\s*কোর্ট|সুইডেন|ইরান|যুক্তরাষ্ট্র|ট্রাম্প|হোয়াইট\s*হাউস/i.test(fullText);
 
-  if (DOMESTIC_AND_PETTY_CRIME_PATTERNS.some((rx) => rx.test(text))) {
+  if (isMacroInstitutional || (hasMacroKeywords && categorySlug !== "entertainment")) {
     return {
-      isRelevant: false,
-      reason: "DOMESTIC_VIOLENCE_OR_PETTY_CRIME",
-      examPhase: "PRELIM",
-      suggestedExamTrack: "",
-    };
-  }
-
-  if (LOCAL_FACTIONAL_CLASHES.some((rx) => rx.test(text))) {
-    return {
-      isRelevant: false,
-      reason: "LOCAL_FACTIONAL_CLASH",
-      examPhase: "PRELIM",
-      suggestedExamTrack: "",
-    };
-  }
-
-  if (SENSATIONALISM_AND_SUPERSTITION.some((rx) => rx.test(text))) {
-    return {
-      isRelevant: false,
-      reason: "SUPERSTITION_OR_SENSATIONALISM",
-      examPhase: "PRELIM",
-      suggestedExamTrack: "",
+      isRelevant: true,
+      reason: "MACRO_INSTITUTIONAL_EVENT",
+      examPhase: "COMPREHENSIVE",
+      suggestedExamTrack: "বিসিএস প্রিলি ও লিখিত: অর্থনীতি, সুশাসন ও আন্তর্জাতিক পরিক্রমা",
     };
   }
 
   // 3. Check for Road Safety Surveys & Transport Policy (Written Exam High-Yield)
-  const hasRoadContext = /সড়ক|দুর্ঘটনা|পরিবহন|ট্রাফিক/i.test(text);
-  const isWrittenSurveyOrPolicy = WRITTEN_SURVEY_AND_POLICY_SIGNALS.some((rx) => rx.test(text));
+  const hasRoadContext = /সড়ক|দুর্ঘটনা|পরিবহন|ট্রাফিক/i.test(fullText);
+  const isWrittenSurveyOrPolicy = WRITTEN_SURVEY_AND_POLICY_SIGNALS.some((rx) => rx.test(fullText));
 
   if (hasRoadContext && isWrittenSurveyOrPolicy) {
     return {
@@ -328,8 +293,45 @@ export function evaluateExamRelevance(
     };
   }
 
-  // 4. Exclude Isolated Routine Accidents (unless already qualified under survey above)
-  if (ROUTINE_ACCIDENT_PATTERNS.some((rx) => rx.test(text)) && !isWrittenSurveyOrPolicy) {
+  // 4. Check Negative Crime & Tabloid Triggers on primaryText
+  if (CELEBRITY_TABLOID_PATTERNS.some((rx) => rx.test(primaryText))) {
+    return {
+      isRelevant: false,
+      reason: "CELEBRITY_TABLOID_OR_GOSSIP",
+      examPhase: "PRELIM",
+      suggestedExamTrack: "",
+    };
+  }
+
+  if (DOMESTIC_AND_PETTY_CRIME_PATTERNS.some((rx) => rx.test(primaryText))) {
+    return {
+      isRelevant: false,
+      reason: "DOMESTIC_VIOLENCE_OR_PETTY_CRIME",
+      examPhase: "PRELIM",
+      suggestedExamTrack: "",
+    };
+  }
+
+  if (LOCAL_FACTIONAL_CLASHES.some((rx) => rx.test(primaryText))) {
+    return {
+      isRelevant: false,
+      reason: "LOCAL_FACTIONAL_CLASH",
+      examPhase: "PRELIM",
+      suggestedExamTrack: "",
+    };
+  }
+
+  if (SENSATIONALISM_AND_SUPERSTITION.some((rx) => rx.test(primaryText))) {
+    return {
+      isRelevant: false,
+      reason: "SUPERSTITION_OR_SENSATIONALISM",
+      examPhase: "PRELIM",
+      suggestedExamTrack: "",
+    };
+  }
+
+  // 5. Exclude Isolated Routine Accidents (unless already qualified under survey above)
+  if (ROUTINE_ACCIDENT_PATTERNS.some((rx) => rx.test(primaryText)) && !isWrittenSurveyOrPolicy) {
     return {
       isRelevant: false,
       reason: "ROUTINE_ISOLATED_ACCIDENT",
@@ -338,8 +340,8 @@ export function evaluateExamRelevance(
     };
   }
 
-  // 5. Check for Major Sports Awards or International Records (General Knowledge Booster)
-  if (MAJOR_SPORTS_AWARDS_AND_RECORDS.some((rx) => rx.test(text))) {
+  // 6. Check for Major Sports Awards or International Records (General Knowledge Booster)
+  if (MAJOR_SPORTS_AWARDS_AND_RECORDS.some((rx) => rx.test(fullText))) {
     return {
       isRelevant: true,
       reason: "MAJOR_SPORTS_AWARD_OR_MILESTONE",
@@ -348,24 +350,13 @@ export function evaluateExamRelevance(
     };
   }
 
-  // 6. Exclude Routine Daily Weather
-  if (ROUTINE_WEATHER_PATTERNS.some((rx) => rx.test(text)) && !/জলবায়ু|কপ|COP|তহবিল/i.test(text)) {
+  // 7. Exclude Routine Daily Weather
+  if (ROUTINE_WEATHER_PATTERNS.some((rx) => rx.test(primaryText)) && !/জলবায়ু|কপ|COP|তহবিল/i.test(fullText)) {
     return {
       isRelevant: false,
       reason: "ROUTINE_WEATHER",
       examPhase: "PRELIM",
       suggestedExamTrack: "",
-    };
-  }
-
-  // 7. Positive Institutional Check (Economy, Governance, World, Tech, Opinion)
-  const isMacroInstitutional = MACRO_INSTITUTIONAL_SIGNALS.some((rx) => rx.test(text));
-  if (isMacroInstitutional) {
-    return {
-      isRelevant: true,
-      reason: "MACRO_INSTITUTIONAL_EVENT",
-      examPhase: "COMPREHENSIVE",
-      suggestedExamTrack: "বিসিএস প্রিলি ও লিখিত: অর্থনীতি, সুশাসন ও আন্তর্জাতিক পরিক্রমা",
     };
   }
 
