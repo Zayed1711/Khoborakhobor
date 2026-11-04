@@ -5,10 +5,11 @@ import SocialFeedCard from "./SocialFeedCard";
 import CapsuleStoryPills from "./CapsuleStoryPills";
 import DateArchiveDropdown from "./DateArchiveDropdown";
 import { 
-  BookOpen, Flame, CheckCircle2, XCircle, ArrowRight, ChevronDown, ChevronUp 
+  BookOpen, Flame, CheckCircle2, XCircle, ArrowRight, ChevronDown, ChevronUp, Loader2 
 } from "lucide-react";
 import { useAppMode } from "@/context/LanguageContext";
 import { isBengaliText } from "@/lib/bilingual";
+import { getArticlesByDateAction, DateArchiveStats } from "@/actions/articles";
 import Link from "next/link";
 
 interface SocialFeedStreamProps {
@@ -19,6 +20,7 @@ interface SocialFeedStreamProps {
   streakDays?: number;
   featuredQuiz?: any;
   featuredEnglishQuiz?: any;
+  archiveStats?: DateArchiveStats | null;
 }
 
 export default function SocialFeedStream({
@@ -29,9 +31,37 @@ export default function SocialFeedStream({
   streakDays = 0,
   featuredQuiz,
   featuredEnglishQuiz,
+  archiveStats,
 }: SocialFeedStreamProps) {
   const { setMode, isEnglishMode } = useAppMode();
   const [selectedDate, setSelectedDate] = useState("all");
+  const [feedArticles, setFeedArticles] = useState<any[]>(articles);
+  const [isLoadingDate, setIsLoadingDate] = useState(false);
+
+  // Synchronize when server revalidates initial articles
+  useEffect(() => {
+    if (selectedDate === "all") {
+      setFeedArticles(articles);
+    }
+  }, [articles, selectedDate]);
+
+  // Dynamic date selector fetching full historical records on demand
+  const handleSelectDate = async (dateKey: string) => {
+    setSelectedDate(dateKey);
+    if (dateKey === "all") {
+      setFeedArticles(articles);
+      return;
+    }
+    setIsLoadingDate(true);
+    try {
+      const fetched = await getArticlesByDateAction(dateKey);
+      setFeedArticles(fetched);
+    } catch (err) {
+      console.error("Failed to load articles for date:", dateKey, err);
+    } finally {
+      setIsLoadingDate(false);
+    }
+  };
 
   // Mobile Streak & Quiz Interactive State
   const activeQuiz = isEnglishMode ? (featuredEnglishQuiz || featuredQuiz) : featuredQuiz;
@@ -52,7 +82,7 @@ export default function SocialFeedStream({
 
   // Filter by platform mode and selected archive date
   const filteredArticles = useMemo(() => {
-    let list = articles;
+    let list = feedArticles;
 
     // 1. Date filter (past 7 days or all)
     if (selectedDate !== "all") {
@@ -82,7 +112,7 @@ export default function SocialFeedStream({
       const timeB = new Date(b.createdAtIso || b.createdAt).getTime() || 0;
       return timeB - timeA;
     });
-  }, [articles, isEnglishMode, selectedDate]);
+  }, [feedArticles, isEnglishMode, selectedDate]);
 
   // Filter capsule stories by mode so English learners see English capsules
   const filteredCapsules = useMemo(() => {
@@ -120,47 +150,65 @@ export default function SocialFeedStream({
             <button
               type="button"
               onClick={() => setIsMobileQuizExpanded(!isMobileQuizExpanded)}
-              className="text-xs text-[#717887] hover:text-[#1c1d21] flex items-center gap-1 font-medium"
+              className="text-xs text-[#717887] hover:text-[#1c1d21] flex items-center gap-1 cursor-pointer"
             >
-              <span>{isEnglishMode ? "10s Recall" : "১০-সেকেন্ড রিকল"}</span>
+              <span className="text-[11px]">
+                {isMobileQuizExpanded 
+                  ? (isEnglishMode ? "Minimize" : "সংক্ষিপ্ত") 
+                  : (isEnglishMode ? "Expand Quiz" : "কুইজ দেখুন")}
+              </span>
               {isMobileQuizExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
           </div>
 
-          {/* Expandable Daily Challenge Body */}
+          {/* Quiz Body */}
           {isMobileQuizExpanded && (
-            <div className="space-y-2.5 pt-0.5">
-              <p className="text-xs font-bold text-[#1c1d21] leading-relaxed break-words">
+            <div className="space-y-2.5 pt-1">
+              <div className="flex items-center justify-between">
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                  isEnglishMode ? "bg-blue-100 text-blue-800" : "bg-red-100 text-red-800"
+                }`}>
+                  {isEnglishMode ? "Daily English Challenge" : "বিসিএস প্রিলিমিনারি চ্যালেঞ্জ"}
+                </span>
+                <span className="text-[10px] text-[#717887] font-semibold">
+                  {isEnglishMode ? "10 Points" : "১০ পয়েন্ট"}
+                </span>
+              </div>
+
+              <p className="text-xs font-semibold text-[#1c1d21] leading-snug">
                 {activeQuiz.question}
               </p>
 
-              <div className="space-y-1.5">
+              <div className="grid grid-cols-1 gap-1.5">
                 {activeQuiz.options?.map((opt: string, idx: number) => {
-                  let btnStyle = "bg-[#faf8f4] border-[#ded8cb] hover:bg-[#f0ebe0] text-[#343a46]";
+                  const isSelected = mobileQuizSelected === idx;
+                  const isCorrect = idx === activeQuiz.correctIndex;
+                  let btnStyle = "border-[#ded8cb] bg-[#faf8f4] hover:bg-[#f4efe4] text-[#1c1d21]";
+
                   if (mobileQuizAnswered) {
-                    if (idx === activeQuiz.correctOption) {
-                      btnStyle = "bg-emerald-50 border-emerald-500 text-emerald-950 font-bold";
-                    } else if (mobileQuizSelected === idx) {
-                      btnStyle = "bg-rose-50 border-rose-400 text-rose-950";
+                    if (isCorrect) {
+                      btnStyle = "border-emerald-500 bg-emerald-50 text-emerald-900 font-bold";
+                    } else if (isSelected) {
+                      btnStyle = "border-red-500 bg-red-50 text-red-900";
+                    } else {
+                      btnStyle = "border-[#e5dec9] bg-white opacity-40 text-gray-500";
                     }
-                  } else if (mobileQuizSelected === idx) {
-                    btnStyle = "bg-[#f5ebeb] border-[#842323] text-[#842323] font-semibold";
                   }
 
                   return (
                     <button
                       key={idx}
                       type="button"
-                      disabled={mobileQuizAnswered}
                       onClick={() => handleMobileQuizSelect(idx)}
-                      className={`w-full text-left p-2.5 rounded-xl border text-xs transition flex items-start justify-between gap-2 overflow-hidden ${btnStyle}`}
+                      disabled={mobileQuizAnswered}
+                      className={`w-full text-left p-2 rounded-xl text-xs border transition flex items-center justify-between cursor-pointer ${btnStyle}`}
                     >
-                      <span className="flex-1 min-w-0 break-words leading-relaxed">{opt}</span>
-                      {mobileQuizAnswered && idx === activeQuiz.correctOption && (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <span className="truncate">{opt}</span>
+                      {mobileQuizAnswered && isCorrect && (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                       )}
-                      {mobileQuizAnswered && mobileQuizSelected === idx && idx !== activeQuiz.correctOption && (
-                        <XCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                      {mobileQuizAnswered && isSelected && !isCorrect && (
+                        <XCircle className="w-4 h-4 text-red-600 shrink-0" />
                       )}
                     </button>
                   );
@@ -178,17 +226,29 @@ export default function SocialFeedStream({
         </div>
       )}
 
-      {/* 3. Date Selection Dropdown Menu (In the middle of daily capsule & categories) */}
+      {/* 3. Date Selection Dropdown Menu (With dynamic on-demand date loader) */}
       <DateArchiveDropdown
-        articles={articles}
+        articles={feedArticles}
         selectedDate={selectedDate}
-        onSelectDate={setSelectedDate}
+        onSelectDate={handleSelectDate}
         isEnglishMode={isEnglishMode}
+        archiveStats={archiveStats}
+        isLoading={isLoadingDate}
       />
 
-      {/* 5. Main Social Newsfeed Stream */}
+      {/* 4. Main Social Newsfeed Stream */}
       <div className="space-y-3 sm:space-y-4">
-        {filteredArticles.length > 0 ? (
+        {isLoadingDate ? (
+          <div className="p-10 text-center bg-white border border-[#ded8cb] rounded-2xl space-y-3 animate-fade-in">
+            <Loader2 className="w-8 h-8 text-[#842323] animate-spin mx-auto" />
+            <h4 className="text-sm font-bold text-[#1c1d21]">
+              {isEnglishMode ? "Loading articles from date archive..." : "আর্কাইভ থেকে প্রতিবেদন লোড করা হচ্ছে..."}
+            </h4>
+            <p className="text-xs text-[#717887]">
+              {isEnglishMode ? "Fetching chronologically verified articles..." : "অনুগ্রহ করে অপেক্ষা করুন, প্রতিবেদনগুলো সাজানো হচ্ছে..."}
+            </p>
+          </div>
+        ) : filteredArticles.length > 0 ? (
           filteredArticles.map((article, index) => (
             <div
               key={article.id}
@@ -219,8 +279,8 @@ export default function SocialFeedStream({
               {selectedDate !== "all" && (
                 <button
                   type="button"
-                  onClick={() => setSelectedDate("all")}
-                  className={`px-4 py-2 text-white rounded-lg text-xs font-bold ${
+                  onClick={() => handleSelectDate("all")}
+                  className={`px-4 py-2 text-white rounded-lg text-xs font-bold cursor-pointer ${
                     isEnglishMode ? "bg-[#1e40af]" : "bg-[#842323]"
                   }`}
                 >
@@ -230,7 +290,7 @@ export default function SocialFeedStream({
               <button
                 type="button"
                 onClick={() => setMode(isEnglishMode ? "job_prep" : "english_learning")}
-                className={`px-4 py-2 bg-[#f4efe4] border border-[#ded8cc] rounded-lg text-xs font-bold ${
+                className={`px-4 py-2 bg-[#f4efe4] border border-[#ded8cc] rounded-lg text-xs font-bold cursor-pointer ${
                   isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"
                 }`}
               >

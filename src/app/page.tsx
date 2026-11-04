@@ -4,7 +4,7 @@ import LeftNavSidebar from "@/components/LeftNavSidebar";
 import RightStudyRail from "@/components/RightStudyRail";
 import SocialFeedStream from "@/components/SocialFeedStream";
 import MobileBottomNav from "@/components/MobileBottomNav";
-import { getPublishedArticles } from "@/actions/articles";
+import { getPublishedArticles, getDateArchiveStatsAction } from "@/actions/articles";
 import { getCurrentSession } from "@/actions/auth";
 import { prisma } from "@/lib/prisma";
 import { getDailyChallengeQuiz } from "@/lib/quiz/generator";
@@ -24,6 +24,13 @@ export default async function Home() {
     articles = await getPublishedArticles();
   } catch (e) {
     console.error("[HOME] Articles error:", e);
+  }
+
+  let archiveStats: any = null;
+  try {
+    archiveStats = await getDateArchiveStatsAction();
+  } catch (e) {
+    console.error("[HOME] Archive stats error:", e);
   }
 
   let categories: any[] = [];
@@ -59,6 +66,7 @@ export default async function Home() {
             streakDays={session.student?.streakDays || 0}
             featuredQuiz={dailyBnQuiz}
             featuredEnglishQuiz={dailyEnQuiz}
+            archiveStats={archiveStats}
           />
         </div>
 

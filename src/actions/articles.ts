@@ -16,6 +16,121 @@ function safeParseJson<T>(value: any, fallback: T): T {
   }
 }
 
+export interface DateArchiveStats {
+  totalCounts: Record<string, number>;
+  bnCounts: Record<string, number>;
+  enCounts: Record<string, number>;
+  totalAll: number;
+  bnAll: number;
+  enAll: number;
+}
+
+export async function getDateArchiveStatsAction(): Promise<DateArchiveStats> {
+  try {
+    const articles = await prisma.article.findMany({
+      select: {
+        title: true,
+        createdAt: true,
+      },
+    });
+
+    const totalCounts: Record<string, number> = {};
+    const bnCounts: Record<string, number> = {};
+    const enCounts: Record<string, number> = {};
+    let bnAll = 0;
+    let enAll = 0;
+
+    for (const a of articles) {
+      if (a.createdAt) {
+        const key = a.createdAt instanceof Date
+          ? a.createdAt.toISOString().split("T")[0]
+          : new Date(a.createdAt).toISOString().split("T")[0];
+
+        totalCounts[key] = (totalCounts[key] || 0) + 1;
+        const isBn = /[\u0980-\u09FF]/.test(a.title || "");
+        if (isBn) {
+          bnCounts[key] = (bnCounts[key] || 0) + 1;
+          bnAll++;
+        } else {
+          enCounts[key] = (enCounts[key] || 0) + 1;
+          enAll++;
+        }
+      }
+    }
+
+    return {
+      totalCounts,
+      bnCounts,
+      enCounts,
+      totalAll: articles.length,
+      bnAll,
+      enAll,
+    };
+  } catch (err) {
+    console.error("[ARTICLES] Error loading date archive stats:", err);
+    return {
+      totalCounts: {},
+      bnCounts: {},
+      enCounts: {},
+      totalAll: 0,
+      bnAll: 0,
+      enAll: 0,
+    };
+  }
+}
+
+export async function getArticlesByDateAction(dateKey: string): Promise<any[]> {
+  try {
+    if (!dateKey || dateKey === "all") {
+      return getPublishedArticles(150);
+    }
+
+    const startOfDay = new Date(`${dateKey}T00:00:00.000Z`);
+    const endOfDay = new Date(`${dateKey}T23:59:59.999Z`);
+
+    const articles = await prisma.article.findMany({
+      where: {
+        createdAt: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+      include: {
+        category: true,
+        vocabulary: true,
+        quizQuestions: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 200,
+    });
+
+    const parsed = articles.map((a) => ({
+      ...a,
+      createdAtIso: a.createdAt instanceof Date ? a.createdAt.toISOString() : new Date(a.createdAt).toISOString(),
+      keyTakeaways: safeParseJson(a.keyTakeaways, []),
+      factTable: safeParseJson((a as any).factTable, []),
+      examTagsList: a.examTags ? a.examTags.split(",").map((t) => t.trim()) : [],
+      quizQuestions: a.quizQuestions.map((q) => ({
+        ...q,
+        options: safeParseJson(q.options, []),
+      })),
+    }));
+
+    parsed.sort((a, b) => {
+      const timeA = new Date(a.createdAtIso).getTime() || 0;
+      const timeB = new Date(b.createdAtIso).getTime() || 0;
+      return timeB - timeA;
+    });
+
+    return parsed;
+  } catch (err) {
+    console.error(`[ARTICLES] Error loading articles for date (${dateKey}):`, err);
+    return [];
+  }
+}
+
 export async function getPublishedArticles(limit: number = 150) {
   try {
     const articles = await prisma.article.findMany({
