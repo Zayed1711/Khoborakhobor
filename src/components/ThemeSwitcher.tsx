@@ -85,7 +85,7 @@ export default function ThemeSwitcher({ compact = false, className = "" }: Theme
 
   return (
     <div className={`inline-flex items-center gap-1.5 text-xs text-[#525964] ${className}`}>
-      <span className="text-[11px] font-medium text-[#737b88] hidden sm:inline">কাগজের আভা:</span>
+      <span className="text-xs font-medium text-[#737b88] hidden sm:inline">কাগজের আভা:</span>
       <div className="inline-flex bg-[#f3efe6] p-0.5 rounded-md border border-[#ded8cb]">
         <button
           type="button"

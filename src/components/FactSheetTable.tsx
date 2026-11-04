@@ -135,12 +135,12 @@ export default function FactSheetTable({
               <h3 className="text-sm font-bold text-[#1c1d21] font-serif">
                 বিসিএস ও ভর্তি পরীক্ষা তথ্য ছক (Exam Fact Sheet)
               </h3>
-              <span className="text-[10px] bg-amber-100 text-amber-900 border border-amber-200 font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+              <span className="text-xs bg-amber-100 text-amber-900 border border-amber-200 font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
                 <Sparkles className="w-2.5 h-2.5 text-amber-700" />
                 হাই-ইল্ড ডেটা
               </span>
             </div>
-            <p className="text-[11px] text-[#6b7280]">
+            <p className="text-xs text-[#6b7280]">
               প্রিলিমিনারি নৈর্ব্যক্তিক ও লিখিত রচনায় কোটেশনযোগ্য সুনির্দিষ্ট পরিসংখ্যান
             </p>
           </div>
@@ -189,7 +189,7 @@ export default function FactSheetTable({
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-[#eae4d8] bg-[#faf6ee] text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#525a68]">
+            <tr className="border-b border-[#eae4d8] bg-[#faf6ee] text-xs font-bold uppercase tracking-wider text-[#525a68]">
               <th className="py-2.5 px-4 sm:px-5 w-1/4">ক্ষেত্র / সূচক</th>
               <th className="py-2.5 px-4 sm:px-5 w-5/12 text-[#1c1d21]">সুনির্দিষ্ট তথ্য ও পরিসংখ্যান</th>
               <th className="py-2.5 px-4 sm:px-5 w-1/3">পরীক্ষার প্রাসঙ্গিকতা</th>
@@ -211,7 +211,7 @@ export default function FactSheetTable({
                       </div>
                       <div>
                         <span className="text-[#1c1d21] font-bold block">{row.parameter}</span>
-                        <span className="text-[10px] text-[#717887] font-normal block sm:hidden">
+                        <span className="text-xs text-[#717887] font-normal block sm:hidden">
                           {tier.label}
                         </span>
                       </div>

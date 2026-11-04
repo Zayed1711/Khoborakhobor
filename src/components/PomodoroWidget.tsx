@@ -90,7 +90,7 @@ export default function PomodoroWidget() {
         >
           <Timer className="w-4 h-4 text-current" />
           <span className="font-mono text-xs font-bold">{formatTime(secondsLeft)}</span>
-          <span className="text-[10px] uppercase font-semibold tracking-wider opacity-85">
+          <span className="text-xs uppercase font-semibold tracking-wider opacity-85">
             {isBreak ? "বিরতি" : "ফোকাস"}
           </span>
         </button>
@@ -122,7 +122,7 @@ export default function PomodoroWidget() {
               <div className="font-mono text-3xl font-black text-[#17191d] tracking-tight">
                 {formatTime(secondsLeft)}
               </div>
-              <p className="text-[11px] text-[#717887] mt-0.5">
+              <p className="text-xs text-[#717887] mt-0.5">
                 {isBreak
                   ? "৫ মিনিটের চোখ ও মনের বিশ্রাম নিন"
                   : `মনোযোগের সাথে পাঠ্য অনুশীলন (${customMinutes} মিনিট)`}
@@ -142,7 +142,7 @@ export default function PomodoroWidget() {
             {/* Custom Duration Selector (Student Decides Time) */}
             {!isActive && !isBreak && (
               <div className="pt-2 border-t border-[#f2ede4]">
-                <label className="block text-[11px] font-medium text-[#525964] mb-1.5">
+                <label className="block text-xs font-medium text-[#525964] mb-1.5">
                   পড়ার সময়কাল নির্ধারণ করুন (মিনিট):
                 </label>
                 <div className="flex items-center justify-center gap-1.5">
@@ -150,7 +150,7 @@ export default function PomodoroWidget() {
                     <button
                       key={m}
                       onClick={() => handleDurationChange(m)}
-                      className={`text-[11px] font-semibold px-2 py-1 rounded transition border ${
+                      className={`text-xs font-semibold px-2 py-1 rounded transition border ${
                         customMinutes === m
                           ? "bg-[#842323] text-white border-[#842323] shadow-2xs"
                           : "bg-[#faf8f4] text-[#4b5563] border-[#ded8cb] hover:bg-[#ede7da]"
@@ -163,7 +163,7 @@ export default function PomodoroWidget() {
 
                 {/* Direct Fine-tuning input */}
                 <div className="flex items-center justify-center gap-2 mt-2">
-                  <span className="text-[10px] text-[#8e95a2]">কাস্টম মিনিট:</span>
+                  <span className="text-xs text-[#8e95a2]">কাস্টম মিনিট:</span>
                   <input
                     type="number"
                     min="1"
@@ -210,7 +210,7 @@ export default function PomodoroWidget() {
 
             {/* Session Counter */}
             {completedSessions > 0 && (
-              <p className="text-[10px] text-[#2d5a40] font-semibold bg-[#edf7ed] py-1 px-2 rounded border border-[#c8e6c9]">
+              <p className="text-xs text-[#2d5a40] font-semibold bg-[#edf7ed] py-1 px-2 rounded border border-[#c8e6c9]">
                 আজকে সম্পন্ন সেশন: {completedSessions}টি
               </p>
             )}

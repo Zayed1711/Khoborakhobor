@@ -59,11 +59,11 @@ export default async function DailyCapsulePage() {
                   <span className="w-5 h-5 rounded-full bg-[#f4efe4] text-[#842323] flex items-center justify-center font-bold text-xs">
                     {idx + 1}
                   </span>
-                  <span className="text-[11px] font-bold text-[#842323] uppercase tracking-wider">
+                  <span className="text-xs font-bold text-[#842323] uppercase tracking-wider">
                     {art.category.name}
                   </span>
                 </div>
-                <div className="flex items-center gap-1 text-[11px] text-[#788191]">
+                <div className="flex items-center gap-1 text-xs text-[#788191]">
                   <Clock className="w-3 h-3" />
                   <span>{art.readTime}</span>
                 </div>
@@ -81,7 +81,7 @@ export default async function DailyCapsulePage() {
               {/* Key Takeaways */}
               {art.keyTakeaways && art.keyTakeaways.length > 0 && (
                 <div className="mt-3 p-3 bg-[#faf8f4] border border-[#eee9df] rounded text-xs space-y-1.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#1c1d21] block">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#1c1d21] block">
                     শিক্ষণীয় মূল বিষয়সমূহ:
                   </span>
                   <ul className="space-y-1 text-[#3b414d] list-disc list-inside">
@@ -97,7 +97,7 @@ export default async function DailyCapsulePage() {
               {/* Vocabulary Preview & Link */}
               <div className="mt-4 pt-3 border-t border-[#f0ebdf] flex items-center justify-between text-xs">
                 {art.vocabulary && art.vocabulary.length > 0 ? (
-                  <div className="flex items-center gap-1 text-[11px] text-[#6b7280]">
+                  <div className="flex items-center gap-1 text-xs text-[#6b7280]">
                     <Sparkles className="w-3 h-3 text-[#c29547]" />
                     <span>পারিভাষিক শব্দ: {art.vocabulary.map((v: any) => v.term).join(", ")}</span>
                   </div>

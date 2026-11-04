@@ -39,12 +39,12 @@ export default function HighlighterTooltip({
         <>
           <button
             onClick={() => onLookupDictionary(selectedText)}
-            className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold text-amber-300 hover:text-white hover:bg-white/10 transition border border-amber-300/40 shrink-0"
+            className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold text-amber-300 hover:text-white hover:bg-white/10 transition border border-amber-300/40 shrink-0"
             title="শব্দের অর্থ, উচ্চারণ ও সংজ্ঞা দেখুন (Dictionary Lookup)"
           >
             <BookOpen className="w-3 h-3 text-amber-400" />
             <span>অভিধান</span>
-            <span className="text-[8px] font-bold px-1 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30">
+            <span className="text-xs font-bold px-1 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30">
               PRO
             </span>
           </button>
@@ -52,7 +52,7 @@ export default function HighlighterTooltip({
         </>
       )}
 
-      <span className="text-[10px] text-[#9ca3af] font-medium pl-0.5 flex items-center gap-1 shrink-0">
+      <span className="text-xs text-[#9ca3af] font-medium pl-0.5 flex items-center gap-1 shrink-0">
         <Highlighter className="w-3 h-3 text-[#f5c66b]" />
         <span className="hidden sm:inline">মার্কার:</span>
       </span>
@@ -83,7 +83,7 @@ export default function HighlighterTooltip({
       {/* Add with Memo button */}
       <button
         onClick={onOpenMemo}
-        className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium text-white hover:bg-white/10 transition shrink-0"
+        className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium text-white hover:bg-white/10 transition shrink-0"
         title="ব্যক্তিগত নোট বা ব্যাখ্যা যুক্ত করুন"
       >
         <Edit3 className="w-3 h-3" />

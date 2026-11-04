@@ -53,16 +53,16 @@ export default function HighlightCarousel({ articles }: HighlightCarouselProps) 
             className="w-full h-full object-cover transition-all duration-700 brightness-[0.98]"
           />
           <div className="absolute top-3 left-3 flex items-center gap-2">
-            <span className="bg-[#842323] text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-xs uppercase tracking-wider">
+            <span className="bg-[#842323] text-white text-xs font-bold px-3 py-1 rounded-full shadow-xs uppercase tracking-wider">
               {current.category.name}
             </span>
             {current.examTags && (
-              <span className="bg-[#1f2733]/85 text-white text-[10px] font-medium px-2.5 py-1 rounded-full backdrop-blur-xs">
+              <span className="bg-[#1f2733]/85 text-white text-xs font-medium px-2.5 py-1 rounded-full backdrop-blur-xs">
                 {current.examTags.split(",")[0]}
               </span>
             )}
           </div>
-          <div className="absolute bottom-3 left-3 bg-[#17191d]/80 text-[#faf8f4] text-[10px] px-2.5 py-1 rounded backdrop-blur-xs flex items-center gap-1 font-mono">
+          <div className="absolute bottom-3 left-3 bg-[#17191d]/80 text-[#faf8f4] text-xs px-2.5 py-1 rounded backdrop-blur-xs flex items-center gap-1 font-mono">
             <Clock className="w-3 h-3" />
             <span>{current.readTime} পাঠ</span>
           </div>
@@ -72,7 +72,7 @@ export default function HighlightCarousel({ articles }: HighlightCarouselProps) 
         <div className="md:w-1/2 p-6 sm:p-8 flex flex-col justify-between bg-[#ffffff]">
           <div>
             <div className="flex items-center justify-between gap-2 mb-3">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#842323]">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#842323]">
                 ক্যাপসুল হাইলাইট #{currentIndex + 1} / {articles.length}
               </span>
               <div className="flex items-center gap-1.5">
@@ -102,7 +102,7 @@ export default function HighlightCarousel({ articles }: HighlightCarouselProps) 
             {/* Micro Takeaways (Clean, max 2 points) */}
             {current.keyTakeaways && current.keyTakeaways.length > 0 && (
               <div className="mt-4 p-3 bg-[#faf8f4] border border-[#ece7dc] rounded-md text-xs space-y-1">
-                <span className="text-[10px] font-bold uppercase text-[#1c1d21] block tracking-wider">
+                <span className="text-xs font-bold uppercase text-[#1c1d21] block tracking-wider">
                   মূল শিক্ষণীয় পয়েন্ট:
                 </span>
                 <p className="text-[#3b414d] line-clamp-2 leading-relaxed">

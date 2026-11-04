@@ -159,17 +159,17 @@ export default function DateArchiveDropdown({
             <span className="text-xs font-bold text-[#1c1d21]">
               {isEnglishMode ? "Date Archive" : "সংবাদ আর্কাইভ"}
             </span>
-            <span className="text-[10px] font-semibold text-[#842323] bg-[#fbf5f5] px-1.5 py-0.2 rounded border border-[#f2dede]">
+            <span className="text-xs font-semibold text-[#842323] bg-[#fbf5f5] px-1.5 py-0.2 rounded border border-[#f2dede]">
               {isEnglishMode ? "Past 7 Days" : "বিগত ৭ দিন"}
             </span>
             {isLoading && (
-              <span className="flex items-center gap-1 text-[10px] text-[#842323] font-semibold animate-pulse">
+              <span className="flex items-center gap-1 text-xs text-[#842323] font-semibold animate-pulse">
                 <Loader2 className="w-3 h-3 animate-spin" />
                 {isEnglishMode ? "Loading..." : "লোড হচ্ছে..."}
               </span>
             )}
           </div>
-          <span className="text-[11px] text-[#717887] hidden sm:block truncate">
+          <span className="text-xs text-[#717887] hidden sm:block truncate">
             {isEnglishMode
               ? "Filter editorial feed by specific publication date"
               : "নির্দিষ্ট তারিখের সংবাদ ও বিষয়ভিত্তিক সম্পাদকীয় ফিল্টার করুন"}
@@ -183,7 +183,7 @@ export default function DateArchiveDropdown({
           <button
             type="button"
             onClick={() => onSelectDate("all")}
-            className="flex items-center gap-1 text-[11px] font-semibold text-[#842323] hover:underline px-2 py-1 bg-[#fbf5f5] rounded-lg border border-[#f2dede] transition cursor-pointer"
+            className="flex items-center gap-1 text-xs font-semibold text-[#842323] hover:underline px-2 py-1 bg-[#fbf5f5] rounded-lg border border-[#f2dede] transition cursor-pointer"
             title={isEnglishMode ? "Reset to all dates" : "সব তারিখের সংবাদে ফিরে যান"}
           >
             <RotateCcw className="w-3 h-3" />
@@ -228,7 +228,7 @@ export default function DateArchiveDropdown({
                   {selectedDate === "all" && <Check className="w-3.5 h-3.5 shrink-0" />}
                   <span>{isEnglishMode ? "All News (Past 7 Days)" : "সব সংবাদ (বিগত ৭ দিন)"}</span>
                 </div>
-                <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-full ${
+                <span className={`text-xs font-mono px-1.5 py-0.5 rounded-full ${
                   selectedDate === "all" ? "bg-white/20 text-white" : "bg-[#f4efe4] text-[#842323] font-bold"
                 }`}>
                   {isEnglishMode ? allCount : toBnDigits(allCount)}
@@ -263,12 +263,12 @@ export default function DateArchiveDropdown({
                         <span className="w-3.5" />
                       )}
                       <span>{isEnglishMode ? d.labelEn : d.labelBn}</span>
-                      <span className={`text-[10px] ${isSelected ? "text-white/80" : "text-[#717887]"}`}>
+                      <span className={`text-xs ${isSelected ? "text-white/80" : "text-[#717887]"}`}>
                         ({isEnglishMode ? d.subLabelEn : d.subLabelBn})
                       </span>
                     </div>
 
-                    <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-full ${
+                    <span className={`text-xs font-mono px-1.5 py-0.5 rounded-full ${
                       isSelected
                         ? "bg-white/20 text-white"
                         : count > 0

@@ -161,7 +161,7 @@ export default function SideNotePanel({
           <div className="flex items-center gap-2">
             <Link
               href="/saved"
-              className="text-[11px] text-[#842323] hover:underline font-medium"
+              className="text-xs text-[#842323] hover:underline font-medium"
               title="সম্পূর্ণ স্টাডি হাব খুলুন"
             >
               স্টাডি হাব →
@@ -183,7 +183,7 @@ export default function SideNotePanel({
             <label className="text-xs font-bold text-[#1c1d21] flex items-center gap-1.5">
               <span>পঠনকালীন খসড়া নোটবুক</span>
             </label>
-            <span className="text-[10px] text-[#788191]">স্বয়ংক্রিয় ক্লাউড সিঙ্ক</span>
+            <span className="text-xs text-[#788191]">স্বয়ংক্রিয় ক্লাউড সিঙ্ক</span>
           </div>
 
           {/* Lined Digital Notebook Area */}
@@ -196,7 +196,7 @@ export default function SideNotePanel({
               className="w-full bg-transparent resize-none text-xs leading-relaxed text-[#23272e] placeholder:text-[#9ea6b3] outline-none"
             />
             <div className="flex items-center justify-between pt-2 border-t border-[#f0eae0] mt-1">
-              <span className="text-[10px] text-[#8e95a2]">
+              <span className="text-xs text-[#8e95a2]">
                 {notebookText.length} হরফ
               </span>
               <button
@@ -230,7 +230,7 @@ export default function SideNotePanel({
 
           {notes.length === 0 ? (
             <div className="p-3 bg-[#faf8f3] rounded border border-dashed border-[#ded8cb] text-center text-[#788191]">
-              <p className="text-[11px] leading-relaxed">
+              <p className="text-xs leading-relaxed">
                 নিবন্ধের যেকোনো বাক্য সিলেক্ট করে মার্কার দিয়ে চিহ্নিত করুন। সেগুলো সাথে সাথে এখানে জমা হবে।
               </p>
             </div>
@@ -251,11 +251,11 @@ export default function SideNotePanel({
                       &ldquo;{note.quoteText || (note as any).snippet}&rdquo;
                     </p>
                     {note.memo && (
-                      <p className="text-[11px] text-[#555e6d] bg-white/80 p-1 rounded font-sans border border-[#e8e2d6]">
+                      <p className="text-xs text-[#555e6d] bg-white/80 p-1 rounded font-sans border border-[#e8e2d6]">
                         {note.memo}
                       </p>
                     )}
-                    <div className="flex items-center justify-between text-[10px] text-[#8e95a2] pt-1">
+                    <div className="flex items-center justify-between text-xs text-[#8e95a2] pt-1">
                       <span>{noteColor || "মার্কার"}</span>
                       <button
                         onClick={() => handleDeleteNote(note.id)}
@@ -279,7 +279,7 @@ export default function SideNotePanel({
               <BookOpen className="w-3.5 h-3.5 text-[#842323]" />
               <span>স্মার্ট ধারণা ও শব্দকোষ (Lexicon)</span>
             </h4>
-            <span className="text-[10px] text-[#717887]">তাত্ক্ষণিক অর্থ ও উদাহরণ</span>
+            <span className="text-xs text-[#717887]">তাত্ক্ষণিক অর্থ ও উদাহরণ</span>
           </div>
 
           {/* Dictionary Search Input */}
@@ -311,7 +311,7 @@ export default function SideNotePanel({
                 <span className="font-bold text-xs text-[#842323] font-serif">
                   {activeEntry.term}
                 </span>
-                <span className="text-[10px] bg-[#ede7dc] text-[#555d6b] px-1.5 py-0.5 rounded font-mono">
+                <span className="text-xs bg-[#ede7dc] text-[#555d6b] px-1.5 py-0.5 rounded font-mono">
                   {activeEntry.category}
                 </span>
               </div>
@@ -321,21 +321,21 @@ export default function SideNotePanel({
               </p>
 
               {activeEntry.realLifeExample && (
-                <div className="text-[11px] text-[#3e4552] bg-white p-2 rounded border border-[#e4dcce] space-y-0.5">
-                  <span className="font-semibold text-[#842323] block text-[10px]">বাস্তব প্রয়োগ / উদাহরণ:</span>
+                <div className="text-xs text-[#3e4552] bg-white p-2 rounded border border-[#e4dcce] space-y-0.5">
+                  <span className="font-semibold text-[#842323] block text-xs">বাস্তব প্রয়োগ / উদাহরণ:</span>
                   <p className="italic">{activeEntry.realLifeExample}</p>
                 </div>
               )}
 
               {activeEntry.examRelevance && (
-                <p className="text-[10px] text-[#555e6d] bg-[#f3ede1] p-1.5 rounded border border-[#e4dcce]">
+                <p className="text-xs text-[#555e6d] bg-[#f3ede1] p-1.5 rounded border border-[#e4dcce]">
                   <strong>পরীক্ষার প্রস্তুতিতে গুরুত্ব:</strong> {activeEntry.examRelevance}
                 </p>
               )}
 
               {/* 1-Click Saving Option to Study Hub */}
               <div className="pt-2 border-t border-[#ede6d8] flex items-center justify-between gap-2">
-                <span className="text-[10px] text-[#717887]">
+                <span className="text-xs text-[#717887]">
                   ওয়ার্ড ব্যাংক ও ডাউনলোডে যুক্ত হবে
                 </span>
                 <button
@@ -365,7 +365,7 @@ export default function SideNotePanel({
         {/* Guest Notice if not logged in */}
         {!student && (
           <div className="p-3 bg-[#f6f2e8] border border-[#e2dcd0] rounded-lg text-center">
-            <p className="text-[11px] text-[#555d6b]">
+            <p className="text-xs text-[#555d6b]">
               নোট ও শব্দগুলো স্থায়ীভাবে আপনার অ্যাকাউন্টে সংরক্ষণ করতে{" "}
               <Link href={`/login?redirect=/article/${articleSlug}`} className="text-[#842323] font-bold underline">
                 লগইন করুন

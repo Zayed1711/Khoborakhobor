@@ -124,14 +124,16 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
         {/* ======================================================== */}
         {/* MOBILE DEDICATED APP BAR (< md: Clean, 52px, 0 Clutter) */}
         {/* ======================================================== */}
-        <div className="md:hidden flex items-center justify-between px-3.5 py-2.5 bg-white border-b border-[#ece7dc]">
+        <div className="md:hidden flex items-center justify-between gap-1.5 px-2.5 py-2 bg-white border-b border-[#ece7dc]">
           {/* Left: Mobile Brand Logo */}
-          <KhoborLogo variant="compact" size="sm" showTagline={false} />
+          <div className="min-w-0 shrink overflow-hidden">
+            <KhoborLogo variant="compact" size="sm" showTagline={false} />
+          </div>
 
-          {/* Right: Quick Ergonomic Controls */}
-          <div className="flex items-center gap-1.5">
+          {/* Right: Quick Ergonomic Controls (must fit a 360px screen) */}
+          <div className="flex items-center gap-1 shrink-0">
             {/* 1-Tap Platform Mode Toggle Pill */}
-            <div className="inline-flex rounded-lg border border-[#ded8cc] bg-[#faf8f4] p-0.5 text-[10px] font-semibold">
+            <div className="inline-flex rounded-lg border border-[#ded8cc] bg-[#faf8f4] p-0.5 text-xs font-semibold">
               <button
                 type="button"
                 onClick={() => setMode("job_prep")}
@@ -149,8 +151,9 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
                   isEnglishMode ? "bg-[#1e40af] text-white shadow-2xs font-bold" : "text-[#555d6b]"
                 }`}
                 title="English Learning"
+                aria-label="English Learning"
               >
-                <span>English</span>
+                <span>EN</span>
               </button>
             </div>
 
@@ -158,30 +161,28 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
             {isLoggedIn ? (
               <Link
                 href="/saved"
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 text-[10px] font-medium border border-amber-500/20 shrink-0"
+                className="inline-flex items-center gap-1.5 h-9 px-2.5 rounded-full bg-amber-500/10 text-amber-700 text-xs font-medium border border-amber-500/20 shrink-0"
                 title={`Founding Pro Trial: Active (${trialDaysRemaining} Days Left)`}
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                <span>Pro ({trialDaysRemaining}d)</span>
+                <span>Pro</span>
               </Link>
             ) : (
               <Link
                 href="/login"
-                className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#faf8f4] border border-[#ded8cb] text-[#842323] text-[10px] font-bold"
+                className="w-9 h-9 rounded-lg bg-[#faf8f4] border border-[#ded8cb] text-[#842323] flex items-center justify-center"
                 title="লগইন বা সাইন আপ"
+                aria-label="লগইন বা সাইন আপ"
               >
-                <span>লগইন</span>
+                <UserCheck className="w-4 h-4" />
               </Link>
             )}
 
-            {/* Eye-Care Theme Switcher */}
-            <ThemeSwitcher compact />
-
-            {/* Instant Search Button (40x40 touch target) */}
+            {/* Instant Search Button */}
             <button
               type="button"
               onClick={() => setIsSearchOpen(true)}
-              className="w-8 h-8 rounded-lg border border-[#ded8cb] bg-[#faf8f4] flex items-center justify-center text-[#404652] hover:bg-[#ede7da] transition active:scale-95"
+              className="w-9 h-9 rounded-lg border border-[#ded8cb] bg-[#faf8f4] flex items-center justify-center text-[#404652] hover:bg-[#ede7da] transition active:scale-95"
               aria-label="অনুসন্ধান করুন"
             >
               <Search className={`w-4 h-4 ${isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"}`} />
@@ -191,8 +192,9 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
             <button
               type="button"
               onClick={() => setIsMobileCategoryOpen(!isMobileCategoryOpen)}
-              className="w-8 h-8 rounded-lg border border-[#ded8cb] bg-[#faf8f4] flex items-center justify-center text-[#404652] hover:bg-[#ede7da] transition"
-              aria-label="বিভাগসমূহ"
+              className="w-9 h-9 rounded-lg border border-[#ded8cb] bg-[#faf8f4] flex items-center justify-center text-[#404652] hover:bg-[#ede7da] transition"
+              aria-label="বিভাগসমূহ ও সেটিংস"
+              aria-expanded={isMobileCategoryOpen}
               title="বিভাগসমূহ"
             >
               {isMobileCategoryOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
@@ -203,7 +205,13 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
         {/* Mobile Slide-down Category Drawer (Optional deep-dive) */}
         {isMobileCategoryOpen && (
           <div className="md:hidden border-b border-[#ece7dc] bg-[#faf8f4] px-4 py-3 max-h-[60vh] overflow-y-auto animate-in slide-in-from-top duration-200 space-y-1">
-            <span className="text-[11px] font-bold text-[#717887] uppercase tracking-wider block mb-2">
+            <div className="flex items-center justify-between gap-3 pb-2 mb-1 border-b border-[#ece7dc]">
+              <span className="text-xs font-semibold text-[#555d6b]">
+                {isEnglishMode ? "Reading theme" : "পড়ার থিম"}
+              </span>
+              <ThemeSwitcher compact />
+            </div>
+            <span className="text-xs font-bold text-[#717887] uppercase tracking-wider block mb-2">
               {isEnglishMode ? "Explore Tracks & Categories" : "সংবাদ ও স্টাডি বিভাগসমূহ"}
             </span>
             <Link
@@ -226,7 +234,7 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
                     key={cat.id}
                     href={`/category/${cat.slug}`}
                     onClick={() => setIsMobileCategoryOpen(false)}
-                    className="block px-2.5 py-2 text-xs text-[#3b414d] hover:bg-[#ede7da] bg-white rounded-lg border border-[#ded8cb] font-medium truncate"
+                    className="block px-3 py-2.5 text-sm text-[#3b414d] hover:bg-[#ede7da] bg-white rounded-lg border border-[#ded8cb] font-medium truncate"
                   >
                     {displayName}
                   </Link>
@@ -240,16 +248,12 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
         {/* DESKTOP HEADER (Preserved 100% with full institutional layout) */}
         {/* ======================================================== */}
         {/* Top Micro-Bar */}
-        <div className="hidden md:block border-b border-[#ece7dc] text-[11px] text-[#555d6b] py-1.5 px-4 sm:px-8 bg-[#faf8f3]">
+        <div className="hidden md:block border-b border-[#ece7dc] text-xs text-[#555d6b] py-1.5 px-4 sm:px-8 bg-[#faf8f3]">
           <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <span className="flex items-center gap-1.5 font-medium text-[#404652]">
                 <Calendar className="w-3.5 h-3.5 text-[#88909d]" />
                 {currentDate}
-              </span>
-              <span className="hidden md:inline-block text-[#d5d0c4]">|</span>
-              <span className="hidden md:inline-block text-[#606775]">
-                {isEnglishMode ? "Dhaka: 28°C, Clear Sky" : "ঢাকা: ২৮° সেলসিয়াস, পরিচ্ছন্ন আবহাওয়া"}
               </span>
               <span className="hidden lg:inline-block text-[#d5d0c4]">|</span>
               <Link
@@ -267,7 +271,7 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
               {/* PRIMARY PLATFORM MODE SWITCHER PILL */}
               <div
                 id="platform-mode-switcher"
-                className="inline-flex rounded-lg border border-[#ded8cc] bg-white p-0.5 shadow-2xs text-[11px] font-semibold"
+                className="inline-flex rounded-lg border border-[#ded8cc] bg-white p-0.5 shadow-2xs text-xs font-semibold"
               >
                 <button
                   type="button"
@@ -316,7 +320,7 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
               {sessionState?.role === "admin" && (
                 <Link
                   href="/admin"
-                  className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold border border-amber-200 transition text-[11px]"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold border border-amber-200 transition text-xs"
                 >
                   অ্যাডমিন
                 </Link>
@@ -356,7 +360,7 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
                   {isEnglishMode ? "Search articles & words..." : "অনুসন্ধান করুন..."}
                 </span>
               </div>
-              <kbd className="hidden sm:inline-flex items-center bg-[#eae4d6] text-[#6b7280] text-[10px] font-mono px-1.5 py-0.5 rounded border border-[#dfd8ca] shrink-0">
+              <kbd className="hidden sm:inline-flex items-center bg-[#eae4d6] text-[#6b7280] text-xs font-mono px-1.5 py-0.5 rounded border border-[#dfd8ca] shrink-0">
                 Ctrl K
               </kbd>
             </button>
@@ -372,7 +376,7 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
             >
               <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
               <span className="font-semibold">Founding Pro</span>
-              <span className="text-[11px] text-amber-800/80 font-normal">
+              <span className="text-xs text-amber-800/80 font-normal">
                 {isLoggedIn ? `| ${trialDaysRemaining}d remaining` : "| 14-Day Trial"}
               </span>
             </Link>

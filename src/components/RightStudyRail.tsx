@@ -200,10 +200,10 @@ export default function RightStudyRail({
             )}
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase bg-amber-500/10 text-amber-700 border border-amber-500/20 shrink-0">
+            <span className="px-1.5 py-0.5 rounded text-xs font-bold tracking-wider uppercase bg-amber-500/10 text-amber-700 border border-amber-500/20 shrink-0">
               PRO • FREE IN NOV
             </span>
-            <span className="text-[10px] text-[#717887]">
+            <span className="text-xs text-[#717887]">
               {isEnglishMode ? "শব্দার্থ ও প্রয়োগ" : "একটিভ রিকল"}
             </span>
           </div>
@@ -213,13 +213,13 @@ export default function RightStudyRail({
         {(activeQuiz.sourceName || activeQuiz.articleTitle || activeQuiz.contextQuote) && (
           <div className="p-2 bg-[#fbf9f5] border border-[#e2dcd0] rounded-xl space-y-1.5">
             {/* Source Newspaper Badge & Article Link */}
-            <div className="flex items-center justify-between text-[11px] gap-2 flex-wrap">
+            <div className="flex items-center justify-between text-xs gap-2 flex-wrap">
               <div className="flex items-center gap-1.5 min-w-0">
-                <span className="font-bold text-[#842323] uppercase tracking-wide text-[10px] bg-[#f0eae1] px-1.5 py-0.5 rounded border border-[#ded8cb] shrink-0 font-serif">
+                <span className="font-bold text-[#842323] uppercase tracking-wide text-xs bg-[#f0eae1] px-1.5 py-0.5 rounded border border-[#ded8cb] shrink-0 font-serif">
                   {cleanSourceName}
                 </span>
                 {activeQuiz.paragraphRef && (
-                  <span className="text-[10px] text-[#717887] font-mono shrink-0">
+                  <span className="text-xs text-[#717887] font-mono shrink-0">
                     {activeQuiz.paragraphRef}
                   </span>
                 )}
@@ -227,7 +227,7 @@ export default function RightStudyRail({
               {activeQuiz.articleSlug && (
                 <Link
                   href={`/article/${activeQuiz.articleSlug}`}
-                  className="text-[10px] text-[#1e40af] hover:text-[#1e3a8a] hover:underline font-semibold flex items-center gap-0.5 shrink-0 ml-auto group"
+                  className="text-xs text-[#1e40af] hover:text-[#1e3a8a] hover:underline font-semibold flex items-center gap-0.5 shrink-0 ml-auto group"
                   title="মূল প্রতিবেদনটি বিস্তারিত পড়ুন"
                 >
                   <span>মূল প্রতিবেদন পড়ুন</span>
@@ -238,8 +238,8 @@ export default function RightStudyRail({
 
             {/* Context Line / Excerpt Quote */}
             {activeQuiz.contextQuote && (
-              <div className="text-[11px] text-[#404652] italic leading-relaxed border-l-2 border-[#842323]/60 pl-2 py-0.5 bg-white/70 rounded-r font-serif">
-                <span className="text-[#717887] not-italic block text-[9px] font-semibold uppercase tracking-wider mb-0.5 font-sans">
+              <div className="text-xs text-[#404652] italic leading-relaxed border-l-2 border-[#842323]/60 pl-2 py-0.5 bg-white/70 rounded-r font-serif">
+                <span className="text-[#717887] not-italic block text-xs font-semibold uppercase tracking-wider mb-0.5 font-sans">
                   সংশ্লিষ্ট বাক্য / অনুচ্ছেদ উদ্ধৃতি:
                 </span>
                 “{activeQuiz.contextQuote}”
@@ -250,7 +250,7 @@ export default function RightStudyRail({
 
         <div className="space-y-1">
           {topicBadge && (
-            <span className="inline-block px-1.5 py-0.5 rounded bg-[#f4efe4] text-[#842323] text-[9.5px] font-semibold border border-[#ded8cb]/80 uppercase tracking-wide">
+            <span className="inline-block px-1.5 py-0.5 rounded bg-[#f4efe4] text-[#842323] text-xs font-semibold border border-[#ded8cb]/80 uppercase tracking-wide">
               {topicBadge}
             </span>
           )}
@@ -279,10 +279,10 @@ export default function RightStudyRail({
                 className={`w-full text-left p-2.5 rounded-lg border text-xs transition flex items-start justify-between gap-2 overflow-hidden ${btnStyle}`}
               >
                 <div className="flex items-start gap-1.5 flex-1 min-w-0">
-                  <span className="font-mono font-semibold text-[#717887] text-[11px] shrink-0 mt-0.5">
+                  <span className="font-mono font-semibold text-[#717887] text-xs shrink-0 mt-0.5">
                     {isEnglishMode ? OPTION_PREFIX_EN[idx] || `(${idx + 1})` : OPTION_PREFIX_BN[idx] || `(${idx + 1})`}
                   </span>
-                  <span className="flex-1 min-w-0 break-words leading-relaxed text-[11.5px]">{opt}</span>
+                  <span className="flex-1 min-w-0 break-words leading-relaxed text-xs">{opt}</span>
                 </div>
                 {answered && idx === activeQuiz.correctOption && (
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
@@ -296,7 +296,7 @@ export default function RightStudyRail({
         </div>
 
         {answered && (
-          <div className="p-2.5 bg-[#faf8f4] border border-[#ded8cb] rounded-lg text-[11px] text-[#404652] leading-relaxed animate-fade-in">
+          <div className="p-2.5 bg-[#faf8f4] border border-[#ded8cb] rounded-lg text-xs text-[#404652] leading-relaxed animate-fade-in">
             <span className="font-bold text-[#1c1d21]">ব্যাখ্যা: </span>
             {activeQuiz.explanation}
           </div>
@@ -330,7 +330,7 @@ export default function RightStudyRail({
               <span className="font-semibold text-[#343a46] group-hover:text-[#842323] transition-colors">
                 #{h.tag}
               </span>
-              <span className="text-[10px] text-[#788191] font-mono group-hover:text-[#842323] transition-colors">
+              <span className="text-xs text-[#788191] font-mono group-hover:text-[#842323] transition-colors">
                 {h.countLabel}
               </span>
             </button>
@@ -340,7 +340,7 @@ export default function RightStudyRail({
 
       {/* 4. Eye-Care Reading Themes */}
       <div className="shrink-0 p-4 bg-white border border-[#ded8cb] rounded-2xl shadow-2xs space-y-2">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-[#737b88] block">
+        <span className="text-xs font-bold uppercase tracking-wider text-[#737b88] block">
           কাগজের আভা ও চোখের প্রশান্তি:
         </span>
         <ThemeSwitcher />
@@ -349,10 +349,10 @@ export default function RightStudyRail({
       {/* 5. Copyright Notice */}
       <div 
         data-digital-signature="KK-RAIL-AUTH-2026"
-        className="shrink-0 p-3 text-[10px] text-[#8e95a2] space-y-1 leading-relaxed font-sans"
+        className="shrink-0 p-3 text-xs text-[#8e95a2] space-y-1 leading-relaxed font-sans"
       >
         <p>&copy; ২০২৬ খবরাখবর (KhoboraKhobor)</p>
-        <p className="text-[9px] text-[#a0a8b5]">
+        <p className="text-xs text-[#a0a8b5]">
           {isEnglishMode ? "Dual-Track Academic Edition" : "সর্বস্বত্ব সংরক্ষিত।"}
         </p>
       </div>

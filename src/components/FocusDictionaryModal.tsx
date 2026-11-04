@@ -129,7 +129,7 @@ export default function FocusDictionaryModal({
             <h3 className="text-sm font-bold tracking-wide">
               স্মার্ট অভিধান ও উচ্চারণ (Smart Lexicon)
             </h3>
-            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase bg-amber-500/20 text-amber-300 border border-amber-400/30 shrink-0">
+            <span className="px-1.5 py-0.5 rounded text-xs font-bold tracking-wider uppercase bg-amber-500/20 text-amber-300 border border-amber-400/30 shrink-0">
               PRO • FREE IN NOV
             </span>
           </div>
@@ -202,7 +202,7 @@ export default function FocusDictionaryModal({
                         উচ্চারণ: [{banglaPhonetic}]
                       </span>
                     )}
-                    <span className="text-[11px] text-[#64748b] bg-slate-100 px-2 py-0.5 rounded font-medium">
+                    <span className="text-xs text-[#64748b] bg-slate-100 px-2 py-0.5 rounded font-medium">
                       {entry.category || "ইংরেজি শব্দকোষ"}
                     </span>
                   </div>
@@ -225,7 +225,7 @@ export default function FocusDictionaryModal({
 
               {/* Bangla Meaning Box */}
               <div className="p-3.5 bg-blue-50/70 border border-blue-200/80 rounded-xl space-y-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-900 block font-mono">
+                <span className="text-xs font-bold uppercase tracking-wider text-blue-900 block font-mono">
                   সহজ বাংলা অর্থ:
                 </span>
                 <p className="text-xs sm:text-sm text-[#0f172a] font-medium leading-relaxed font-sans">
@@ -236,7 +236,7 @@ export default function FocusDictionaryModal({
               {/* English Conceptual Definition */}
               {entry.simplifiedMeaning && (
                 <div className="space-y-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748b] block font-mono">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#64748b] block font-mono">
                     English Definition:
                   </span>
                   <p className="text-xs text-[#334155] leading-relaxed italic bg-[#f8fafc] p-3 rounded-lg border border-[#e2e8f0]">
@@ -248,7 +248,7 @@ export default function FocusDictionaryModal({
               {/* Real-Life Practical Example */}
               {entry.realLifeExample && (
                 <div className="p-3 bg-gradient-to-br from-[#faf8f5] to-[#f5f0e6] rounded-xl border border-[#ded8cb] space-y-1.5">
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-900 font-mono uppercase tracking-wider">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900 font-mono uppercase tracking-wider">
                     <Sparkles className="w-3 h-3 text-amber-600" />
                     <span>বাস্তব বাক্যে প্রয়োগ ও প্রসঙ্গ:</span>
                   </div>
@@ -266,7 +266,7 @@ export default function FocusDictionaryModal({
         </div>
 
         {/* Footer info */}
-        <div className="p-3 bg-[#f8fafc] border-t border-[#e2e8f0] flex items-center justify-between text-[11px] text-[#64748b]">
+        <div className="p-3 bg-[#f8fafc] border-t border-[#e2e8f0] flex items-center justify-between text-xs text-[#64748b]">
           <span>খবরাখবর স্মার্ট ডিকশনারি ইঞ্জিন</span>
           <button
             type="button"

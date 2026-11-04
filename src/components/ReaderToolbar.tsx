@@ -112,13 +112,13 @@ export default function ReaderToolbar({
                   >
                     <BookOpen className="w-3.5 h-3.5 text-[#1e40af] shrink-0" />
                     <span>অভিধান</span>
-                    <span className="px-1 py-0.2 rounded text-[8.5px] font-bold tracking-wider uppercase bg-amber-500/15 text-amber-800 border border-amber-500/25 shrink-0">
+                    <span className="px-1 py-0.2 rounded text-xs font-bold tracking-wider uppercase bg-amber-500/15 text-amber-800 border border-amber-500/25 shrink-0">
                       PRO • FREE IN NOV
                     </span>
                   </button>
                 )}
                 <div
-                  className="inline-flex items-center gap-1.5 px-2.5 h-8 rounded-lg bg-blue-50/60 text-blue-900 border border-blue-200/60 text-[11px] font-medium whitespace-nowrap shrink-0"
+                  className="inline-flex items-center gap-1.5 px-2.5 h-8 rounded-lg bg-blue-50/60 text-blue-900 border border-blue-200/60 text-xs font-medium whitespace-nowrap shrink-0"
                   title="ইংরেজি শব্দের উচ্চারণ শুনতে শব্দের ওপর ক্লিক করুন"
                 >
                   <Volume2 className="w-3.5 h-3.5 text-blue-700 shrink-0" />
@@ -163,12 +163,12 @@ export default function ReaderToolbar({
             >
               <Edit3 className="w-3.5 h-3.5" />
               <span>নোটবুক</span>
-              <span className="px-1 py-0.2 rounded text-[8.5px] font-bold tracking-wider uppercase bg-amber-500/15 text-amber-800 border border-amber-500/25 shrink-0">
+              <span className="px-1 py-0.2 rounded text-xs font-bold tracking-wider uppercase bg-amber-500/15 text-amber-800 border border-amber-500/25 shrink-0">
                 PRO • FREE IN NOV
               </span>
               {noteCount > 0 && (
                 <span
-                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                  className={`px-1.5 py-0.2 rounded-full text-xs font-bold ${
                     isNotebookOpen ? "bg-white text-[#842323]" : "bg-[#842323] text-white"
                   }`}
                 >
@@ -195,8 +195,8 @@ export default function ReaderToolbar({
       {/* 2. MOBILE READER TOOLBAR (Strictly md:hidden, 2 Rows)    */}
       {/* ======================================================== */}
       <div className="md:hidden flex flex-col gap-2.5 p-2.5 mb-6 bg-[#ffffff] border border-[#e2dcd0] rounded-xl shadow-2xs text-xs text-[#525964]">
-        {/* Row 1: Font Size Controls + Theme Switcher */}
-        <div className="flex items-center justify-between gap-2">
+        {/* Row 1: Font Size Controls + Theme Switcher (wraps instead of overflowing on narrow phones) */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-1">
             <Type className="w-3.5 h-3.5 text-[#88909d]" />
             <div className="inline-flex bg-[#f3efe6] p-0.5 rounded-lg border border-[#ded8cb]">
@@ -277,7 +277,7 @@ export default function ReaderToolbar({
             <Edit3 className="w-3.5 h-3.5" />
             <span>নোটবুক</span>
             {noteCount > 0 && (
-              <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-bold ${
+              <span className={`px-1.5 py-0.2 rounded-full text-xs font-bold ${
                 isNotebookOpen ? "bg-white text-[#842323]" : "bg-[#842323] text-white"
               }`}>
                 {noteCount}

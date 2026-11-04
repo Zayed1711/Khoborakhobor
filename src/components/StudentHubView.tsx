@@ -297,11 +297,11 @@ export default function StudentHubView({
                 {student.name}
               </h1>
               {isEnglishMode ? (
-                <span className="text-[11px] bg-[#f0f9ff] text-[#0284c7] font-bold px-2.5 py-0.5 rounded-full border border-[#bae6fd] flex items-center gap-1">
+                <span className="text-xs bg-[#f0f9ff] text-[#0284c7] font-bold px-2.5 py-0.5 rounded-full border border-[#bae6fd] flex items-center gap-1">
                   🇬🇧 English Learning Track (IELTS & Vocabulary)
                 </span>
               ) : (
-                <span className="text-[11px] bg-[#f5ebeb] text-[#842323] font-bold px-2.5 py-0.5 rounded-full border border-[#e5c9c9]">
+                <span className="text-xs bg-[#f5ebeb] text-[#842323] font-bold px-2.5 py-0.5 rounded-full border border-[#e5c9c9]">
                   {student.targetTrack === "BCS_GOVT"
                     ? "বিসিএস ও সরকারি চাকরি প্রস্তুতি"
                     : student.targetTrack === "ADMISSION"
@@ -320,7 +320,7 @@ export default function StudentHubView({
           <div className="bg-[#fbf9f5] border border-[#e5dfd2] px-3.5 py-2 rounded-lg flex items-center gap-2">
             <Flame className="w-5 h-5 text-[#f59e0b] fill-current animate-pulse" />
             <div>
-              <span className="text-[10px] text-[#717887] font-semibold block uppercase">
+              <span className="text-xs text-[#717887] font-semibold block uppercase">
                 স্টাডি স্ট্রিক
               </span>
               <span className="text-sm font-bold text-[#1c1d21]">
@@ -358,7 +358,7 @@ export default function StudentHubView({
                 <h3 className="text-sm sm:text-base font-bold text-[#1c1d21] font-serif">
                   আপনার ফাউন্ডিং প্রো অগ্রগতি ও বিশ্লেষণ (Founding Pro Progress)
                 </h3>
-                <span className="text-[10px] uppercase tracking-wider font-extrabold bg-amber-400 text-neutral-950 px-2 py-0.5 rounded-full shadow-2xs">
+                <span className="text-xs uppercase tracking-wider font-extrabold bg-amber-400 text-neutral-950 px-2 py-0.5 rounded-full shadow-2xs">
                   Active Pro Trial
                 </span>
               </div>
@@ -369,7 +369,7 @@ export default function StudentHubView({
           </div>
 
           <div className="bg-white/90 backdrop-blur-xs border border-amber-300 px-3.5 py-1.5 rounded-xl text-right shadow-2xs">
-            <span className="text-[11px] text-[#717887] block font-medium">ট্রায়াল অবশিষ্ট</span>
+            <span className="text-xs text-[#717887] block font-medium">ট্রায়াল অবশিষ্ট</span>
             <span className="text-sm font-extrabold text-[#842323] font-mono">
               {activityStats?.trialDaysRemaining ?? 29} দিন
             </span>
@@ -380,7 +380,7 @@ export default function StudentHubView({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 relative z-10 pt-1">
           {/* 1. Articles Read */}
           <div className="p-3.5 bg-white border border-[#e8dfcf] rounded-xl shadow-2xs">
-            <span className="text-[11px] text-[#717887] font-medium block">পঠিত বিশ্লেষণ</span>
+            <span className="text-xs text-[#717887] font-medium block">পঠিত বিশ্লেষণ</span>
             <div className="flex items-baseline gap-1 mt-1">
               <span className="text-xl sm:text-2xl font-black text-[#1c1d21] font-mono">
                 {activityStats?.articlesRead ?? (student?.articlesRead || 0)}
@@ -391,7 +391,7 @@ export default function StudentHubView({
 
           {/* 2. Words Looked Up */}
           <div className="p-3.5 bg-white border border-[#e8dfcf] rounded-xl shadow-2xs">
-            <span className="text-[11px] text-[#717887] font-medium block">শব্দ অনুসন্ধান</span>
+            <span className="text-xs text-[#717887] font-medium block">শব্দ অনুসন্ধান</span>
             <div className="flex items-baseline gap-1 mt-1">
               <span className="text-xl sm:text-2xl font-black text-[#1e40af] font-mono">
                 {activityStats?.wordsLookedUp ?? (student?.wordsLookedUp || 0)}
@@ -402,7 +402,7 @@ export default function StudentHubView({
 
           {/* 3. Quizzes Taken */}
           <div className="p-3.5 bg-white border border-[#e8dfcf] rounded-xl shadow-2xs">
-            <span className="text-[11px] text-[#717887] font-medium block">কুইজ সম্পন্ন</span>
+            <span className="text-xs text-[#717887] font-medium block">কুইজ সম্পন্ন</span>
             <div className="flex items-baseline gap-1 mt-1">
               <span className="text-xl sm:text-2xl font-black text-[#842323] font-mono">
                 {activityStats?.quizzesTaken ?? (student?.quizzesTaken || 0)}
@@ -413,7 +413,7 @@ export default function StudentHubView({
 
           {/* 4. Notes Saved */}
           <div className="p-3.5 bg-white border border-[#e8dfcf] rounded-xl shadow-2xs">
-            <span className="text-[11px] text-[#717887] font-medium block">সংরক্ষিত নোট</span>
+            <span className="text-xs text-[#717887] font-medium block">সংরক্ষিত নোট</span>
             <div className="flex items-baseline gap-1 mt-1">
               <span className="text-xl sm:text-2xl font-black text-emerald-700 font-mono">
                 {activityStats?.notesSaved ?? (student?.notesSaved || notes.length)}
@@ -549,7 +549,7 @@ export default function StudentHubView({
           {/* Category Pipeline Filter Bar */}
           {categoriesWithCounts.length > 0 && (
             <div className="flex items-center gap-1.5 overflow-x-auto pb-2 text-xs no-print border-b border-[#e5dfd2]">
-              <span className="text-[11px] font-bold text-[#717887] shrink-0 mr-1">
+              <span className="text-xs font-bold text-[#717887] shrink-0 mr-1">
                 বিষয়ভিত্তিক পাইপলাইন:
               </span>
               <button
@@ -596,26 +596,26 @@ export default function StudentHubView({
                       {/* Note Category & Tag Badges */}
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[10px] font-bold text-[#842323] bg-[#f5ebeb] px-2 py-0.5 rounded border border-[#ebd0d0]">
+                          <span className="text-xs font-bold text-[#842323] bg-[#f5ebeb] px-2 py-0.5 rounded border border-[#ebd0d0]">
                             {note.article?.category?.name || "সাধারণ বিষয়"}
                           </span>
                           {isSummary && (
-                            <span className="text-[10px] font-semibold text-[#1f2733] bg-[#ece8dd] px-2 py-0.5 rounded">
+                            <span className="text-xs font-semibold text-[#1f2733] bg-[#ece8dd] px-2 py-0.5 rounded">
                               সারসংক্ষেপ অনুশীলন
                             </span>
                           )}
                           {isYellow && (
-                            <span className="text-[10px] font-semibold text-[#854d0e] bg-[#fef08a] px-2 py-0.5 rounded">
+                            <span className="text-xs font-semibold text-[#854d0e] bg-[#fef08a] px-2 py-0.5 rounded">
                               হলুদ মার্কার
                             </span>
                           )}
                           {isGreen && (
-                            <span className="text-[10px] font-semibold text-[#166534] bg-[#bbf7d0] px-2 py-0.5 rounded">
+                            <span className="text-xs font-semibold text-[#166534] bg-[#bbf7d0] px-2 py-0.5 rounded">
                               সবুজ মার্কার
                             </span>
                           )}
                           {isPurple && (
-                            <span className="text-[10px] font-semibold text-[#6b21a8] bg-[#e9d5ff] px-2 py-0.5 rounded">
+                            <span className="text-xs font-semibold text-[#6b21a8] bg-[#e9d5ff] px-2 py-0.5 rounded">
                               বেগুনি মার্কার
                             </span>
                           )}
@@ -646,14 +646,14 @@ export default function StudentHubView({
                         <div className="mt-2.5 p-2 bg-[#f6f2e9] rounded text-xs text-[#404652] flex items-start gap-1.5">
                           <Edit3 className="w-3 h-3 text-[#842323] shrink-0 mt-0.5" />
                           <div>
-                            <strong className="text-[#1c1d21] block text-[11px]">শিক্ষার্থীর নিজস্ব নোট:</strong>
+                            <strong className="text-[#1c1d21] block text-xs">শিক্ষার্থীর নিজস্ব নোট:</strong>
                             <span>{note.memo}</span>
                           </div>
                         </div>
                       )}
                     </div>
 
-                    <div className="mt-4 pt-2.5 border-t border-[#f2ede4] flex items-center justify-between text-[11px] text-[#8e95a2]">
+                    <div className="mt-4 pt-2.5 border-t border-[#f2ede4] flex items-center justify-between text-xs text-[#8e95a2]">
                       <span>সংরক্ষণ: {new Date(note.createdAt).toLocaleDateString("bn-BD")}</span>
                       <Link
                         href={`/article/${note.article.slug}`}
@@ -670,7 +670,7 @@ export default function StudentHubView({
             <div className="p-12 text-center bg-white rounded-xl border border-[#e4ded3] text-xs text-[#717887] space-y-2">
               <Highlighter className="w-8 h-8 text-[#d5cfc4] mx-auto" />
               <p className="font-bold text-[#2a2d34] text-sm">আপনার নোটবুকে এখনও কোনো উদ্ধৃতি বা নোট নেই</p>
-              <p className="text-[11px] text-[#8e95a2] max-w-md mx-auto">
+              <p className="text-xs text-[#8e95a2] max-w-md mx-auto">
                 যেকোনো সংবাদ পড়ার সময় গুরুত্বপূর্ণ প্যারাগ্রাফ বা বাক্য মাউস দিয়ে হাইলাইট করলে স্বয়ংক্রিয়ভাবে ক্লাউড নোটবুকে সেভ করার অপশন আসবে।
               </p>
               <div className="pt-2">
@@ -758,11 +758,11 @@ export default function StudentHubView({
                 onClick={() => setIsCardFlipped(!isCardFlipped)}
                 className="min-h-[260px] p-8 bg-white border-2 border-[#ded8cb] hover:border-[#842323] rounded-2xl shadow-sm cursor-pointer transition flex flex-col justify-between text-center select-none relative group"
               >
-                <div className="flex items-center justify-between text-[11px] text-[#8e95a2]">
+                <div className="flex items-center justify-between text-xs text-[#8e95a2]">
                   <span className="font-bold text-[#842323] uppercase tracking-wider">
                     {isCardFlipped ? "সংজ্ঞা ও অর্থ (পিছনের অংশ)" : "ধারণাগত শব্দ (সামনের অংশ)"}
                   </span>
-                  <span className="text-[10px] bg-[#f6f2e9] px-2 py-0.5 rounded text-[#505764]">
+                  <span className="text-xs bg-[#f6f2e9] px-2 py-0.5 rounded text-[#505764]">
                     ক্লিক করে ফ্লিপ করুন
                   </span>
                 </div>
@@ -808,19 +808,19 @@ export default function StudentHubView({
                         </p>
                         {isEnglishMode && currentFlashcard.term.context && (
                           <div className="text-xs text-[#0369a1] bg-[#f0f9ff] p-2 rounded border border-[#bae6fd] mt-2 text-left">
-                            <span className="font-semibold block text-[10px] text-[#0284c7] uppercase">বাস্তব প্রয়োগের উদাহরণ:</span>
+                            <span className="font-semibold block text-xs text-[#0284c7] uppercase">বাস্তব প্রয়োগের উদাহরণ:</span>
                             {currentFlashcard.term.context}
                           </div>
                         )}
                       </div>
-                      <span className="text-[11px] text-[#842323] font-semibold block mt-2">
+                      <span className="text-xs text-[#842323] font-semibold block mt-2">
                         উৎস প্রতিবেদন: {currentFlashcard.term.article?.title}
                       </span>
                     </div>
                   )}
                 </div>
 
-                <div className="text-[11px] text-[#a0a8b5]">
+                <div className="text-xs text-[#a0a8b5]">
                   {isCardFlipped ? "মনে রাখতে পারলে নিচে 'স্মরণে এসেছে' চাপুন" : "অর্থটি মনে করার চেষ্টা করুন, তারপর ক্লিক করুন"}
                 </div>
               </div>
@@ -884,13 +884,13 @@ export default function StudentHubView({
                     >
                       <div>
                         <div className="flex items-center justify-between mb-1.5">
-                          <span className={`text-[10px] font-bold uppercase tracking-wider ${
+                          <span className={`text-xs font-bold uppercase tracking-wider ${
                             isEnglishMode ? "text-[#0284c7]" : "text-[#842323]"
                           }`}>
                             {isEnglishMode ? "Vocabulary Word" : "পারিভাষিক শব্দ"}
                           </span>
                           {item.mastered && (
-                            <span className="text-[10px] font-bold text-[#166534] bg-[#dcfce7] px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <span className="text-xs font-bold text-[#166534] bg-[#dcfce7] px-2 py-0.5 rounded-full flex items-center gap-1">
                               <Check className="w-3 h-3" />
                               <span>{isEnglishMode ? "Mastered" : "মুখস্থ"}</span>
                             </span>
@@ -917,7 +917,7 @@ export default function StudentHubView({
                             )}
                           </div>
                           {isEnglishMode && (
-                            <div className="text-[11px] font-medium text-[#c29547]">
+                            <div className="text-xs font-medium text-[#c29547]">
                               [{getBanglaPronunciation(item.term.term)}]
                             </div>
                           )}
@@ -926,13 +926,13 @@ export default function StudentHubView({
                           {item.term.definition}
                         </p>
                         {item.term.context && (
-                          <div className="mt-2 text-[11px] text-[#64748b] bg-[#faf8f4] p-2 rounded border border-[#f0ede6] italic line-clamp-3">
+                          <div className="mt-2 text-xs text-[#64748b] bg-[#faf8f4] p-2 rounded border border-[#f0ede6] italic line-clamp-3">
                             {item.term.context}
                           </div>
                         )}
                       </div>
 
-                      <div className="mt-4 pt-2.5 border-t border-[#f2ede4] flex items-center justify-between text-[11px]">
+                      <div className="mt-4 pt-2.5 border-t border-[#f2ede4] flex items-center justify-between text-xs">
                         <Link
                           href={`/article/${item.term.article?.slug}`}
                           className="text-[#842323] font-semibold hover:underline truncate max-w-[140px]"
@@ -945,7 +945,7 @@ export default function StudentHubView({
                               ? handleReviewAgain(item.id)
                               : handleMasterCard(item.id)
                           }
-                          className={`text-[10px] font-bold px-2.5 py-1 rounded transition ${
+                          className={`text-xs font-bold px-2.5 py-1 rounded transition ${
                             item.mastered
                               ? "text-[#64748b] hover:text-[#b91c1c] hover:bg-[#fee2e2]"
                               : "bg-[#f5f1e8] text-[#842323] hover:bg-[#ebdcc4]"
@@ -963,7 +963,7 @@ export default function StudentHubView({
                 <div className="p-12 text-center bg-white rounded-xl border border-[#e4ded3] text-xs text-[#717887] space-y-2">
                   <Sparkles className="w-8 h-8 text-[#d5cfc4] mx-auto" />
                   <p className="font-bold text-[#2a2d34] text-sm">ওয়ার্ড ব্যাংকে কোনো শব্দ জমা নেই</p>
-                  <p className="text-[11px] text-[#8e95a2] max-w-md mx-auto">
+                  <p className="text-xs text-[#8e95a2] max-w-md mx-auto">
                     যেকোনো সংবাদে থাকা পারিভাষিক শব্দে ক্লিক করে &lsquo;সংরক্ষণ করুন&rsquo; চাপলে তা এখানে আপনার ফ্ল্যাশকার্ড তালিকায় জমা হবে।
                   </p>
                 </div>
@@ -986,7 +986,7 @@ export default function StudentHubView({
                 <span className="text-2xl font-bold font-mono text-[#17191d]">
                   {quizAnalytics.totalAttempts}
                 </span>
-                <span className="text-[11px] text-[#555d6b]">টি প্রশ্ন</span>
+                <span className="text-xs text-[#555d6b]">টি প্রশ্ন</span>
               </div>
             </div>
 
@@ -996,7 +996,7 @@ export default function StudentHubView({
                 <span className="text-2xl font-bold font-mono text-[#166534]">
                   {quizAnalytics.correctAttempts}
                 </span>
-                <span className="text-[11px] text-[#555d6b]">টি সঠিক</span>
+                <span className="text-xs text-[#555d6b]">টি সঠিক</span>
               </div>
             </div>
 
@@ -1006,7 +1006,7 @@ export default function StudentHubView({
                 <span className="text-2xl font-bold font-mono text-[#842323]">
                   {quizAnalytics.accuracyPercent}%
                 </span>
-                <span className="text-[11px] text-[#555d6b]">সাফল্যের হার</span>
+                <span className="text-xs text-[#555d6b]">সাফল্যের হার</span>
               </div>
             </div>
 
@@ -1016,7 +1016,7 @@ export default function StudentHubView({
                 <span className="text-2xl font-bold font-mono text-[#b91c1c]">
                   {quizAnalytics.mistakes.length}
                 </span>
-                <span className="text-[11px] text-[#555d6b]">টি প্রশ্ন রিভিশন যোগ্য</span>
+                <span className="text-xs text-[#555d6b]">টি প্রশ্ন রিভিশন যোগ্য</span>
               </div>
             </div>
           </div>
@@ -1085,7 +1085,7 @@ export default function StudentHubView({
                       <span className="text-xs font-bold text-[#842323]">
                         {m.categoryName || "সাধারণ জ্ঞান"} &bull; {m.articleTitle}
                       </span>
-                      <span className="text-[10px] text-[#717887]">
+                      <span className="text-xs text-[#717887]">
                         {new Date(m.date).toLocaleDateString("bn-BD")}
                       </span>
                     </div>
@@ -1096,7 +1096,7 @@ export default function StudentHubView({
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                       <div className="p-2.5 bg-[#fef2f2] border border-[#fca5a5] rounded-lg">
-                        <span className="text-[10px] font-bold text-[#991b1b] uppercase block">
+                        <span className="text-xs font-bold text-[#991b1b] uppercase block">
                           আপনার প্রদত্ত ভুল উত্তর:
                         </span>
                         <span className="font-semibold text-[#b91c1c] mt-0.5 block">
@@ -1105,7 +1105,7 @@ export default function StudentHubView({
                       </div>
 
                       <div className="p-2.5 bg-[#f0fdf4] border border-[#86efac] rounded-lg">
-                        <span className="text-[10px] font-bold text-[#166534] uppercase block">
+                        <span className="text-xs font-bold text-[#166534] uppercase block">
                           সঠিক উত্তর:
                         </span>
                         <span className="font-semibold text-[#15803d] mt-0.5 block">
@@ -1116,7 +1116,7 @@ export default function StudentHubView({
 
                     {m.explanation && (
                       <div className="p-3 bg-[#faf8f4] border border-[#eee9df] rounded-lg text-xs text-[#404652]">
-                        <strong className="text-[#842323] block text-[11px] mb-0.5">ব্যাখ্যা:</strong>
+                        <strong className="text-[#842323] block text-xs mb-0.5">ব্যাখ্যা:</strong>
                         <span>{m.explanation}</span>
                       </div>
                     )}
@@ -1137,7 +1137,7 @@ export default function StudentHubView({
               <div className="p-8 text-center bg-white rounded-xl border border-[#ded8cb] text-xs text-[#166534] space-y-1">
                 <CheckCircle2 className="w-8 h-8 text-[#22c55e] mx-auto mb-2" />
                 <p className="font-bold text-sm">চমৎকার! কোনো অমীমাংসিত ভুল উত্তর নেই</p>
-                <p className="text-[11px] text-[#525964]">
+                <p className="text-xs text-[#525964]">
                   আপনি যেসকল কুইজে অংশ নিয়েছেন সেগুলোর প্রস্তুতি সন্তোষজনক রয়েছে।
                 </p>
               </div>
@@ -1227,15 +1227,15 @@ export default function StudentHubView({
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 text-xs">
                 <div className="bg-[#fbf9f5] p-3.5 rounded-lg border border-[#eee9df]">
-                  <span className="text-[#717887] block text-[11px]">শিক্ষার্থীর নাম</span>
+                  <span className="text-[#717887] block text-xs">শিক্ষার্থীর নাম</span>
                   <strong className="text-sm text-[#1c1d21] font-serif block mt-0.5">{student.name}</strong>
                 </div>
                 <div className="bg-[#fbf9f5] p-3.5 rounded-lg border border-[#eee9df]">
-                  <span className="text-[#717887] block text-[11px]">টার্গেট পরীক্ষা ট্র্যাক</span>
+                  <span className="text-[#717887] block text-xs">টার্গেট পরীক্ষা ট্র্যাক</span>
                   <strong className="text-sm text-[#842323] block mt-0.5">{student.targetTrack}</strong>
                 </div>
                 <div className="bg-[#fbf9f5] p-3.5 rounded-lg border border-[#eee9df]">
-                  <span className="text-[#717887] block text-[11px]">শিক্ষা প্রতিষ্ঠান</span>
+                  <span className="text-[#717887] block text-xs">শিক্ষা প্রতিষ্ঠান</span>
                   <strong className="text-sm text-[#1c1d21] block mt-0.5">{student.institution || "সাধারণ শিক্ষার্থী"}</strong>
                 </div>
               </div>

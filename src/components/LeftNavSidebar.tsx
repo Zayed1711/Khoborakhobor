@@ -72,7 +72,7 @@ export default function LeftNavSidebar({ session }: LeftNavSidebarProps) {
                   <span>{item.label}</span>
                 </div>
                 {item.badge && (
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
                     isActive ? "bg-white/20 text-white" : badgeColor
                   }`}>
                     {item.badge}
@@ -110,7 +110,7 @@ export default function LeftNavSidebar({ session }: LeftNavSidebarProps) {
               <Compass className={`w-4 h-4 ${isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"} group-hover:rotate-45 transition-transform duration-300`} />
               <span>{isEnglishMode ? "Tutorial Tour" : "টিউটোরিয়াল গাইড"}</span>
             </div>
-            <span className={`text-[10px] ${badgeColor} px-1.5 py-0.5 rounded font-bold`}>
+            <span className={`text-xs ${badgeColor} px-1.5 py-0.5 rounded font-bold`}>
               {isEnglishMode ? "Replay" : "পুনরায়"}
             </span>
           </button>
@@ -132,7 +132,7 @@ export default function LeftNavSidebar({ session }: LeftNavSidebarProps) {
                   <span className="text-xs font-bold text-[#1c1d21] block truncate max-w-[120px]">
                     {session.student.name}
                   </span>
-                  <span className="text-[10px] text-[#717887] block truncate max-w-[120px]">
+                  <span className="text-xs text-[#717887] block truncate max-w-[120px]">
                     {isEnglishMode
                       ? "English Candidate"
                       : session.student.targetTrack === "BCS_GOVT"
@@ -144,7 +144,7 @@ export default function LeftNavSidebar({ session }: LeftNavSidebarProps) {
                 </div>
               </div>
 
-              <div className={`flex items-center gap-0.5 text-[10px] font-mono font-bold ${
+              <div className={`flex items-center gap-0.5 text-xs font-mono font-bold ${
                 isEnglishMode ? "text-[#1e40af] bg-blue-50" : "text-[#842323] bg-[#fdf2f2]"
               } px-1.5 py-0.5 rounded`}>
                 <Flame className="w-3 h-3 text-[#f97316]" />
@@ -152,7 +152,7 @@ export default function LeftNavSidebar({ session }: LeftNavSidebarProps) {
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-2 border-t border-[#f4efe4] text-[11px]">
+            <div className="flex items-center justify-between pt-2 border-t border-[#f4efe4] text-xs">
               <Link
                 href="/saved"
                 className={`font-semibold hover:underline ${isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"}`}
@@ -188,7 +188,7 @@ export default function LeftNavSidebar({ session }: LeftNavSidebarProps) {
               <UserCheck className={`w-4 h-4 ${isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"}`} />
               <span>{isEnglishMode ? "Learner Profile" : "শিক্ষার্থী প্রোফাইল"}</span>
             </div>
-            <p className="text-[11px] text-[#646c7a] leading-relaxed">
+            <p className="text-xs text-[#646c7a] leading-relaxed">
               {isEnglishMode
                 ? "Sign in to save your personal Word Bank, flashcards & streak."
                 : "নোটবুক, বুকমার্ক ও দৈনিক স্ট্রিক ট্র্যাক করতে অ্যাকাউন্টে যুক্ত হোন।"}

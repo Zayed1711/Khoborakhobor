@@ -131,7 +131,7 @@ export default function Footer() {
               </div>
 
               {feedback && (
-                <div className={`p-2 rounded text-[11px] flex items-start gap-1.5 leading-snug animate-fade-in ${
+                <div className={`p-2 rounded text-xs flex items-start gap-1.5 leading-snug animate-fade-in ${
                   status === "success" ? "bg-emerald-950/60 border border-emerald-700/60 text-emerald-300" : "bg-rose-950/60 border border-rose-700/60 text-rose-300"
                 }`}>
                   {status === "success" ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" /> : <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />}
@@ -143,7 +143,7 @@ export default function Footer() {
         </div>
 
         {/* Legal, Trademark & Fair-Use Educational Disclaimer */}
-        <div className="mt-10 p-4 sm:p-5 bg-[#1e232c] border border-[#3b4352] rounded-xl text-[11px] text-[#9aa4b2] leading-relaxed space-y-2">
+        <div className="mt-10 p-4 sm:p-5 bg-[#1e232c] border border-[#3b4352] rounded-xl text-xs text-[#9aa4b2] leading-relaxed space-y-2">
           <div className="flex items-center gap-2 font-bold text-white">
             <span className="w-2 h-2 rounded-full bg-[#f5c66b]" />
             <span className="font-serif text-xs">আইনগত বিজ্ঞপ্তি, ট্রেডমার্ক ও শিক্ষামূলক ফেয়ার-ইউজ নীতি (Legal, Trademark & Fair-Use Policy)</span>
@@ -158,10 +158,10 @@ export default function Footer() {
           data-signature="SHA256:KK-2026-BD-NEWS-VERIFIED"
           className="mt-6 pt-6 border-t border-[#3b4352] flex flex-wrap items-center justify-between gap-4 text-xs text-[#8e9aa8]"
         >
-          <p className="text-[11px] text-[#9aa4b2]">
+          <p className="text-xs text-[#9aa4b2]">
             &copy; ২০২৬ খবরাখবর (KhoboraKhobor) &bull; গণমাধ্যম ও তথ্যপ্রযুক্তি আইন অনুযায়ী সর্বস্বত্ব সংরক্ষিত।
           </p>
-          <p className="text-[11px] text-[#7d8896]">
+          <p className="text-xs text-[#7d8896]">
             শিক্ষার্থী ও পাঠকদের নির্ভরযোগ্য সংবাদ ও শিক্ষামূলক প্ল্যাটফর্ম
           </p>
         </div>

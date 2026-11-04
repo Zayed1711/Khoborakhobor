@@ -162,7 +162,7 @@ export default function VocabularyTable({
                 <h3 className="text-sm sm:text-base font-bold text-[#0f172a] font-serif">
                   শব্দভাণ্ডার ও বাস্তব প্রয়োগ ছক (Vocabulary Matrix)
                 </h3>
-                <span className="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-full border border-blue-200">
+                <span className="text-xs bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-full border border-blue-200">
                   {rows.length}টি মূল শব্দ
                 </span>
               </div>
@@ -235,7 +235,7 @@ export default function VocabularyTable({
             <button
               type="button"
               onClick={() => setRevealedIds({})}
-              className="text-[11px] underline font-semibold text-amber-800 hover:text-amber-950"
+              className="text-xs underline font-semibold text-amber-800 hover:text-amber-950"
             >
               সব পুনরায় ঢাকুন
             </button>
@@ -247,7 +247,7 @@ export default function VocabularyTable({
           {/* Desktop View Table */}
           <table className="w-full text-left hidden md:table border-collapse">
             <thead>
-              <tr className="bg-[#f8fafc] border-b border-[#e2e8f0] text-[11px] font-bold text-[#475569] uppercase tracking-wider font-mono">
+              <tr className="bg-[#f8fafc] border-b border-[#e2e8f0] text-xs font-bold text-[#475569] uppercase tracking-wider font-mono">
                 <th className="py-3 px-4 w-[28%]">১. শব্দ ও উচ্চারণ (Word & Phonics)</th>
                 <th className="py-3 px-4 w-[36%]">২. দ্বৈত অর্থ ও সমার্থক (Meanings)</th>
                 <th className="py-3 px-4 w-[36%]">৩. বাস্তব বাক্যে নতুন প্রয়োগ (New Example)</th>
@@ -283,10 +283,10 @@ export default function VocabularyTable({
                       </div>
 
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="bg-amber-50 text-amber-900 border border-amber-200/80 px-2 py-0.5 rounded font-mono font-medium text-[11px]">
+                        <span className="bg-amber-50 text-amber-900 border border-amber-200/80 px-2 py-0.5 rounded font-mono font-medium text-xs">
                           [{row.banglaPhonetic}]
                         </span>
-                        <span className="text-[10px] text-[#64748b] font-medium">
+                        <span className="text-xs text-[#64748b] font-medium">
                           {row.partOfSpeech}
                         </span>
                       </div>
@@ -296,7 +296,7 @@ export default function VocabularyTable({
                           type="button"
                           onClick={() => handleSaveWord(row)}
                           disabled={isSaved}
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold transition ${
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition ${
                             isSaved
                               ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
                               : "bg-[#f1f5f9] hover:bg-[#e2e8f0] text-[#334155] border border-[#cbd5e1]"
@@ -323,7 +323,7 @@ export default function VocabularyTable({
                         onClick={() => shouldMask && toggleReveal(row.id)}
                         className={shouldMask ? "cursor-pointer group relative" : ""}
                       >
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-blue-800 block mb-0.5">
+                        <span className="text-xs font-bold uppercase tracking-wider text-blue-800 block mb-0.5">
                           বাংলা অর্থ:
                         </span>
                         {shouldMask ? (
@@ -338,21 +338,21 @@ export default function VocabularyTable({
                       </div>
 
                       <div className="pt-1 border-t border-[#f1f5f9]">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748b] block mb-0.5 font-mono">
+                        <span className="text-xs font-bold uppercase tracking-wider text-[#64748b] block mb-0.5 font-mono">
                           English Concept:
                         </span>
-                        <p className="text-[11px] text-[#475569] leading-relaxed italic">
+                        <p className="text-xs text-[#475569] leading-relaxed italic">
                           "{row.englishDefinition}"
                         </p>
                       </div>
 
                       {row.synonyms && row.synonyms.length > 0 && (
                         <div className="flex flex-wrap items-center gap-1 pt-1">
-                          <span className="text-[10px] text-[#64748b] font-semibold">Synonyms:</span>
+                          <span className="text-xs text-[#64748b] font-semibold">Synonyms:</span>
                           {row.synonyms.map((s, sIdx) => (
                             <span
                               key={sIdx}
-                              className="text-[10px] bg-slate-100 text-[#334155] px-1.5 py-0.5 rounded border border-slate-200"
+                              className="text-xs bg-slate-100 text-[#334155] px-1.5 py-0.5 rounded border border-slate-200"
                             >
                               {s}
                             </span>
@@ -364,14 +364,14 @@ export default function VocabularyTable({
                     {/* Column 3: Fresh Practical Example (NOT from the passage) */}
                     <td className="py-4 px-4 align-top">
                       <div className="p-3 bg-gradient-to-br from-[#f8fafc] to-[#f1f5f9] rounded-xl border border-[#e2e8f0] space-y-2">
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-800 font-mono">
+                        <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-800 font-mono">
                           <Sparkles className="w-3 h-3 text-emerald-600" />
                           <span>বাস্তব বাক্যে নতুন প্রয়োগ:</span>
                         </div>
                         <p className="text-xs text-[#0f172a] font-medium leading-relaxed">
                           "{row.freshExampleEn}"
                         </p>
-                        <p className="text-[11px] text-[#475569] leading-relaxed border-t border-slate-200/80 pt-1.5">
+                        <p className="text-xs text-[#475569] leading-relaxed border-t border-slate-200/80 pt-1.5">
                           {row.freshExampleBn}
                         </p>
                       </div>
@@ -436,7 +436,7 @@ export default function VocabularyTable({
                     onClick={() => shouldMask && toggleReveal(row.id)}
                     className={`space-y-1 ${shouldMask ? "cursor-pointer" : ""}`}
                   >
-                    <span className="text-[11px] font-bold text-blue-800 block">বাংলা অর্থ:</span>
+                    <span className="text-xs font-bold text-blue-800 block">বাংলা অর্থ:</span>
                     {shouldMask ? (
                       <div className="bg-amber-50 border border-dashed border-amber-300 rounded-lg p-2 text-center text-amber-900 text-xs font-semibold">
                         ক্লিক করে অর্থ দেখুন (Reveal)
@@ -449,13 +449,13 @@ export default function VocabularyTable({
                   </div>
 
                   <div className="p-3 bg-[#f8fafc] rounded-xl border border-[#e2e8f0] space-y-1.5">
-                    <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block font-mono">
+                    <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider block font-mono">
                       বাস্তব বাক্যে নতুন প্রয়োগ:
                     </span>
                     <p className="text-xs text-[#0f172a] font-medium leading-relaxed">
                       "{row.freshExampleEn}"
                     </p>
-                    <p className="text-[11px] text-[#475569] leading-relaxed pt-1 border-t border-slate-200">
+                    <p className="text-xs text-[#475569] leading-relaxed pt-1 border-t border-slate-200">
                       {row.freshExampleBn}
                     </p>
                   </div>

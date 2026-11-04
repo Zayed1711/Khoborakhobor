@@ -253,15 +253,15 @@ function AuthForm() {
           <div>
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-              <span className="text-[11px] font-bold text-amber-950 uppercase tracking-wide">
+              <span className="text-xs font-bold text-amber-950 uppercase tracking-wide">
                 ফাউন্ডিং প্রো ট্রায়াল (Founding Pro)
               </span>
             </div>
-            <p className="text-[11px] text-[#656d7b] mt-0.5">
+            <p className="text-xs text-[#656d7b] mt-0.5">
               অভিধান, কুইজ ও ক্লাউড নোটবুক ২ ডিসেম্বর পর্যন্ত ১০০% ফ্রি
             </p>
           </div>
-          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold text-[#842323] bg-[#fbf5f5] border border-[#eddada] shrink-0">
+          <span className="px-2 py-0.5 rounded-md text-xs font-bold text-[#842323] bg-[#fbf5f5] border border-[#eddada] shrink-0">
             FREE TRIAL
           </span>
         </div>
@@ -272,7 +272,7 @@ function AuthForm() {
             <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
             <div>
               <span className="font-bold">ইন-অ্যাপ ব্রাউজার শনাক্ত হয়েছে:</span>
-              <p className="text-[11px] text-amber-900 mt-0.5 leading-relaxed">
+              <p className="text-xs text-amber-900 mt-0.5 leading-relaxed">
                 Facebook বা Instagram ব্রাউজারে Google লগইন নিরাপত্তা ত্রুটি দেখাতে পারে। সরাসরি নিচের <strong>মোবাইল ওটিপি</strong> বা <strong>ম্যাজিক লিংক</strong> ব্যবহার করে পাসওয়ার্ড ছাড়া প্রবেশ করুন।
               </p>
             </div>
@@ -310,7 +310,7 @@ function AuthForm() {
         {/* Divider */}
         <div className="relative flex items-center justify-center my-1">
           <div className="border-t border-[#ece6d8] w-full"></div>
-          <span className="bg-white px-3 text-[10px] text-[#8e95a2] uppercase tracking-wider font-semibold absolute">
+          <span className="bg-white px-3 text-xs text-[#8e95a2] uppercase tracking-wider font-semibold absolute">
             অথবা বিকল্প পদ্ধতিতে
           </span>
         </div>
@@ -409,7 +409,7 @@ function AuthForm() {
                         className="w-full text-xs px-3.5 py-2.5 bg-[#fcfbf9] border border-[#ded8cb] rounded-xl focus:outline-none focus:border-[#842323] text-[#1c1d21] font-mono tracking-wider"
                         required
                       />
-                      <p className="text-[11px] text-[#717887] mt-1">
+                      <p className="text-xs text-[#717887] mt-1">
                         ইন-অ্যাপ ব্রাউজারে পাসওয়ার্ড ছাড়া সরাসরি এক ক্লিকে ওটিপি দিয়ে প্রবেশ করুন।
                       </p>
                     </div>
@@ -434,7 +434,7 @@ function AuthForm() {
                         <button
                           type="button"
                           onClick={() => setOtpSent(false)}
-                          className="text-[11px] text-[#842323] hover:underline"
+                          className="text-xs text-[#842323] hover:underline"
                         >
                           নম্বর পরিবর্তন
                         </button>
@@ -451,12 +451,12 @@ function AuthForm() {
                         required
                       />
                       {simulatedOtpCode && (
-                        <div className="mt-2 p-2 bg-[#f6f2e8] border border-[#e2dcd0] rounded-lg text-[11px] text-[#555d6b] flex items-center justify-between">
+                        <div className="mt-2 p-2 bg-[#f6f2e8] border border-[#e2dcd0] rounded-lg text-xs text-[#555d6b] flex items-center justify-between">
                           <span>ট্রায়াল ডেমো কোড: <strong className="text-[#842323] font-mono text-xs">{simulatedOtpCode}</strong></span>
                           <button
                             type="button"
                             onClick={() => setOtpCode(simulatedOtpCode)}
-                            className="text-[#842323] font-bold underline text-[10px]"
+                            className="text-[#842323] font-bold underline text-xs"
                           >
                             অটো-ফিল করুন
                           </button>
@@ -497,7 +497,7 @@ function AuthForm() {
                         className="w-full text-xs px-3.5 py-2.5 bg-[#fcfbf9] border border-[#ded8cb] rounded-xl focus:outline-none focus:border-[#842323] text-[#1c1d21]"
                         required
                       />
-                      <p className="text-[11px] text-[#717887] mt-1">
+                      <p className="text-xs text-[#717887] mt-1">
                         কোনো পাসওয়ার্ড মনে রাখার প্রয়োজন নেই। সরাসরি ১ ক্লিকে লগইন করার লিঙ্ক তৈরি হবে।
                       </p>
                     </div>
@@ -645,7 +645,7 @@ function AuthForm() {
                       <Mail className="w-3.5 h-3.5 text-[#842323]" />
                       <span>ইমেইল ঠিকানা (@gmail.com)</span>
                     </span>
-                    <span className="text-[10px] text-[#842323] font-medium bg-red-50 px-2 py-0.5 rounded border border-red-200">
+                    <span className="text-xs text-[#842323] font-medium bg-red-50 px-2 py-0.5 rounded border border-red-200">
                       @gmail.com আবশ্যক
                     </span>
                   </label>
@@ -729,11 +729,11 @@ function AuthForm() {
 
       {/* Meta-Standard Privacy & Copyright Seal */}
       <div className="mt-6 text-center space-y-1">
-        <div className="inline-flex items-center gap-1.5 text-[11px] text-[#717887]">
+        <div className="inline-flex items-center gap-1.5 text-xs text-[#717887]">
           <ShieldCheck className="w-3.5 h-3.5 text-[#2e744a]" />
           <span>ব্যবহারকারী গোপনীয়তা ও ডেটা সুরক্ষা নীতিমালা অনুযায়ী পরিচালিত</span>
         </div>
-        <p className="text-[10px] text-[#8e95a2]">
+        <p className="text-xs text-[#8e95a2]">
           কপিরাইট &copy; ২০২৬ খবরাখবর ডিজিটাল &bull; সর্বস্বত্ব সংরক্ষিত
         </p>
       </div>

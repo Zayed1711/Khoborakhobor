@@ -45,7 +45,7 @@ export default async function PolicyPage() {
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-bold text-[#1c1d21] font-serif">১. সম্পাদকীয় নীতিমালা (Editorial Policy)</h2>
-              <span className="text-[11px] text-[#717887]">বস্তুনিষ্ঠতা, স্বাধীনতা ও রেফারেন্স নির্দেশিকা</span>
+              <span className="text-xs text-[#717887]">বস্তুনিষ্ঠতা, স্বাধীনতা ও রেফারেন্স নির্দেশিকা</span>
             </div>
           </div>
           <div className="text-xs text-[#404652] leading-relaxed space-y-2.5">
@@ -68,7 +68,7 @@ export default async function PolicyPage() {
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-bold text-[#1c1d21] font-serif">২. তথ্য যাচাইকরণ প্রক্রিয়া (Fact-Checking Protocol)</h2>
-              <span className="text-[11px] text-[#717887]">ক্রস-রেফারেন্সিং ও মাল্টি-সোর্স সত্যতা নিরূপণ</span>
+              <span className="text-xs text-[#717887]">ক্রস-রেফারেন্সিং ও মাল্টি-সোর্স সত্যতা নিরূপণ</span>
             </div>
           </div>
           <div className="text-xs text-[#404652] leading-relaxed space-y-2.5">
@@ -77,16 +77,16 @@ export default async function PolicyPage() {
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
               <div className="p-3 bg-[#faf8f4] border border-[#ded8cb] rounded-xl space-y-1">
-                <span className="text-[10px] font-bold text-[#842323] uppercase">স্তর ১: উৎস স্ক্রিনিং</span>
-                <p className="text-[11px] text-[#555d6b]">কেবল বাংলাদেশ সরকার অনুমোদিত শীর্ষ জাতীয় ও আন্তর্জাতিক স্বীকৃত গণমাধ্যম থেকে তথ্য সংকলন।</p>
+                <span className="text-xs font-bold text-[#842323] uppercase">স্তর ১: উৎস স্ক্রিনিং</span>
+                <p className="text-xs text-[#555d6b]">কেবল বাংলাদেশ সরকার অনুমোদিত শীর্ষ জাতীয় ও আন্তর্জাতিক স্বীকৃত গণমাধ্যম থেকে তথ্য সংকলন।</p>
               </div>
               <div className="p-3 bg-[#faf8f4] border border-[#ded8cb] rounded-xl space-y-1">
-                <span className="text-[10px] font-bold text-[#842323] uppercase">স্তর ২: নয়েজ ফিল্টারিং</span>
-                <p className="text-[11px] text-[#555d6b]">পারিবারিক বিরোধ, ভিত্তিহীন গুজব বা লঘু বিনোদন সংবাদ পরীক্ষার সিলেবাসের স্বার্থে বাদ দেওয়া হয়।</p>
+                <span className="text-xs font-bold text-[#842323] uppercase">স্তর ২: নয়েজ ফিল্টারিং</span>
+                <p className="text-xs text-[#555d6b]">পারিবারিক বিরোধ, ভিত্তিহীন গুজব বা লঘু বিনোদন সংবাদ পরীক্ষার সিলেবাসের স্বার্থে বাদ দেওয়া হয়।</p>
               </div>
               <div className="p-3 bg-[#faf8f4] border border-[#ded8cb] rounded-xl space-y-1">
-                <span className="text-[10px] font-bold text-[#842323] uppercase">স্তর ৩: উপাত্ত ছক বিন্যাস</span>
-                <p className="text-[11px] text-[#555d6b]">অর্থনৈতিক ডেটা, জিডিপি বা সাংবিধানিক ধারা সংশ্লিষ্ট সরকারি প্রকাশনার সাথে মিলিয়ে ছকভুক্ত করা।</p>
+                <span className="text-xs font-bold text-[#842323] uppercase">স্তর ৩: উপাত্ত ছক বিন্যাস</span>
+                <p className="text-xs text-[#555d6b]">অর্থনৈতিক ডেটা, জিডিপি বা সাংবিধানিক ধারা সংশ্লিষ্ট সরকারি প্রকাশনার সাথে মিলিয়ে ছকভুক্ত করা।</p>
               </div>
             </div>
           </div>
@@ -100,7 +100,7 @@ export default async function PolicyPage() {
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-bold text-[#1c1d21] font-serif">৩. শিক্ষার্থী ও গবেষক সহায়তা (Academic Support)</h2>
-              <span className="text-[11px] text-[#717887]">পরীক্ষার সিলেবাস ম্যাপিং ও স্টাডি নোটবুক গাইড</span>
+              <span className="text-xs text-[#717887]">পরীক্ষার সিলেবাস ম্যাপিং ও স্টাডি নোটবুক গাইড</span>
             </div>
           </div>
           <div className="text-xs text-[#404652] leading-relaxed space-y-2.5">
@@ -126,7 +126,7 @@ export default async function PolicyPage() {
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-bold text-[#1c1d21] font-serif">৪. গোপনীয়তা ও পাঠক সুরক্ষা নীতি (Privacy & Reader Protection)</h2>
-              <span className="text-[11px] text-[#717887]">ব্যক্তিগত তথ্যের নিরাপত্তা ও ডেটা অধিকার</span>
+              <span className="text-xs text-[#717887]">ব্যক্তিগত তথ্যের নিরাপত্তা ও ডেটা অধিকার</span>
             </div>
           </div>
           <div className="text-xs text-[#404652] leading-relaxed space-y-2.5">

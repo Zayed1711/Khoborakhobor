@@ -100,7 +100,7 @@ export default function ShareStudyModal({
             </div>
             <div>
               <h3 className="text-sm font-bold text-[#1c1d21]">স্টাডি গ্রুপ শেয়ারিং</h3>
-              <p className="text-[11px] text-[#717887]">সহপাঠী বা স্টাডি গ্রুপের সাথে প্রস্তুত নোট শেয়ার করুন</p>
+              <p className="text-xs text-[#717887]">সহপাঠী বা স্টাডি গ্রুপের সাথে প্রস্তুত নোট শেয়ার করুন</p>
             </div>
           </div>
           <button
@@ -134,13 +134,13 @@ export default function ShareStudyModal({
           {/* Formatted Study Bulletin Card Preview */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-[#68707f] flex items-center gap-1">
+              <span className="text-xs font-semibold text-[#68707f] flex items-center gap-1">
                 <Sparkles className="w-3.5 h-3.5 text-[#c29547]" />
                 <span>প্রস্তুত স্টাডি বুলেটিন প্রিভিউ:</span>
               </span>
               <button
                 onClick={handleCopyNote}
-                className="text-[11px] font-semibold text-[#842323] hover:underline flex items-center gap-1"
+                className="text-xs font-semibold text-[#842323] hover:underline flex items-center gap-1"
               >
                 {copiedNote ? (
                   <>

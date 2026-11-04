@@ -97,7 +97,7 @@ export default function ArticleSummaryReflection({
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="text-[11px] text-[#717887]">
+          <div className="text-xs text-[#717887]">
             {summaryInput.length > 0 ? (
               <span>{summaryInput.length} হরফ লিখিত</span>
             ) : (
@@ -107,7 +107,7 @@ export default function ArticleSummaryReflection({
 
           <div className="flex items-center gap-2">
             {!student && (
-              <span className="text-[11px] text-[#788191]">
+              <span className="text-xs text-[#788191]">
                 সংরক্ষণ করতে{" "}
                 <Link href={`/login?redirect=/article/${articleSlug}`} className="text-[#842323] font-semibold underline">
                   লগইন
@@ -152,10 +152,10 @@ export default function ArticleSummaryReflection({
               >
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-[#842323] bg-[#f5ebeb] px-2 py-0.5 rounded">
+                    <span className="text-xs font-bold text-[#842323] bg-[#f5ebeb] px-2 py-0.5 rounded">
                       সারসংক্ষেপ অনুশীলন
                     </span>
-                    <span className="text-[10px] text-[#8e95a2]">
+                    <span className="text-xs text-[#8e95a2]">
                       {new Date(note.createdAt).toLocaleDateString("bn-BD")}
                     </span>
                   </div>

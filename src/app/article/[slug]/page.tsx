@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getArticleBySlug, getPublishedArticles } from "@/actions/articles";
 import { getArticleStudyNotes, getActiveStudent } from "@/actions/student";
 import ArticleReaderView from "@/components/ArticleReaderView";
+import { toFeedCard } from "@/lib/feed-card";
 
 export const dynamic = "force-dynamic";
 
@@ -17,8 +18,8 @@ export default async function ArticleDetailPage({ params }: Props) {
     return notFound();
   }
 
-  const allArticles = await getPublishedArticles();
-  const relatedArticles = allArticles.filter((a) => a.id !== article.id).slice(0, 3);
+  const recent = await getPublishedArticles(4);
+  const relatedArticles = recent.filter((a) => a.id !== article.id).slice(0, 3).map(toFeedCard);
   const student = await getActiveStudent();
   const notes = student ? await getArticleStudyNotes(student.id, article.slug) : [];
 

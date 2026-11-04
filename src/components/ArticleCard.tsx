@@ -70,7 +70,7 @@ export default function ArticleCard({ article, variant = "standard" }: ArticleCa
               <p className="text-xs font-bold text-[#1c1d21]">
                 {authorName}
               </p>
-              <p className="text-[11px] text-[#6d7583]">{authorRole}</p>
+              <p className="text-xs text-[#6d7583]">{authorRole}</p>
             </div>
           </div>
           <Link href={`/article/${article.slug}`}>
@@ -98,7 +98,7 @@ export default function ArticleCard({ article, variant = "standard" }: ArticleCa
           />
         </div>
         <div className="flex-1 min-w-0">
-          <span className="text-[10px] font-semibold text-[#842323] uppercase tracking-wider block">
+          <span className="text-xs font-semibold text-[#842323] uppercase tracking-wider block">
             {article.category.name.split(" ")[0]}
           </span>
           <Link href={`/article/${article.slug}`}>
@@ -106,7 +106,7 @@ export default function ArticleCard({ article, variant = "standard" }: ArticleCa
               {article.title}
             </h4>
           </Link>
-          <div className="flex items-center gap-2 mt-1 text-[11px] text-[#788191]">
+          <div className="flex items-center gap-2 mt-1 text-xs text-[#788191]">
             <span>{article.readTime}</span>
           </div>
         </div>
@@ -122,7 +122,7 @@ export default function ArticleCard({ article, variant = "standard" }: ArticleCa
           alt={article.title}
           className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500 brightness-[0.98]"
         />
-        <span className="absolute bottom-2 left-2 bg-[#1f2733]/85 text-[#ffffff] text-[10px] font-semibold px-2 py-0.5 rounded backdrop-blur-xs">
+        <span className="absolute bottom-2 left-2 bg-[#1f2733]/85 text-[#ffffff] text-xs font-semibold px-2 py-0.5 rounded backdrop-blur-xs">
           {article.category.name.split(" ")[0]}
         </span>
       </div>

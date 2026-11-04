@@ -34,7 +34,7 @@ export default function CapsuleStoryPills({ capsuleArticles }: CapsuleStoryPills
         </div>
         <Link
           href="/capsule"
-          className={`text-[11px] font-semibold hover:underline flex items-center gap-1 ${
+          className={`text-xs font-semibold hover:underline flex items-center gap-1 ${
             isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"
           }`}
         >
@@ -70,7 +70,7 @@ export default function CapsuleStoryPills({ capsuleArticles }: CapsuleStoryPills
             </div>
 
             {/* Micro Caption */}
-            <span className="text-[10px] text-[#404652] font-semibold line-clamp-1 w-full group-hover:text-[#1e40af] transition-colors leading-tight">
+            <span className="text-xs text-[#404652] font-semibold line-clamp-1 w-full group-hover:text-[#1e40af] transition-colors leading-tight">
               {isEnglishMode ? art.title : (isBengaliText(art.title) ? art.title : translateTitleToBengali(art.title))}
             </span>
           </Link>

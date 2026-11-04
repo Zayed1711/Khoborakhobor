@@ -9,6 +9,7 @@ import { getCurrentSession } from "@/actions/auth";
 import { getTrendingHashtagsAction } from "@/actions/search";
 import { prisma } from "@/lib/prisma";
 import { getDailyChallengeQuiz } from "@/lib/quiz/generator";
+import { toFeedCard } from "@/lib/feed-card";
 
 export const dynamic = "force-dynamic";
 
@@ -43,9 +44,12 @@ export default async function Home() {
     console.error("[HOME] Categories error:", e);
   }
 
-  const capsuleArticles = articles.filter((a) => a.isCapsule);
+  // Daily challenges are built from the full articles on the server; the client only
+  // receives slim feed cards (no bodies, vocabulary or quiz answers).
   const dailyBnQuiz = getDailyChallengeQuiz({ mode: "bn", articles });
   const dailyEnQuiz = getDailyChallengeQuiz({ mode: "en", articles });
+  const feedCards = articles.map(toFeedCard);
+  const capsuleArticles = feedCards.filter((a) => a.isCapsule);
   const trendingHashtags = await getTrendingHashtagsAction();
 
   return (
@@ -61,7 +65,7 @@ export default async function Home() {
         {/* Center Column: Social Media Newsfeed Stream */}
         <div className="flex-1 max-w-2xl min-w-0 w-full">
           <SocialFeedStream
-            articles={articles}
+            articles={feedCards}
             capsuleArticles={capsuleArticles}
             categories={categories}
             studentId={session.student?.id}

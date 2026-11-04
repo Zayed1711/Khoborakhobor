@@ -6,6 +6,7 @@ import { extractStudentTakeaways } from "@/lib/scraper/spider";
 import { generateContextualMicroQuiz, shuffleQuizOptions } from "@/lib/quiz/generator";
 import { extractFactTable } from "@/lib/scraper/examFilter";
 import { requireAdmin } from "@/lib/guards";
+import { toFeedCard, FeedCard } from "@/lib/feed-card";
 import { sanitizeArticleHtml, textToParagraphHtml } from "@/lib/sanitize-html";
 
 function safeParseJson<T>(value: any, fallback: T): T {
@@ -81,11 +82,12 @@ export async function getDateArchiveStatsAction(): Promise<DateArchiveStats> {
   }
 }
 
-export async function getArticlesByDateAction(dateKey: string): Promise<any[]> {
+export async function getArticlesByDateAction(dateKey: string): Promise<FeedCard[]> {
   try {
     if (!dateKey || dateKey === "all") {
-      return getPublishedArticles(150);
+      return (await getPublishedArticles(150)).map(toFeedCard);
     }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return [];
 
     const startOfDay = new Date(`${dateKey}T00:00:00.000Z`);
     const endOfDay = new Date(`${dateKey}T23:59:59.999Z`);
@@ -126,7 +128,7 @@ export async function getArticlesByDateAction(dateKey: string): Promise<any[]> {
       return timeB - timeA;
     });
 
-    return parsed;
+    return parsed.map(toFeedCard);
   } catch (err) {
     console.error(`[ARTICLES] Error loading articles for date (${dateKey}):`, err);
     return [];

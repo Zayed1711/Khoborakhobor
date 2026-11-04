@@ -6,10 +6,10 @@ import {
   Sparkles, HelpCircle, Bookmark, 
   Share2, Check, ArrowRight, ShieldCheck, Clock, 
   ExternalLink, ChevronDown, CheckCircle2, XCircle, 
-  Lightbulb, BookOpen, Layers, Target, Globe
+  Lightbulb, BookOpen, Layers, Globe
 } from "lucide-react";
 import ShareStudyModal from "./ShareStudyModal";
-import { saveWordToBankAction } from "@/actions/student";
+import { submitQuizAnswerAction } from "@/actions/student";
 import { useLanguage } from "@/context/LanguageContext";
 import { isBengaliText, translateTitleToBengali, translateSummaryToBengali } from "@/lib/bilingual";
 import { getNewspaperSourceInfo } from "@/lib/sources";
@@ -20,7 +20,7 @@ interface SocialFeedCardProps {
     slug: string;
     title: string;
     summary: string;
-    content: string;
+    content?: string;
     keyTakeaways?: string[];
     factTable?: { parameter: string; value: string; relevance: string }[];
     sourceName?: string | null;
@@ -34,28 +34,23 @@ interface SocialFeedCardProps {
       name: string;
       slug: string;
     };
-    vocabulary?: {
-      id: string;
-      term: string;
-      definition: string;
-      context?: string | null;
-    }[];
     quizQuestions?: {
       id: string;
       question: string;
       options: string[] | string;
-      correctOption: number;
-      explanation?: string | null;
     }[];
   };
   studentId?: string;
   isInitiallySaved?: boolean;
+  /** Load this card's image immediately (first card only); others lazy-load. */
+  eagerImage?: boolean;
 }
 
 export default function SocialFeedCard({
   article,
   studentId,
   isInitiallySaved = false,
+  eagerImage = false,
 }: SocialFeedCardProps) {
   const [showTakeaways, setShowTakeaways] = useState(false);
   const [showQuiz, setShowQuiz] = useState(false);
@@ -96,11 +91,23 @@ export default function SocialFeedCard({
 
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [quizAnswered, setQuizAnswered] = useState(false);
+  const [quizChecking, setQuizChecking] = useState(false);
+  const [quizResult, setQuizResult] = useState<{ correctOption: number; explanation: string | null } | null>(null);
 
-  const handleQuizSelect = (idx: number) => {
-    if (quizAnswered) return;
+  // The correct answer is not shipped with the feed; the server checks it.
+  const handleQuizSelect = async (idx: number) => {
+    if (quizAnswered || quizChecking || !firstQuiz) return;
     setSelectedOption(idx);
-    setQuizAnswered(true);
+    setQuizChecking(true);
+    try {
+      const res = await submitQuizAnswerAction(studentId || "", firstQuiz.id, idx);
+      setQuizResult({ correctOption: res.correctOption, explanation: res.explanation ?? null });
+      setQuizAnswered(true);
+    } catch {
+      setSelectedOption(null);
+    } finally {
+      setQuizChecking(false);
+    }
   };
 
   const handleToggleSave = () => {
@@ -113,8 +120,8 @@ export default function SocialFeedCard({
       className="bg-white border border-[#ded8cb] rounded-2xl shadow-2xs hover:shadow-xs transition duration-200 overflow-hidden text-[#1c1d21]"
     >
       {/* 1. Header Post Bar with Official Newspaper Logo */}
-      <div className="p-4 sm:p-5 pb-3 flex items-center justify-between border-b border-[#f4efe4]">
-        <div className="flex items-center gap-3">
+      <div className="p-4 sm:p-5 pb-3 flex items-center justify-between gap-2 border-b border-[#f4efe4]">
+        <div className="flex items-center gap-3 min-w-0">
           <div
             className={`relative w-9 h-9 sm:w-10 sm:h-10 rounded-full ${sourceInfo.bgColor} ${sourceInfo.borderColor} border shadow-2xs shrink-0 flex items-center justify-center select-none transition-transform hover:scale-105`}
             title={`উৎস: ${sourceInfo.name}`}
@@ -123,12 +130,12 @@ export default function SocialFeedCard({
               {sourceInfo.monogram}
             </span>
           </div>
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <span className="text-xs font-bold text-[#1c1d21]">
                 {article.sourceName || sourceInfo.name}
               </span>
-              <span className="text-[10px] bg-[#f5ebeb] text-[#842323] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+              <span className="text-xs bg-[#f5ebeb] text-[#842323] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
                 {article.category.name}
               </span>
               {article.sourceUrl && (
@@ -136,15 +143,15 @@ export default function SocialFeedCard({
                   href={article.sourceUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[10px] text-[#842323] hover:underline inline-flex items-center gap-0.5 font-semibold ml-0.5"
+                  className="text-xs text-[#842323] hover:underline inline-flex items-center gap-0.5 font-semibold ml-0.5"
                   title="সংবাদপত্রের বিস্তারিত প্রতিবেদন দেখুন"
                 >
                   <span>বিস্তারিত</span>
-                  <ExternalLink className="w-2.5 h-2.5" />
+                  <ExternalLink className="w-3 h-3" />
                 </a>
               )}
             </div>
-            <div className="flex items-center gap-2 text-[11px] text-[#717887] mt-0.5">
+            <div className="flex items-center gap-2 text-xs text-[#717887] mt-0.5">
               <span>{article.publishedAt}</span>
               <span>&bull;</span>
               <span className="flex items-center gap-1 font-mono">
@@ -158,7 +165,7 @@ export default function SocialFeedCard({
         <button
           type="button"
           onClick={() => setIsShareModalOpen(true)}
-          className="p-2 text-[#788191] hover:text-[#1c1d21] hover:bg-[#faf8f4] rounded-full transition"
+          className="p-2 shrink-0 text-[#788191] hover:text-[#1c1d21] hover:bg-[#faf8f4] rounded-full transition"
           title="শেয়ার করুন"
         >
           <Share2 className="w-4 h-4" />
@@ -170,13 +177,13 @@ export default function SocialFeedCard({
         {/* Bilingual Translation Toggle for English Articles */}
         {isEnglish && (
           <div className="flex items-center justify-between bg-[#fbf9f5] border border-[#e2dcd0] p-1.5 px-3 rounded-lg text-xs">
-            <span className="font-medium text-[#717887] text-[11px] flex items-center gap-1.5">
+            <span className="font-medium text-[#717887] text-xs flex items-center gap-1.5">
               <Globe className="w-3.5 h-3.5 text-[#842323]" />
               <span className="hidden sm:inline">ইংরেজি সম্পাদকীয় প্রতিবেদন</span>
               <span className="sm:hidden">English Source</span>
             </span>
 
-            <div className="inline-flex rounded-md border border-[#ded8cb] bg-white p-0.5 text-[11px]">
+            <div className="inline-flex rounded-md border border-[#ded8cb] bg-white p-0.5 text-xs">
               <button
                 type="button"
                 onClick={() => setShowTranslation(true)}
@@ -209,19 +216,19 @@ export default function SocialFeedCard({
           </h2>
         </Link>
 
-        <p className="text-xs sm:text-sm text-[#404652] leading-relaxed line-clamp-3">
+        <p className="text-[15px] sm:text-base text-[#404652] leading-relaxed line-clamp-3">
           {displaySummary}
         </p>
 
         {/* High-Yield Data Metric Pill for Exam Aspirants */}
         {article.factTable && article.factTable.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 pt-0.5">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#f6f2e9] border border-[#e2dcd0] text-[11px] text-[#2c323f]">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#f6f2e9] border border-[#e2dcd0] text-xs text-[#2c323f]">
               <span className="font-bold text-[#842323]">{article.factTable[0]?.parameter}:</span>
               <span className="font-medium text-[#17191d]">{article.factTable[0]?.value}</span>
             </div>
             {article.factTable[1] && (
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#faf8f4] border border-[#e8e2d6] text-[11px] text-[#4b5563] hidden sm:inline-flex">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#faf8f4] border border-[#e8e2d6] text-xs text-[#4b5563] hidden sm:inline-flex">
                 <span className="font-semibold text-[#842323]">{article.factTable[1]?.parameter}:</span>
                 <span className="font-medium text-[#17191d]">{article.factTable[1]?.value}</span>
               </div>
@@ -231,20 +238,20 @@ export default function SocialFeedCard({
 
         {/* Media Image */}
         {article.featuredImage && (
-          <div className="relative aspect-video sm:aspect-21/9 rounded-xl overflow-hidden bg-[#eee9df] border border-[#ded8cb] group">
+          <div className="relative aspect-video rounded-xl overflow-hidden bg-[#eee9df] border border-[#ded8cb] group">
             <Link href={`/article/${article.slug}`}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- remote news images from many hosts */}
               <img
                 src={article.featuredImage}
                 alt={article.title}
+                loading={eagerImage ? "eager" : "lazy"}
+                decoding="async"
+                fetchPriority={eagerImage ? "high" : "auto"}
+                width={1200}
+                height={675}
                 className="w-full h-full object-cover group-hover:scale-102 transition duration-500 brightness-[0.98]"
               />
             </Link>
-            {article.examTags && (
-              <div className="absolute bottom-2.5 left-2.5 bg-[#17191d]/85 text-white text-[10px] font-medium px-2.5 py-1 rounded-md backdrop-blur-xs flex items-center gap-1.5 shadow-sm">
-                <Target className="w-3 h-3 text-[#f5c66b]" />
-                <span>{article.examTags}</span>
-              </div>
-            )}
           </div>
         )}
 
@@ -255,7 +262,7 @@ export default function SocialFeedCard({
               <Lightbulb className="w-4 h-4" />
               <span>শিক্ষণীয় মূল বিষয়বস্তু (Exam Key Takeaways):</span>
             </div>
-            <ul className="space-y-1.5 text-xs text-[#343a46] list-disc list-inside">
+            <ul className="space-y-1.5 text-sm text-[#343a46] list-disc list-inside">
               {article.keyTakeaways.map((pt, i) => (
                 <li key={i} className="leading-relaxed">
                   {pt}
@@ -269,14 +276,14 @@ export default function SocialFeedCard({
         {showQuiz && firstQuiz && (
           <div className="p-4 bg-[#fdfbf7] border border-[#ded8cb] rounded-xl animate-fade-in space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-[#842323] uppercase tracking-wider flex items-center gap-1">
+              <span className="text-xs font-bold text-[#842323] uppercase tracking-wider flex items-center gap-1">
                 <HelpCircle className="w-3.5 h-3.5" />
                 <span>১০-সেকেন্ড একটিভ রিকল কুইজ:</span>
               </span>
-              <span className="text-[10px] text-[#717887]">তাত্ক্ষণিক ফিডব্যাক</span>
+              <span className="text-xs text-[#717887]">তাত্ক্ষণিক ফিডব্যাক</span>
             </div>
 
-            <p className="text-xs font-bold text-[#1c1d21] leading-snug">
+            <p className="text-sm font-bold text-[#1c1d21] leading-snug">
               {firstQuiz.question}
             </p>
 
@@ -284,7 +291,7 @@ export default function SocialFeedCard({
               {parsedOptions.map((opt, oIdx) => {
                 let btnStyle = "bg-white border-[#ded8cb] hover:bg-[#faf8f4] text-[#343a46]";
                 if (quizAnswered) {
-                  if (oIdx === firstQuiz.correctOption) {
+                  if (oIdx === quizResult?.correctOption) {
                     btnStyle = "bg-emerald-50 border-emerald-500 text-emerald-950 font-bold";
                   } else if (selectedOption === oIdx) {
                     btnStyle = "bg-rose-50 border-rose-400 text-rose-950";
@@ -297,15 +304,15 @@ export default function SocialFeedCard({
                   <button
                     key={oIdx}
                     type="button"
-                    disabled={quizAnswered}
+                    disabled={quizAnswered || quizChecking}
                     onClick={() => handleQuizSelect(oIdx)}
-                    className={`w-full text-left p-2.5 rounded-lg border text-xs transition flex items-center justify-between ${btnStyle}`}
+                    className={`w-full text-left p-3 rounded-lg border text-sm leading-snug transition flex items-center justify-between ${btnStyle}`}
                   >
                     <span>{opt}</span>
-                    {quizAnswered && oIdx === firstQuiz.correctOption && (
+                    {quizAnswered && oIdx === quizResult?.correctOption && (
                       <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     )}
-                    {quizAnswered && selectedOption === oIdx && oIdx !== firstQuiz.correctOption && (
+                    {quizAnswered && selectedOption === oIdx && oIdx !== quizResult?.correctOption && (
                       <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
                     )}
                   </button>
@@ -314,9 +321,9 @@ export default function SocialFeedCard({
             </div>
 
             {quizAnswered && (
-              <div className="p-2.5 bg-white border border-[#ded8cb] rounded text-[11px] text-[#404652] leading-relaxed">
+              <div className="p-2.5 bg-white border border-[#ded8cb] rounded text-xs text-[#404652] leading-relaxed">
                 <span className="font-bold text-[#1c1d21]">ব্যাখ্যা: </span>
-                {firstQuiz.explanation || "সঠিক উত্তর নির্বাচন সম্পন্ন হয়েছে।"}
+                {quizResult?.explanation || "সঠিক উত্তর নির্বাচন সম্পন্ন হয়েছে।"}
               </div>
             )}
           </div>
@@ -337,7 +344,7 @@ export default function SocialFeedCard({
             }`}
           >
             <Lightbulb className="w-3.5 h-3.5 text-[#c29547] shrink-0" />
-            <span className="text-[11px] sm:text-xs">মূলবিন্দু</span>
+            <span className="text-xs sm:text-sm">মূলবিন্দু</span>
           </button>
 
           {/* Micro Quiz Toggle */}
@@ -352,7 +359,7 @@ export default function SocialFeedCard({
               }`}
             >
               <HelpCircle className="w-3.5 h-3.5 text-[#2e744a] shrink-0" />
-              <span className="text-[11px] sm:text-xs">কুইজ</span>
+              <span className="text-xs sm:text-sm">কুইজ</span>
             </button>
           )}
 

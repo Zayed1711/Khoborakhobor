@@ -76,24 +76,25 @@ export default function KhoborLogo({
   if (variant === "compact") {
     const content = (
       <div className={`inline-flex items-center gap-2 select-none group ${className}`}>
-        {renderEmblem("w-9 h-9 sm:w-10 sm:h-10")}
+        {renderEmblem("w-8 h-8 sm:w-10 sm:h-10")}
         <div className="flex flex-col text-left justify-center">
           <div className="flex items-center gap-1.5">
             <span
-              className={`text-xl sm:text-2xl font-black font-serif tracking-tight leading-none ${textColor}`}
+              className={`text-lg sm:text-2xl font-black font-serif tracking-tight leading-none whitespace-nowrap ${textColor}`}
               style={{ fontFamily: "'Noto Serif Bengali', 'SolaimanLipi', Georgia, serif" }}
             >
               খবরাখবর
             </span>
+            {/* The language badge duplicates the header's mode toggle, so it is hidden on phones */}
             <span
-              className={`text-[8.5px] font-bold px-1.5 py-0.5 rounded tracking-wider uppercase font-mono border ${trackBgColor}`}
+              className={`hidden sm:inline text-xs font-bold px-1.5 py-0.5 rounded tracking-wider uppercase font-mono border ${trackBgColor}`}
             >
               {isEnglishMode ? "EN" : "বাংলা"}
             </span>
           </div>
           {showTagline && (
             <span
-              className="text-[8px] sm:text-[9px] tracking-[0.16em] font-extrabold uppercase mt-0.5 text-[#842323]"
+              className="text-xs tracking-[0.16em] font-extrabold uppercase mt-0.5 text-[#842323]"
             >
               KHOBORAKHOBOR DIGITAL
             </span>
@@ -154,7 +155,7 @@ export default function KhoborLogo({
             খবরাখবর
           </span>
           {showTagline && (
-            <span className="text-[9px] tracking-[0.2em] font-extrabold uppercase mt-1 text-[#fde48b]">
+            <span className="text-xs tracking-[0.2em] font-extrabold uppercase mt-1 text-[#fde48b]">
               {isEnglishMode ? "ENGLISH LEARNING TRACK" : "KHOBORAKHOBOR DIGITAL"}
             </span>
           )}

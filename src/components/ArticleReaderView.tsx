@@ -443,7 +443,7 @@ export default function ArticleReaderView({
                       <span className="text-xs font-bold text-[#1c1d21] block">
                         খবরাখবর দ্বিভাষিক পাঠক (Bilingual Reader View)
                       </span>
-                      <span className="text-[11px] text-[#6b7280]">
+                      <span className="text-xs text-[#6b7280]">
                         মূল ইংরেজি সম্পাদকীয় ও বিসিএস পাঠোপযোগী প্রাতিষ্ঠানিক বাংলা ভাবানুবাদ
                       </span>
                     </div>
@@ -484,13 +484,13 @@ export default function ArticleReaderView({
               </p>
 
               {/* Timestamp Bar */}
-              <div className="mt-6 pt-3 border-t border-b border-[#e5dfd4] flex items-center justify-between gap-4 py-2 text-xs text-[#68707f]">
-                <div className="flex items-center gap-2">
+              <div className="mt-6 pt-3 border-t border-b border-[#e5dfd4] flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-2 text-xs text-[#68707f]">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
                   <div
                     className={`w-6 h-6 rounded-full ${sourceInfo.bgColor} ${sourceInfo.borderColor} border shrink-0 flex items-center justify-center select-none shadow-2xs`}
                     title={`উৎস: ${sourceInfo.name}`}
                   >
-                    <span className={`${sourceInfo.textColor} font-bold text-[10px]`}>
+                    <span className={`${sourceInfo.textColor} font-bold text-xs`}>
                       {sourceInfo.monogram}
                     </span>
                   </div>
@@ -620,7 +620,7 @@ export default function ArticleReaderView({
                       ইংরেজি মূল পাঠ ও অডিও উচ্চারণ
                     </span>
                   </div>
-                  <span className="text-[11px] text-[#64748b]">
+                  <span className="text-xs text-[#64748b]">
                     যেকোনো শব্দের ওপর ক্লিক করে সঠিক ইংরেজি উচ্চারণ শুনুন
                   </span>
                 </div>
@@ -733,7 +733,7 @@ export default function ArticleReaderView({
                       <h4 className="text-xs font-bold text-[#1c1d21] group-hover:text-[#842323] line-clamp-2">
                         {rel.title}
                       </h4>
-                      <span className="text-[10px] text-[#788191] mt-2 block">
+                      <span className="text-xs text-[#788191] mt-2 block">
                         {rel.readTime} পাঠ &bull; {rel.publishedAt}
                       </span>
                     </Link>
@@ -802,7 +802,7 @@ export default function ArticleReaderView({
           <div className="relative flex items-center justify-center">
             <Edit3 className="w-5 h-5 text-white" />
             {notes.length > 0 && (
-              <span className="absolute -top-2.5 -right-2.5 min-w-[20px] h-5 px-1 bg-amber-400 text-neutral-950 text-[10px] font-black rounded-full flex items-center justify-center shadow-md border-2 border-white">
+              <span className="absolute -top-2.5 -right-2.5 min-w-[20px] h-5 px-1 bg-amber-400 text-neutral-950 text-xs font-black rounded-full flex items-center justify-center shadow-md border-2 border-white">
                 {notes.length}
               </span>
             )}

@@ -50,7 +50,7 @@ export default function MobileBottomNav() {
               }`}
             >
               <Icon className={`w-5 h-5 ${isActive ? iconActiveColor : "text-[#788191]"}`} />
-              <span className="text-[10px] tracking-tight mt-0.5">{item.label}</span>
+              <span className="text-xs tracking-tight mt-0.5">{item.label}</span>
             </Link>
           );
         })}

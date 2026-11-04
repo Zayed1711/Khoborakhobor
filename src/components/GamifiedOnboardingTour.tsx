@@ -211,7 +211,7 @@ export default function GamifiedOnboardingTour() {
               <Icon className="w-4 h-4" />
             </div>
             <div>
-              <span className="text-[10px] font-bold text-[#842323] uppercase tracking-wider block">
+              <span className="text-xs font-bold text-[#842323] uppercase tracking-wider block">
                 {step.badge}
               </span>
               <h3 className="text-sm font-bold text-[#1c1d21]">
@@ -245,7 +245,7 @@ export default function GamifiedOnboardingTour() {
               <span className="text-xs font-bold text-[#842323] block">
                 প্রাথমিক সংকলক পদক (Novice Scholar)
               </span>
-              <span className="text-[10px] text-[#786b52] block">
+              <span className="text-xs text-[#786b52] block">
                 সফল পরিচিতি পর্ব সম্পন্ন করার জন্য আপনার প্রোফাইলে যুক্ত হলো।
               </span>
             </div>
@@ -266,7 +266,7 @@ export default function GamifiedOnboardingTour() {
                 }`}
               />
             ))}
-            <span className="text-[10px] text-[#8e95a2] font-mono ml-1.5">
+            <span className="text-xs text-[#8e95a2] font-mono ml-1.5">
               {currentStep + 1}/{TOUR_STEPS.length}
             </span>
           </div>

@@ -40,7 +40,7 @@ export default function VocabularyModal({ terms, studentId }: VocabularyModalPro
             শিক্ষণীয় পারিভাষিক শব্দভাণ্ডার (Vocabulary & Concept Bank)
           </h4>
         </div>
-        <span className="text-[11px] text-[#717887]">শব্দে ক্লিক করে সংজ্ঞা ও বিশ্লেষণ জানুন</span>
+        <span className="text-xs text-[#717887]">শব্দে ক্লিক করে সংজ্ঞা ও বিশ্লেষণ জানুন</span>
       </div>
 
       {/* Interactive Word Badges */}
@@ -62,7 +62,7 @@ export default function VocabularyModal({ terms, studentId }: VocabularyModalPro
         <div className="mt-4 p-4 bg-[#ffffff] border border-[#ded8cb] rounded-md transition-all shadow-xs">
           <div className="flex items-start justify-between gap-4 mb-2">
             <div>
-              <span className="text-[10px] uppercase font-bold text-[#842323] tracking-wider block">
+              <span className="text-xs uppercase font-bold text-[#842323] tracking-wider block">
                 ধারণাগত ব্যাখ্যা ও সংজ্ঞা
               </span>
               <div className="flex items-center gap-2">
@@ -106,7 +106,7 @@ export default function VocabularyModal({ terms, studentId }: VocabularyModalPro
           </p>
 
           {selectedTerm.context && (
-            <p className="mt-2 text-[11px] text-[#6b7280] italic bg-[#faf8f4] p-2 rounded border border-[#ece7dc]">
+            <p className="mt-2 text-xs text-[#6b7280] italic bg-[#faf8f4] p-2 rounded border border-[#ece7dc]">
               প্রাসঙ্গিক প্রেক্ষাপট: {selectedTerm.context}
             </p>
           )}

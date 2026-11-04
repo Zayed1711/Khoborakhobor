@@ -122,14 +122,14 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
             <div className="py-8 text-center text-xs text-[#737b88]">
               <p>শিক্ষার্থী ও গবেষকদের সুবিধার্থে যেকোনো বিষয় বা প্রাসঙ্গিক শব্দ লিখুন।</p>
               <div className="mt-3 flex justify-center gap-2">
-                <span className="text-[11px] bg-[#ede7dc] px-2.5 py-1 rounded text-[#4b5563]">
+                <span className="text-xs bg-[#ede7dc] px-2.5 py-1 rounded text-[#4b5563]">
                   কী-বোর্ড শর্টকাট: Esc বন্ধ করতে
                 </span>
               </div>
             </div>
           ) : results.length > 0 ? (
             <div className="space-y-2">
-              <p className="text-[11px] font-semibold text-[#737b88] uppercase tracking-wider mb-2">
+              <p className="text-xs font-semibold text-[#737b88] uppercase tracking-wider mb-2">
                 ফলাফল ({results.length}টি নিবন্ধ পাওয়া গেছে)
               </p>
               {results.map((item) => (
@@ -141,11 +141,11 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                 >
                   <div className="min-w-0 pr-3">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[10px] font-semibold text-[#842323] uppercase">
+                      <span className="text-xs font-semibold text-[#842323] uppercase">
                         {item.categoryName}
                       </span>
                       {item.examTags && (
-                        <span className="text-[9px] text-[#6b7280] bg-[#eee9df] px-1.5 py-0.5 rounded">
+                        <span className="text-xs text-[#6b7280] bg-[#eee9df] px-1.5 py-0.5 rounded">
                           {item.examTags.split(",")[0]}
                         </span>
                       )}

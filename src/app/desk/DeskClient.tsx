@@ -163,7 +163,7 @@ export default function DeskClient() {
                 স্বয়ংক্রিয় সংবাদ সংকলন ও বিশ্লেষণ (Automated News Curation)
               </h2>
             </div>
-            <span className="text-[11px] font-semibold text-[#842323] bg-[#f5ebeb] px-2.5 py-0.5 rounded border border-[#e5c9c9]">
+            <span className="text-xs font-semibold text-[#842323] bg-[#f5ebeb] px-2.5 py-0.5 rounded border border-[#e5c9c9]">
               সংবাদ মাধ্যম সংযুক্ত (Active Sources)
             </span>
           </div>
@@ -174,7 +174,7 @@ export default function DeskClient() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
             <div>
-              <label className="block text-[11px] font-bold text-[#454c59] mb-1">
+              <label className="block text-xs font-bold text-[#454c59] mb-1">
                 সংবাদের তারিখ (Target Date)
               </label>
               <input
@@ -186,7 +186,7 @@ export default function DeskClient() {
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-[#454c59] mb-1">
+              <label className="block text-xs font-bold text-[#454c59] mb-1">
                 সংবাদ মাধ্যমের ভাষা
               </label>
               <select
@@ -427,7 +427,7 @@ export default function DeskClient() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-medium text-[#68707f] mb-1">
+                <label className="block text-xs font-medium text-[#68707f] mb-1">
                   অপশন ১
                 </label>
                 <input
@@ -439,7 +439,7 @@ export default function DeskClient() {
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-[#68707f] mb-1">
+                <label className="block text-xs font-medium text-[#68707f] mb-1">
                   অপশন ২
                 </label>
                 <input
@@ -451,7 +451,7 @@ export default function DeskClient() {
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-[#68707f] mb-1">
+                <label className="block text-xs font-medium text-[#68707f] mb-1">
                   অপশন ৩
                 </label>
                 <input
@@ -463,7 +463,7 @@ export default function DeskClient() {
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-[#68707f] mb-1">
+                <label className="block text-xs font-medium text-[#68707f] mb-1">
                   অপশন ৪
                 </label>
                 <input

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import SocialFeedCard from "./SocialFeedCard";
 import CapsuleStoryPills from "./CapsuleStoryPills";
 import DateArchiveDropdown from "./DateArchiveDropdown";
@@ -114,6 +114,35 @@ export default function SocialFeedStream({
     });
   }, [feedArticles, isEnglishMode, selectedDate]);
 
+  // Render the feed in pages so phones don't mount 150 cards and 100+ images at once
+  const PAGE_SIZE = 10;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const hasMore = visibleCount < filteredArticles.length;
+
+  // Start from the top page again whenever the filter changes
+  const [lastFilterKey, setLastFilterKey] = useState(`${selectedDate}|${isEnglishMode}`);
+  const filterKey = `${selectedDate}|${isEnglishMode}`;
+  if (filterKey !== lastFilterKey) {
+    setLastFilterKey(filterKey);
+    setVisibleCount(PAGE_SIZE);
+  }
+
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node || !hasMore || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setVisibleCount((n) => n + PAGE_SIZE);
+        }
+      },
+      { rootMargin: "600px 0px" }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasMore, visibleCount]);
+
   // Filter capsule stories by mode so English learners see English capsules
   const filteredCapsules = useMemo(() => {
     if (isEnglishMode) {
@@ -140,7 +169,7 @@ export default function SocialFeedStream({
               <span className={isEnglishMode ? "text-blue-900" : "text-amber-900"}>
                 {isEnglishMode ? "Daily Streak" : "ডেইলি স্ট্রিক"}
               </span>
-              <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full border font-bold ${
+              <span className={`text-xs font-mono px-2 py-0.5 rounded-full border font-bold ${
                 isEnglishMode ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-orange-50 text-orange-700 border-orange-200"
               }`}>
                 {streakDays} {isEnglishMode ? "Days!" : "দিন!"}
@@ -152,7 +181,7 @@ export default function SocialFeedStream({
               onClick={() => setIsMobileQuizExpanded(!isMobileQuizExpanded)}
               className="text-xs text-[#717887] hover:text-[#1c1d21] flex items-center gap-1 cursor-pointer"
             >
-              <span className="text-[11px]">
+              <span className="text-xs">
                 {isMobileQuizExpanded 
                   ? (isEnglishMode ? "Minimize" : "সংক্ষিপ্ত") 
                   : (isEnglishMode ? "Expand Quiz" : "কুইজ দেখুন")}
@@ -165,12 +194,12 @@ export default function SocialFeedStream({
           {isMobileQuizExpanded && (
             <div className="space-y-2.5 pt-1">
               <div className="flex items-center justify-between">
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
                   isEnglishMode ? "bg-blue-100 text-blue-800" : "bg-red-100 text-red-800"
                 }`}>
                   {isEnglishMode ? "Daily English Challenge" : "বিসিএস প্রিলিমিনারি চ্যালেঞ্জ"}
                 </span>
-                <span className="text-[10px] text-[#717887] font-semibold">
+                <span className="text-xs text-[#717887] font-semibold">
                   {isEnglishMode ? "10 Points" : "১০ পয়েন্ট"}
                 </span>
               </div>
@@ -203,7 +232,7 @@ export default function SocialFeedStream({
                       disabled={mobileQuizAnswered}
                       className={`w-full text-left p-2 rounded-xl text-xs border transition flex items-center justify-between cursor-pointer ${btnStyle}`}
                     >
-                      <span className="truncate">{opt}</span>
+                      <span className="leading-snug">{opt}</span>
                       {mobileQuizAnswered && isCorrect && (
                         <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                       )}
@@ -216,7 +245,7 @@ export default function SocialFeedStream({
               </div>
 
               {mobileQuizAnswered && (
-                <div className="p-2.5 bg-blue-50/60 border border-blue-200/80 rounded-xl text-[11px] text-[#3b414d] leading-relaxed animate-fade-in">
+                <div className="p-2.5 bg-blue-50/60 border border-blue-200/80 rounded-xl text-xs text-[#3b414d] leading-relaxed animate-fade-in">
                   <span className="font-bold text-[#1c1d21]">ব্যাখ্যা: </span>
                   {activeQuiz.explanation || "সঠিক উত্তর যাচাই সম্পন্ন হয়েছে।"}
                 </div>
@@ -249,17 +278,35 @@ export default function SocialFeedStream({
             </p>
           </div>
         ) : filteredArticles.length > 0 ? (
-          filteredArticles.map((article, index) => (
-            <div
-              key={article.id}
-              {...(index === 0 ? { id: "tutorial-smart-reading" } : {})}
-            >
-              <SocialFeedCard
-                article={article}
-                studentId={studentId}
-              />
-            </div>
-          ))
+          <>
+            {filteredArticles.slice(0, visibleCount).map((article, index) => (
+              <div
+                key={article.id}
+                {...(index === 0 ? { id: "tutorial-smart-reading" } : {})}
+              >
+                <SocialFeedCard
+                  article={article}
+                  studentId={studentId}
+                  eagerImage={index === 0}
+                />
+              </div>
+            ))}
+            {hasMore && (
+              <div ref={sentinelRef} className="flex justify-center py-2">
+                <button
+                  type="button"
+                  onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}
+                  className={`px-5 py-2.5 rounded-xl border border-[#ded8cb] bg-white text-sm font-semibold shadow-2xs hover:bg-[#faf8f4] transition ${
+                    isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"
+                  }`}
+                >
+                  {isEnglishMode
+                    ? `Load more (${filteredArticles.length - visibleCount} left)`
+                    : `আরও খবর দেখুন (বাকি ${(filteredArticles.length - visibleCount).toLocaleString("bn-BD")}টি)`}
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="p-8 sm:p-12 text-center bg-white border border-[#ded8cb] rounded-2xl space-y-2">
             <BookOpen className="w-8 h-8 text-[#8e9aa8] mx-auto" />
