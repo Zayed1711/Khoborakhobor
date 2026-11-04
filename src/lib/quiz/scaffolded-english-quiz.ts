@@ -670,6 +670,63 @@ export function generateScaffoldedEnglishQuiz(
       contextQuote: citation.quote,
       paragraphRef: citation.paragraphRef,
     });
+  } else if (/\binvest(s|ed|ing|ment)?\b/i.test(combined)) {
+    const regex = /\binvest(s|ed|ing|ment)?\b/i;
+    const citation = getContext(regex);
+    questions.push({
+      id: `scaffold-prep-${idCounter++}`,
+      question: `অর্থনৈতিক ও প্রাতিষ্ঠানিক সংবাদে "invest" শব্দের সাথে কোন Preposition ব্যবহৃত হয়?`,
+      options: [
+        "in (অর্থ বা সম্পদ কোনো খাতে বিনিয়োগ করা)",
+        "at (নির্দিষ্ট সময় বা স্থান)",
+        "with (কারো সাথে থাকা)",
+        "from (উৎস নির্দেশ করতে)",
+      ],
+      correctOption: 0,
+      explanation: "ব্যবসা, প্রকল্প বা শেয়ার বাজারে অর্থ খাটানো বোঝাতে 'invest in' বসে।",
+      topicTag: "উপযুক্ত প্রিপজিশন",
+      targetWord: "invest in",
+      contextQuote: citation.quote,
+      paragraphRef: citation.paragraphRef,
+    });
+  } else if (/\bresponsi(ble|bility)\b/i.test(combined)) {
+    const regex = /\bresponsi(ble|bility)\b/i;
+    const citation = getContext(regex);
+    questions.push({
+      id: `scaffold-prep-${idCounter++}`,
+      question: `আইন ও শাসন সংক্রান্ত প্রেক্ষাপটে "responsible" শব্দের পর কোন Preposition বসে?`,
+      options: [
+        "for (নির্দিষ্ট কাজের বা ফলাফলের জন্য দায়ী হওয়া)",
+        "to (কারো প্রতি দায়বদ্ধ থাকা)",
+        "with (সাথে থাকা)",
+        "about (বিষয়ে)",
+      ],
+      correctOption: 0,
+      explanation: "কোনো কার্যক্রম বা ঘটনার জন্য দায়ী বোঝাতে 'responsible for' ব্যবহৃত হয়।",
+      topicTag: "উপযুক্ত প্রিপজিশন",
+      targetWord: "responsible for",
+      contextQuote: citation.quote,
+      paragraphRef: citation.paragraphRef,
+    });
+  } else if (/\bfocus(es|ed|ing)?\b/i.test(combined)) {
+    const regex = /\bfocus(es|ed|ing)?\b/i;
+    const citation = getContext(regex);
+    questions.push({
+      id: `scaffold-prep-${idCounter++}`,
+      question: `সম্পাদকীয় নিবন্ধে "focus" ক্রিয়াপদের সাথে কোন Preposition-টি মানানসইভাবে বসে?`,
+      options: [
+        "on / upon (কোনো নির্দিষ্ট বিষয়ের ওপর আলোকপাত করা)",
+        "in (ভিতরে থাকা)",
+        "at (নির্দিষ্ট লক্ষ্য)",
+        "by (দ্বারা বা মাধ্যমে)",
+      ],
+      correctOption: 0,
+      explanation: "কোনো বিষয়ের ওপর বিশেষ দৃষ্টি বা আলোকপাত বোঝাতে 'focus on' ব্যবহৃত হয়।",
+      topicTag: "উপযুক্ত প্রিপজিশন",
+      targetWord: "focus on",
+      contextQuote: citation.quote,
+      paragraphRef: citation.paragraphRef,
+    });
   }
 
   // 3. Cloze Test / Missing Verb Challenge (Strictly context-guarded)
@@ -697,8 +754,8 @@ export function generateScaffoldedEnglishQuiz(
     });
   }
 
-  // 4. Guaranteed Article-Aligned Reading Comprehension Challenge (if no vocab matched)
-  if (questions.length === 0) {
+  // 4. Guaranteed Article-Aligned Reading Comprehension & Analytical Insight (ensures minimum 3 questions)
+  if (questions.length < 3) {
     const citation = getContext(/./);
     const cleanTitle = articleTitle.replace(/["“”]/g, "").trim();
     const leadSnippet = citation.quote || cleanTitle;
@@ -707,7 +764,7 @@ export function generateScaffoldedEnglishQuiz(
       id: `scaffold-comprehension-${idCounter++}`,
       question: `উদ্ধৃত "${cleanTitle.length > 70 ? cleanTitle.slice(0, 67) + "..." : cleanTitle}" প্রতিবেদনের আলোকে প্রধান আলোচিত তথ্য কোনটি?`,
       options: [
-        `${leadSnippet.length > 80 ? leadSnippet.slice(0, 77) + "..." : leadSnippet} (প্রতিবেদনে আলোচিত মূল ঘটনা)`,
+        `${leadSnippet.length > 80 ? leadSnippet.slice(0, 77) + "..." : leadSnippet} (প্রতিবেদনে আলোচিত মূল তথ্য)`,
         "বিগত দশকের অপ্রাসঙ্গিক পুরনো ঘটনার পুনরাবৃত্তি বা সাধারণ পরিসংখ্যান",
         "কোনো সরকারি বা নিরপেক্ষ তথ্যসূত্র ছাড়া প্রচারিত সামাজিক মাধ্যমের গুজব",
         "উদ্ধৃত প্রতিবেদনের মূল বক্তব্যের সাথে সরাসরি বিপরীত বা অসত্য কোনো বিবরণ",

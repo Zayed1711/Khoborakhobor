@@ -203,21 +203,27 @@ export default function AdminDashboardClient() {
     setSpiderRunning(true);
     setRunResult(null);
     try {
-      const res = await triggerSpiderCrawlAction({
-        targetDate,
-        language,
-        categorySlug: categorySlug === "all" ? undefined : categorySlug,
-        sourceName: sourceName === "all" ? undefined : sourceName,
-        dryRun,
-        limitPerSource,
+      const response = await fetch("/api/admin/spider/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          targetDate,
+          language,
+          categorySlug: categorySlug === "all" ? undefined : categorySlug,
+          sourceName: sourceName === "all" ? undefined : sourceName,
+          dryRun,
+          limitPerSource,
+        }),
       });
+
+      const res = await response.json();
 
       if (res.success && res.data) {
         setRunResult(res.data);
         showNotify("success", res.message);
         refreshAllData();
       } else {
-        showNotify("error", res.message);
+        showNotify("error", res.message || "স্পাইডার চালাতে ত্রুটি হয়েছে।");
       }
     } catch (err: any) {
       const errMsg = err?.message || "";

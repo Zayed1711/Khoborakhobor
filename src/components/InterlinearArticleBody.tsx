@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 interface InterlinearArticleBodyProps {
   htmlContent: string;
@@ -33,6 +33,8 @@ export default function InterlinearArticleBody({
   fontSize,
   onWordClick,
 }: InterlinearArticleBodyProps) {
+  const [activeSpeakingWord, setActiveSpeakingWord] = useState<string | null>(null);
+
   // Parse HTML into clean text blocks (paragraphs)
   const paragraphs = useMemo(() => {
     return extractParagraphs(htmlContent);
@@ -41,7 +43,6 @@ export default function InterlinearArticleBody({
   // Tokenize paragraph into words
   const tokenizedParagraphs = useMemo(() => {
     return paragraphs.map((para) => {
-      // Split by whitespace
       const rawTokens = para.split(/\s+/);
       return rawTokens.map((tok) => {
         const clean = tok.replace(/^[^\w]+|[^\w]+$/g, "");
@@ -71,6 +72,8 @@ export default function InterlinearArticleBody({
         return;
       }
     }
+    setActiveSpeakingWord(word);
+    setTimeout(() => setActiveSpeakingWord(null), 1500);
     onWordClick(word);
   };
 
@@ -87,12 +90,18 @@ export default function InterlinearArticleBody({
               );
             }
 
+            const isSpeaking = activeSpeakingWord?.toLowerCase() === token.cleanWord.toLowerCase();
+
             return (
               <span key={tIdx}>
                 <span
                   onClick={() => handleWordClick(token.cleanWord)}
-                  className="cursor-pointer hover:text-blue-800 hover:bg-blue-50/80 rounded px-1 -mx-0.5 transition-colors"
-                  title={`ক্লিক করে উচ্চারণ শুনুন: ${token.cleanWord}`}
+                  className={`cursor-pointer rounded px-1 -mx-0.5 transition-all ${
+                    isSpeaking
+                      ? "bg-blue-100 text-blue-900 font-bold ring-2 ring-blue-500 shadow-xs scale-105 inline-block"
+                      : "hover:text-blue-800 hover:bg-blue-50/90 active:scale-95"
+                  }`}
+                  title={`ক্লিক করে সঠিক উচ্চারণ শুনুন: ${token.cleanWord}`}
                 >
                   {token.original}
                 </span>

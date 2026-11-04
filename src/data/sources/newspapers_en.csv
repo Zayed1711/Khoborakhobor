@@ -1,4 +1,8 @@
 name,feed_url,category_slug,exam_track,article_selector,date_format
-The Daily Star (English),https://www.thedailystar.net/frontpage/rss.xml,economy,Economy & Global Affairs,article .field-name-body,YYYY-MM-DD
-The Business Standard (English),https://www.tbsnews.net/rss.xml,tech,Technology & Industrial Growth,.section-content,YYYY-MM-DD
-Prothom Alo (English),https://en.prothomalo.com/feed,national,National Affairs & Diplomacy,article .story-element,YYYY-MM-DD
+The Daily Star (National),https://www.thedailystar.net/news/bangladesh/rss.xml,national,Governance & Public Policy,article .field-name-body,YYYY-MM-DD
+The Daily Star (Economy),https://www.thedailystar.net/business/rss.xml,economy,Macroeconomics & Trade Policy,article .field-name-body,YYYY-MM-DD
+The Business Standard (National),https://www.tbsnews.net/bangladesh/rss.xml,national,National Development & Affairs,.section-content,YYYY-MM-DD
+The Business Standard (Economy),https://www.tbsnews.net/economy/rss.xml,economy,Business & Industrial Growth,.section-content,YYYY-MM-DD
+Prothom Alo (English),https://en.prothomalo.com/api/v1/stories,national,Diplomacy & National Affairs,article .story-element,YYYY-MM-DD
+BBC World News (English),https://feeds.bbci.co.uk/news/world/rss.xml,world,Global Affairs & Geopolitics,article,YYYY-MM-DD
+Dhaka Tribune (English),https://www.dhakatribune.com/feed/,national,Contemporary National Issues,article .content-details,YYYY-MM-DD

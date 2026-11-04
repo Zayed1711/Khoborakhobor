@@ -188,39 +188,154 @@ export function removeSourceFromRegistry(feedUrl: string, language: "bn" | "en")
 }
 
 /**
+ * Robust Multi-Format RSS / Atom / REST JSON Feed Parser
+ * Handles:
+ * - Direct REST endpoints (Prothom Alo /api/v1/stories)
+ * - Cheerio XML mode to strip inner HTML (solves The Daily Star <title><a> crashes)
+ * - Fault-tolerant entity recovery (Financial Express unescaped &)
+ * - Atom feeds with <entry> and <published>
+ */
+export async function parseRobustFeed(feedUrl: string, timeoutMs: number = 8000) {
+  const res = await fetch(feedUrl, {
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) KhoboraKhoborEdTechSpider/1.0 (+http://localhost:3000)",
+      Accept: "application/rss+xml, application/xml, application/atom+xml, text/xml, application/json, */*",
+    },
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status} ${res.statusText}`);
+  }
+
+  const rawText = await res.text();
+
+  // 1. JSON REST Endpoints (e.g. Prothom Alo /api/v1/stories)
+  if (rawText.trim().startsWith("{") || feedUrl.includes("/api/v1/stories") || feedUrl.endsWith(".json")) {
+    try {
+      const json = JSON.parse(rawText);
+      const stories = Array.isArray(json.stories) ? json.stories : (Array.isArray(json) ? json : []);
+      const items = stories.map((s: any) => {
+        const pubTime = s["published-at"] || s["last-published-at"];
+        const pubDate = pubTime
+          ? new Date(typeof pubTime === "number" ? pubTime : pubTime).toISOString()
+          : new Date().toISOString();
+        let link = s.url || "";
+        if (!link && s.slug) {
+          link = s.slug.startsWith("http")
+            ? s.slug
+            : (feedUrl.includes("en.prothomalo.com") ? `https://en.prothomalo.com/${s.slug}` : `https://www.prothomalo.com/${s.slug}`);
+        }
+        return {
+          title: s.headline || s.title || "",
+          link,
+          pubDate,
+          isoDate: pubDate,
+          summary: s.subheadline || "",
+          content: s.subheadline || "",
+          categories: Array.isArray(s.sections)
+            ? s.sections.map((sec: any) => sec.name || sec["display-name"] || sec.slug)
+            : [],
+        };
+      });
+      return {
+        title: "Prothom Alo JSON Stories Feed",
+        description: "REST Stories Feed",
+        items,
+      };
+    } catch (e: any) {
+      console.warn("JSON parse error:", e.message);
+    }
+  }
+
+  // 2. Cheerio XML Parsing (Eliminates object-to-primitive error on The Daily Star)
+  try {
+    const $ = cheerio.load(rawText, { xmlMode: true });
+    const feedTitle = $("channel > title, feed > title").first().text().trim() || "Unknown Feed";
+    const feedDesc = $("channel > description, feed > subtitle").first().text().trim() || "";
+
+    const xmlItems: any[] = [];
+    const elements = $("item, entry");
+
+    if (elements.length > 0) {
+      elements.each((_, el) => {
+        const node = $(el);
+        const title = node.find("title").text().trim();
+        let link = node.find("link").text().trim();
+        if (!link) {
+          link = node.find("link").attr("href") || node.find("guid").text().trim() || "";
+        }
+        const pubDate =
+          node.find("pubDate").text().trim() ||
+          node.find("dc\\:date").text().trim() ||
+          node.find("published").text().trim() ||
+          node.find("updated").text().trim();
+        const summary = node.find("description").text().trim() || node.find("summary").text().trim();
+        const contentEncoded = node.find("content\\:encoded").text().trim() || node.find("content").text().trim();
+        const enclosureUrl =
+          node.find("enclosure").attr("url") ||
+          node.find("media\\:content").attr("url") ||
+          node.find("media\\:thumbnail").attr("url");
+
+        if (title && (link || summary)) {
+          xmlItems.push({
+            title,
+            link,
+            pubDate,
+            isoDate: pubDate ? new Date(pubDate).toISOString() : undefined,
+            summary,
+            content: contentEncoded || summary,
+            "content:encoded": contentEncoded,
+            enclosure: enclosureUrl ? { url: enclosureUrl } : undefined,
+          });
+        }
+      });
+
+      if (xmlItems.length > 0) {
+        return {
+          title: feedTitle,
+          description: feedDesc,
+          items: xmlItems,
+        };
+      }
+    }
+  } catch (err: any) {
+    console.warn(`Cheerio XML parsing failed for ${feedUrl}:`, err.message);
+  }
+
+  // 3. Fallback to rss-parser string parsing
+  try {
+    const feed = await parser.parseString(rawText);
+    return {
+      title: feed.title || "Feed",
+      description: feed.description || "",
+      items: feed.items || [],
+    };
+  } catch (err: any) {
+    // 4. Final attempt: standard parser.parseURL
+    const feed = await parser.parseURL(feedUrl);
+    return {
+      title: feed.title || "Feed",
+      description: feed.description || "",
+      items: feed.items || [],
+    };
+  }
+}
+
+/**
  * Test an RSS feed endpoint to verify live health and structure
  */
 export async function testFeedSource(feedUrl: string) {
   try {
-    if (feedUrl.includes("/api/v1/stories") || feedUrl.includes("format=json") || feedUrl.endsWith(".json")) {
-      const res = await fetch(feedUrl, {
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) KhoboraKhoborEdTechSpider/1.0 (+http://localhost:3000)",
-          Accept: "application/json",
-        },
-        signal: AbortSignal.timeout(12000),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-      const json = await res.json();
-      const stories = Array.isArray(json.stories) ? json.stories : (Array.isArray(json) ? json : []);
-      return {
-        success: true,
-        title: "Prothom Alo JSON API Feed",
-        description: `Stories REST endpoint (${stories.length} items)`,
-        itemCount: stories.length,
-        latestItemDate: stories[0]?.["published-at"] || stories[0]?.["last-published-at"] || "N/A",
-        sampleTitles: stories.slice(0, 3).map((s: any) => s.headline || s.title || "Untitled"),
-      };
-    }
-    const feed = await parser.parseURL(feedUrl);
+    const feed = await parseRobustFeed(feedUrl, 10000);
     return {
       success: true,
       title: feed.title || "Unknown Feed Title",
       description: feed.description || "",
       itemCount: feed.items?.length || 0,
       latestItemDate: feed.items?.[0]?.pubDate || feed.items?.[0]?.isoDate || "N/A",
-      sampleTitles: (feed.items || []).slice(0, 3).map((it) => it.title || "Untitled"),
+      sampleTitles: (feed.items || []).slice(0, 3).map((it: any) => it.title || "Untitled"),
     };
   } catch (err: any) {
     return {
@@ -261,11 +376,11 @@ export const PORTAL_CONFIGS: Record<
   },
   "thedailystar.net": {
     title_selectors: ["h1.article-title", "h1", "h1.page-title"],
-    body_selectors: [".sb-story-text", ".article-content", "article .field-body", ".story-text"],
+    body_selectors: [".field-name-body", ".field--name-body", ".sb-story-text", ".article-content", "article .field-body", ".story-text", "article"],
   },
   "tbsnews.net": {
     title_selectors: ["h1.page-header", "h1"],
-    body_selectors: [".field-name-body", ".article-content", "article"],
+    body_selectors: [".field-name-body", ".section-content", ".article-content", "article"],
   },
   "bdnews24.com": {
     title_selectors: ["h1", ".customStoryHead"],
@@ -725,62 +840,8 @@ function isDateMatching(pubDateStr?: string, targetDateStr?: string): boolean {
 async function fetchFeedForSource(source: NewspaperSource): Promise<{ source: NewspaperSource; items: any[]; error?: string }> {
   try {
     console.log(`[FEED] Fetching: ${source.name} [${source.feedUrl}]`);
-    let feedItems: any[] = [];
-
-    if (
-      source.feedUrl.includes("/api/v1/stories") ||
-      source.feedUrl.includes("format=json") ||
-      source.feedUrl.endsWith(".json")
-    ) {
-      const res = await fetch(source.feedUrl, {
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) KhoboraKhoborEdTechSpider/1.0 (+http://localhost:3000)",
-          Accept: "application/json",
-        },
-        signal: AbortSignal.timeout(6000),
-      });
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status} ${res.statusText}`);
-      }
-
-      const jsonData = await res.json();
-      const stories = Array.isArray(jsonData.stories)
-        ? jsonData.stories
-        : Array.isArray(jsonData)
-        ? jsonData
-        : [];
-
-      feedItems = stories.map((s: any) => {
-        const pubTime = s["published-at"] || s["last-published-at"];
-        const pubDate = pubTime
-          ? new Date(typeof pubTime === "number" ? pubTime : pubTime).toISOString()
-          : new Date().toISOString();
-
-        let link = s.url || "";
-        if (!link && s.slug) {
-          link = s.slug.startsWith("http") ? s.slug : `https://www.prothomalo.com/${s.slug}`;
-        }
-
-        return {
-          title: s.headline || s.title || "",
-          link,
-          pubDate,
-          isoDate: pubDate,
-          summary: s.subheadline || "",
-          content: s.subheadline || "",
-          categories: Array.isArray(s.sections)
-            ? s.sections.map((sec: any) => sec.name || sec["display-name"] || sec.slug)
-            : [],
-        };
-      });
-    } else {
-      const feed = await parser.parseURL(source.feedUrl);
-      feedItems = feed.items || [];
-    }
-
-    return { source, items: feedItems };
+    const feed = await parseRobustFeed(source.feedUrl, 6000);
+    return { source, items: feed.items || [] };
   } catch (err: any) {
     console.warn(`Could not crawl ${source.name}: ${err.message}`);
     return { source, items: [], error: err.message };
