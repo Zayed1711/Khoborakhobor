@@ -73,6 +73,16 @@ export default function ArticleReaderView({
 
   // Track article read for logged-in students (marketing activity counter)
   useEffect(() => {
+    const handleAuthGateOpen = (e: any) => {
+      const feat = e.detail?.feature || "notebook";
+      setProGateFeature(feat as ProGateFeature);
+      setProGateOpen(true);
+    };
+    window.addEventListener("khobor_open_auth_gate", handleAuthGateOpen);
+    return () => window.removeEventListener("khobor_open_auth_gate", handleAuthGateOpen);
+  }, []);
+
+  useEffect(() => {
     if (student && article?.slug) {
       trackArticleReadAction(article.slug).catch(() => {});
     }
@@ -260,7 +270,7 @@ export default function ArticleReaderView({
       setTimeout(() => setToastMessage(""), 2800);
     } catch (err) {
       console.error(err);
-      alert("হাইলাইট সংরক্ষণ করতে সমস্যা হয়েছে।");
+      setToastMessage("হাইলাইট সংরক্ষণ করতে সমস্যা হয়েছে।"); setTimeout(() => setToastMessage(""), 2800);
     }
   };
 

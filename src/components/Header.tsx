@@ -71,8 +71,14 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
         setIsMoreMenuOpen(false);
       }
     }
+    const handleGlobalSearchTrigger = () => setIsSearchOpen(true);
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    window.addEventListener("khobor_open_search", handleGlobalSearchTrigger);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("khobor_open_search", handleGlobalSearchTrigger);
+    };
   }, []);
 
   const [currentDate, setCurrentDate] = useState("বুধবার, ২৮ অক্টোবর ২০২৬");
@@ -105,9 +111,12 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
   const primaryCategories = categories.slice(0, 5);
   const extraCategories = categories.slice(5);
 
-  const trialEnd = new Date("2026-12-02T23:59:59+06:00");
-  const diffTrialMs = trialEnd.getTime() - Date.now();
-  const trialDaysRemaining = Math.max(0, Math.ceil(diffTrialMs / (1000 * 60 * 60 * 24)));
+  // Dynamic 14-day Founding Pro Trial computed per active student
+  const studentJoined = sessionState?.student && (sessionState.student as any).createdAt
+    ? new Date((sessionState.student as any).createdAt)
+    : new Date();
+  const daysSinceJoin = Math.floor((Date.now() - studentJoined.getTime()) / (1000 * 60 * 60 * 24));
+  const trialDaysRemaining = Math.max(1, 14 - daysSinceJoin);
 
   return (
     <>
@@ -355,15 +364,17 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
 
           {/* Right Column: Founding Pro Badge & Profile / Login */}
           <div className="shrink-0 flex items-center gap-2.5 justify-end">
-            {/* Reverse Trial Navbar Pill (Visible to all users, highlighting Founding Pro Free until Dec 2) */}
+            {/* Reverse Trial Navbar Pill (Visible to all users, highlighting Founding Pro 14-Day Access) */}
             <Link
               href={isLoggedIn ? "/saved" : "/login"}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-700 text-xs font-medium border border-amber-500/30 hover:bg-amber-500/15 transition shrink-0"
-              title={isLoggedIn ? `Founding Pro Trial: Active (${trialDaysRemaining} Days Left)` : "Founding Pro: Free until Dec 2"}
+              title={isLoggedIn ? `Founding Pro Trial: Active (${trialDaysRemaining} Days Left)` : "Founding Pro: 14-Day Free Access"}
             >
               <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
               <span className="font-semibold">Founding Pro</span>
-              <span className="text-[11px] text-amber-800/80 font-normal">| Free until Dec 2</span>
+              <span className="text-[11px] text-amber-800/80 font-normal">
+                {isLoggedIn ? `| ${trialDaysRemaining}d remaining` : "| 14-Day Trial"}
+              </span>
             </Link>
 
             {/* Profile or Login Action Button */}

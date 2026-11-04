@@ -28,6 +28,24 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
   useEffect(() => {
     setMounted(true);
+
+    const handleCustomSearch = (e: any) => {
+      const q = e.detail?.query || "";
+      if (q) {
+        setQuery(q);
+        startTransition(async () => {
+          try {
+            const found = await searchArticlesAction(q);
+            setResults(found);
+          } catch {
+            setResults([]);
+          }
+        });
+      }
+    };
+
+    window.addEventListener("khobor_open_search", handleCustomSearch);
+    return () => window.removeEventListener("khobor_open_search", handleCustomSearch);
   }, []);
 
   // Keyboard shortcut listener (Ctrl+K or Cmd+K to toggle, Esc to close)

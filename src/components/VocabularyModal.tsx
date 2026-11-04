@@ -18,7 +18,9 @@ export default function VocabularyModal({ terms, studentId }: VocabularyModalPro
 
   const handleToggleSave = async (termId: string) => {
     if (!studentId) {
-      alert("শব্দভাণ্ডারে সংরক্ষণ করতে অনুগ্রহ করে লগইন করুন।");
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("khobor_open_auth_gate", { detail: { feature: "dictionary" } }));
+      }
       return;
     }
     try {

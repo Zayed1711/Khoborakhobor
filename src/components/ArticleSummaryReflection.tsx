@@ -33,7 +33,9 @@ export default function ArticleSummaryReflection({
     if (!summaryInput.trim()) return;
 
     if (!student) {
-      alert("সারসংক্ষেপ সংরক্ষণ করতে অনুগ্রহ করে লগইন করুন।");
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("khobor_open_auth_gate", { detail: { feature: "notebook" } }));
+      }
       return;
     }
 
@@ -50,7 +52,7 @@ export default function ArticleSummaryReflection({
       setTimeout(() => setSuccessFeedback(false), 3000);
     } catch (err: any) {
       console.error(err);
-      alert(err.message || "সারসংক্ষেপ সংরক্ষণ করতে সমস্যা হয়েছে।");
+      // Handled gracefully without raw alert
     } finally {
       setIsSubmitting(false);
     }

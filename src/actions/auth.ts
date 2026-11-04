@@ -337,75 +337,12 @@ export async function googleInstantLoginAction(
   email?: string, 
   name?: string
 ): Promise<{ success: true; student: { id: string; name: string; email: string } } | { success: false; error: string }> {
-  try {
-    const targetEmail = (email || "student.founding@gmail.com").trim().toLowerCase();
-    const targetName = name || "ফাউন্ডিং প্রো লার্নার";
-
-    let student = await prisma.student.findUnique({
-      where: { email: targetEmail },
-    });
-
-    if (!student) {
-      student = await prisma.student.create({
-        data: {
-          name: targetName,
-          email: targetEmail,
-          passwordHash: hashPassword("khobor_pro_trial_2026"),
-          role: "student",
-          status: "active",
-          targetTrack: "BCS_GOVT",
-          streakDays: 1,
-          lastActive: new Date(),
-        },
-      });
-    } else {
-      await prisma.student.update({
-        where: { id: student.id },
-        data: { lastActive: new Date() },
-      });
-    }
-
-    const sessionRole: SessionRole = student.role === "admin" ? "admin" : "student";
-
-    try {
-      const cookieStore = await cookies();
-      cookieStore.set("khobor_session_role", sessionRole, {
-        path: "/",
-        sameSite: "lax",
-        httpOnly: true,
-      });
-      cookieStore.set("khobor_student_id", student.id, {
-        path: "/",
-        sameSite: "lax",
-        httpOnly: true,
-      });
-      revalidatePath("/");
-      revalidatePath("/saved");
-      revalidatePath("/desk");
-      revalidatePath("/admin");
-    } catch {
-      // Graceful fallback for CLI/script runs
-    }
-
-    return {
-      success: true,
-      student: {
-        id: student.id,
-        name: student.name,
-        email: student.email,
-      },
-    };
-  } catch (err: any) {
-    return {
-      success: false,
-      error: err.message || "Google সাইন ইন ব্যর্থ হয়েছে।",
-    };
-  }
+  return {
+    success: false,
+    error: "গুগল ওয়ান-ট্যাপ সাইন-ইন সেবা দ্রুত সংহত হচ্ছে। অনুগ্রহ করে আপনার জিমেইল ও পাসওয়ার্ড দিয়ে সরাসরি লগইন বা নিবন্ধন করুন।",
+  };
 }
 
-/**
- * In-App Browser & Frictionless Authentication: Magic Link via Email
- */
 export async function requestMagicLinkAction(email: string) {
   const cleanEmail = email.trim().toLowerCase();
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -528,22 +465,21 @@ export async function requestPhoneOtpAction(rawPhone: string) {
     };
   }
 
+  if (!process.env.SMS_API_KEY) {
+    return {
+      success: false,
+      error: "এসএমএস ওটিপি গেটওয়ে সার্ভিস সাময়িক রক্ষণাবেক্ষণে রয়েছে। অনুগ্রহ করে আপনার জিমেইল অ্যাকাউন্ট ও পাসওয়ার্ড দিয়ে নিরাপদে প্রবেশ বা নিবন্ধন করুন।",
+    };
+  }
+
   const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
+  const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
   await prisma.authOtp.create({
-    data: {
-      phone,
-      otpCode,
-      expiresAt,
-    },
+    data: { phone, otpCode, expiresAt },
   });
 
-  return {
-    success: true,
-    phone,
-    simulatedOtp: otpCode, // Provided for instant demo/test verification in development/testing
-  };
+  return { success: true, phone };
 }
 
 export async function verifyPhoneOtpAction(rawPhone: string, otpCode: string) {
@@ -567,7 +503,8 @@ export async function verifyPhoneOtpAction(rawPhone: string, otpCode: string) {
     orderBy: { createdAt: "desc" },
   });
 
-  const isDemoPass = cleanOtp === "123456";
+  // Demo bypass removed per Zayed Market-Readiness QA Handbook
+  const isDemoPass = false;
 
   if (!otpRecord && !isDemoPass) {
     return {

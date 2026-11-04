@@ -50,7 +50,9 @@ export default function SideNotePanel({
   const handleSaveFreeformNote = async () => {
     if (!notebookText.trim()) return;
     if (!student) {
-      alert("ব্যক্তিগত ক্লাউড নোটবুকে সংরক্ষণ করতে অনুগ্রহ করে লগইন করুন।");
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("khobor_open_auth_gate", { detail: { feature: "notebook" } }));
+      }
       return;
     }
 
@@ -68,7 +70,7 @@ export default function SideNotePanel({
       setTimeout(() => setNoteSavedFeedback(false), 2500);
     } catch (err) {
       console.error(err);
-      alert("নোট সংরক্ষণ করতে সমস্যা হয়েছে।");
+      // Silent graceful failure with console log
     } finally {
       setIsSavingNote(false);
     }
@@ -104,7 +106,9 @@ export default function SideNotePanel({
   const handleSaveWordToStudyHub = async () => {
     if (!activeEntry) return;
     if (!student) {
-      alert("ব্যক্তিগত ওয়ার্ড ব্যাংকে সংরক্ষণ করতে লগইন করুন।");
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("khobor_open_auth_gate", { detail: { feature: "dictionary" } }));
+      }
       return;
     }
 
@@ -121,7 +125,7 @@ export default function SideNotePanel({
       setTimeout(() => setWordSavedFeedback(false), 3000);
     } catch (err) {
       console.error(err);
-      alert("শব্দভাণ্ডারে সংরক্ষণ করতে সমস্যা হয়েছে।");
+      // Silent graceful failure with console log
     } finally {
       setIsSavingWord(false);
     }

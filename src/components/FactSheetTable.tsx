@@ -96,7 +96,9 @@ export default function FactSheetTable({
 
   const handleSaveToNotebook = async () => {
     if (!student) {
-      alert("নোটবুকে সংরক্ষণ করতে অনুগ্রহ করে লগইন করুন।");
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("khobor_open_auth_gate", { detail: { feature: "notebook" } }));
+      }
       return;
     }
 

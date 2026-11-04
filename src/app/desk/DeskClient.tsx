@@ -67,10 +67,10 @@ export default function DeskClient() {
       if (res.success) {
         setSuccessMsg(res.message);
       } else {
-        alert(res.message);
+        setSuccessMsg(res.message); setTimeout(() => setSuccessMsg(""), 5000);
       }
     } catch (err: any) {
-      alert(err.message || "সংবাদ সংকলন করতে ত্রুটি দেখা দিয়েছে।");
+      setSuccessMsg(err.message || "সংবাদ সংকলনে সমস্যা দেখা দিয়েছে।"); setTimeout(() => setSuccessMsg(""), 5000);
     } finally {
       setSpiderLoading(false);
     }
@@ -124,7 +124,7 @@ export default function DeskClient() {
       setSuccessMsg("শিক্ষামূলক প্রতিবেদন ও কুইজ সফলভাবে ডেটাবেজে সংরক্ষিত হয়েছে।");
       setTimeout(() => setSuccessMsg(""), 5000);
     } catch (err: any) {
-      alert(err.message || "সংরক্ষণ করতে সমস্যা হয়েছে।");
+      setSuccessMsg(err.message || "সংরক্ষণ করতে সমস্যা হয়েছে।"); setTimeout(() => setSuccessMsg(""), 5000);
     } finally {
       setLoading(false);
     }

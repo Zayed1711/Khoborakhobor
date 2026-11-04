@@ -638,8 +638,8 @@ async function runTestSuite() {
       const { requestPhoneOtpAction, verifyPhoneOtpAction } = await import('../src/actions/auth');
       const testPhone = '01799887766';
       const otpRes = await requestPhoneOtpAction(testPhone);
-      const hasSimulatedOtp = otpRes.success && typeof otpRes.simulatedOtp === 'string';
-      const verifyRes = await verifyPhoneOtpAction(testPhone, otpRes.simulatedOtp || '123456');
+      const hasSimulatedOtp = (otpRes as any).success && typeof (otpRes as any).simulatedOtp === 'string';
+      const verifyRes = await verifyPhoneOtpAction(testPhone, (otpRes as any).simulatedOtp || '123456');
       const passed = hasSimulatedOtp && verifyRes.success && verifyRes.student?.phone === testPhone;
       recordTest('Marketing & Auth Gate', 'In-App Webview Fix: Phone Number OTP Generation & Verification', passed, performance.now() - t0);
     } catch (e: any) {

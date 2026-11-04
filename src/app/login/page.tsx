@@ -29,7 +29,7 @@ function AuthForm() {
       ? rawRedirect
       : "/";
 
-  const [authCategory, setAuthCategory] = useState<"quick" | "password">("quick");
+  const [authCategory, setAuthCategory] = useState<"quick" | "password">("password");
   const [quickMethod, setQuickMethod] = useState<"phone" | "magic">("phone");
   const [mode, setMode] = useState<"login" | "signup">(initialTab);
   const [showPassword, setShowPassword] = useState(false);
@@ -87,23 +87,9 @@ function AuthForm() {
     }
   }, [searchParams, redirectUrl, router]);
 
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
-    setError("");
-    setSuccessMsg("");
-    try {
-      const res = await googleInstantLoginAction();
-      if (res.success) {
-        router.push(redirectUrl);
-        router.refresh();
-      } else {
-        setError(res.error || "Google সাইন ইন সম্পন্ন করা যায়নি।");
-      }
-    } catch (err: any) {
-      setError(err.message || "সার্ভার সংযোগে ত্রুটি দেখা দিয়েছে।");
-    } finally {
-      setLoading(false);
-    }
+  const handleGoogleSignIn = () => {
+    setError("গুগল সরাসরি ওয়ান-ক্লিক সাইন-ইন সেবা দ্রুত সংহত হচ্ছে। অনুগ্রহ করে নিচের ফর্মে আপনার জিমেইল ও পাসওয়ার্ড দিয়ে সরাসরি লগইন বা নিবন্ধন করুন।");
+    setAuthCategory("password");
   };
 
   const handleRequestOtp = async (e: React.FormEvent) => {
@@ -119,9 +105,6 @@ function AuthForm() {
       if (res.success) {
         setOtpSent(true);
         setSuccessMsg("আপনার মোবাইলে ৬ সংখ্যার ওটিপি কোড পাঠানো হয়েছে।");
-        if (res.simulatedOtp) {
-          setSimulatedOtpCode(res.simulatedOtp);
-        }
       } else {
         setError(res.error || "ওটিপি পাঠাতে সমস্যা হয়েছে।");
       }
@@ -321,7 +304,7 @@ function AuthForm() {
               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
             />
           </svg>
-          <span>{loading ? "সংযোগ স্থাপন হচ্ছে..." : "Google দিয়ে ১-ক্লিক সাইন ইন"}</span>
+          <span>Google সাইন ইন (শীঘ্রই আসছে)</span>
         </button>
 
         {/* Divider */}

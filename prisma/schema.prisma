@@ -220,3 +220,14 @@ model StudyTelemetry {
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
 }
+
+// -------------------------------------------------------------
+// 9. Editorial Weekly Newsletter Subscribers
+// -------------------------------------------------------------
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+

@@ -281,26 +281,37 @@ export default function RightStudyRail({
         )}
       </div>
 
-      {/* 3. Trending Topics & Hashtags */}
+      {/* 3. Trending Topics & Hashtags (Interactive Search Filter) */}
       <div className="shrink-0 p-4 bg-white border border-[#ded8cb] rounded-2xl shadow-2xs space-y-2.5">
         <div className="flex items-center gap-1.5 text-xs font-bold text-[#1c1d21] pb-2 border-b border-[#f4efe4]">
           <TrendingUp className={`w-4 h-4 ${isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"}`} />
           <span>{isEnglishMode ? "Trending English Topics" : "আজকের ট্রেন্ডিং বিষয়বস্তু"}</span>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1">
           {activeHashtags.map((h, i) => (
-            <div
+            <button
               key={i}
-              className="flex items-center justify-between text-xs hover:bg-[#faf8f4] p-1.5 rounded-lg transition"
+              type="button"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(
+                    new CustomEvent("khobor_open_search", {
+                      detail: { query: h.tag.replace(/_/g, " ") },
+                    })
+                  );
+                }
+              }}
+              className="w-full flex items-center justify-between text-xs hover:bg-[#faf8f4] hover:text-[#842323] p-1.5 rounded-lg transition text-left cursor-pointer group"
+              title={`${h.tag} সম্পর্কিত প্রতিবেদন অনুসন্ধান করুন`}
             >
-              <span className="font-semibold text-[#343a46]">
+              <span className="font-semibold text-[#343a46] group-hover:text-[#842323] transition-colors">
                 #{h.tag}
               </span>
-              <span className="text-[10px] text-[#788191] font-mono">
+              <span className="text-[10px] text-[#788191] font-mono group-hover:text-[#842323] transition-colors">
                 {h.count}
               </span>
-            </div>
+            </button>
           ))}
         </div>
       </div>

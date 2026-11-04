@@ -89,7 +89,9 @@ export default function FocusDictionaryModal({
   const handleSaveToWordBank = async () => {
     if (!entry) return;
     if (!student) {
-      alert("ব্যক্তিগত ওয়ার্ড ব্যাংকে সংরক্ষণ করতে অনুগ্রহ করে লগইন করুন।");
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("khobor_open_auth_gate", { detail: { feature: "dictionary" } }));
+      }
       return;
     }
 
@@ -107,7 +109,7 @@ export default function FocusDictionaryModal({
       }
     } catch (err) {
       console.error(err);
-      alert("সংরক্ষণ করতে সমস্যা হয়েছে।");
+      if (onSaveFeedback) { onSaveFeedback("সংরক্ষণ করতে সমস্যা হয়েছে।"); }
     }
   };
 

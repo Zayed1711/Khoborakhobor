@@ -265,7 +265,7 @@ export default function StudentHubView({
       setIsEditingProfile(false);
       window.location.reload();
     } catch (err: any) {
-      alert(err.message || "প্রোফাইল আপডেট করতে সমস্যা হয়েছে।");
+      console.error("Profile update error:", err);
     } finally {
       setIsSavingProfile(false);
     }
