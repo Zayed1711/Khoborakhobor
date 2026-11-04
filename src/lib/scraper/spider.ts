@@ -1071,6 +1071,14 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
           const existingLead = await prisma.article.findFirst({ where: { isLead: true } });
           const isLead = !existingLead && results.saved === 0;
 
+          let articlePublishedDate = new Date();
+          if (item.pubDate || item.isoDate) {
+            const parsed = new Date(item.pubDate || item.isoDate);
+            if (!isNaN(parsed.getTime())) {
+              articlePublishedDate = parsed;
+            }
+          }
+
           const savedArticle = await prisma.article.create({
             data: {
               slug: finalSlug,
@@ -1084,11 +1092,12 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
               examTags: relevance.suggestedExamTrack || source.examTrack,
               featuredImage: featuredImg,
               imageCaption: `উৎস: ${source.name} • বিভাগ: ${categoryName}`,
-              publishedAt: new Date(item.pubDate || Date.now()).toLocaleDateString("bn-BD", {
+              publishedAt: articlePublishedDate.toLocaleDateString("bn-BD", {
                 day: "numeric",
                 month: "short",
                 year: "numeric",
               }),
+              createdAt: articlePublishedDate,
               readTime: "৩ মিনিট",
               isCapsule: true,
               isLead,

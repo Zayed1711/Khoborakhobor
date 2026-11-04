@@ -16,7 +16,7 @@ function safeParseJson<T>(value: any, fallback: T): T {
   }
 }
 
-export async function getPublishedArticles(limit: number = 60) {
+export async function getPublishedArticles(limit: number = 150) {
   try {
     const articles = await prisma.article.findMany({
       take: limit,
@@ -30,7 +30,7 @@ export async function getPublishedArticles(limit: number = 60) {
       },
     });
 
-    return articles.map((a) => ({
+    const parsed = articles.map((a) => ({
       ...a,
       createdAtIso: a.createdAt instanceof Date ? a.createdAt.toISOString() : new Date(a.createdAt).toISOString(),
       keyTakeaways: safeParseJson(a.keyTakeaways, []),
@@ -41,6 +41,15 @@ export async function getPublishedArticles(limit: number = 60) {
         options: safeParseJson(q.options, []),
       })),
     }));
+
+    // Guarantee strictly latest-first chronological ordering
+    parsed.sort((a, b) => {
+      const timeA = new Date(a.createdAtIso).getTime() || 0;
+      const timeB = new Date(b.createdAtIso).getTime() || 0;
+      return timeB - timeA;
+    });
+
+    return parsed;
   } catch (error) {
     console.error("[ARTICLES] Error loading articles:", error);
     return [];

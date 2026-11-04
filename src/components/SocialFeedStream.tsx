@@ -67,13 +67,21 @@ export default function SocialFeedStream({
     }
 
     // 2. Mode filter:
+    let result = list;
     if (isEnglishMode) {
       const enOnly = list.filter((a) => !isBengaliText(a.title));
-      return enOnly.length > 0 ? enOnly : (selectedDate === "all" ? enOnly : list);
+      result = enOnly.length > 0 ? enOnly : (selectedDate === "all" ? enOnly : list);
     } else {
       const bnOnly = list.filter((a) => isBengaliText(a.title));
-      return bnOnly.length > 0 ? bnOnly : (selectedDate === "all" ? bnOnly : list);
+      result = bnOnly.length > 0 ? bnOnly : (selectedDate === "all" ? bnOnly : list);
     }
+
+    // 3. Guarantee strictly latest news appears on top, then sequentially down
+    return [...result].sort((a, b) => {
+      const timeA = new Date(a.createdAtIso || a.createdAt).getTime() || 0;
+      const timeB = new Date(b.createdAtIso || b.createdAt).getTime() || 0;
+      return timeB - timeA;
+    });
   }, [articles, isEnglishMode, selectedDate]);
 
   // Filter capsule stories by mode so English learners see English capsules
