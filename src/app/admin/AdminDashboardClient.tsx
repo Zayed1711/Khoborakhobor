@@ -220,7 +220,13 @@ export default function AdminDashboardClient() {
         showNotify("error", res.message);
       }
     } catch (err: any) {
-      showNotify("error", err.message || "স্পাইডার চালাতে ত্রুটি হয়েছে।");
+      const errMsg = err?.message || "";
+      if (errMsg.includes("unexpected response") || errMsg.includes("504") || errMsg.includes("timeout")) {
+        showNotify("info", "সার্ভারে স্পাইডার ক্রলিং সম্পন্ন হচ্ছে। কয়েক মুহূর্ত পর রিফ্রেশ করুন।");
+      } else {
+        showNotify("error", errMsg || "স্পাইডার চালাতে ত্রুটি হয়েছে।");
+      }
+      refreshAllData();
     } finally {
       setSpiderRunning(false);
     }
@@ -503,7 +509,7 @@ export default function AdminDashboardClient() {
                           : "bg-red-500"
                       }`}
                     />
-                    {stats.lastRun.targetDate} ({stats.lastRun.saved} সেভড)
+                    {stats.lastRun.targetDate} ({stats.lastRun.saved} সেভড{stats.lastRun.skipped ? ` • ${stats.lastRun.skipped} আপ-টু-ডেট` : ""})
                   </span>
                 ) : (
                   "কোনো ইতিহাস নেই"

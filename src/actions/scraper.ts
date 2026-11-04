@@ -16,9 +16,21 @@ export async function triggerSpiderCrawlAction(options?: SpiderOptions) {
   try {
     const results = await runNewsSpiderWithDateFilter(options);
     const modeText = results.dryRun ? "টেস্ট রান (ড্রাই-রান)" : "সংবাদ সংকলন";
+
+    let message = "";
+    if (results.saved > 0) {
+      message = `${modeText} সফলভাবে সম্পন্ন হয়েছে (${results.targetDate})। সংকলিত: ${results.saved}টি, ডুপ্লিকেট বাদ: ${results.skipped}টি, অপ্রাসঙ্গিক/অপরাধ ফিল্টারড: ${results.filteredExamNoise || 0}টি। মোট সময়: ${(results.durationMs / 1000).toFixed(1)}s`;
+    } else if (results.skipped > 0) {
+      message = `${modeText} সম্পন্ন হয়েছে (${results.targetDate})। কোনো নতুন সংবাদ নেই—ফিডের সকল (${results.skipped}টি) সংবাদ ইতোমধ্যে ডেটাবেজে সংরক্ষিত রয়েছে। মোট সময়: ${(results.durationMs / 1000).toFixed(1)}s`;
+    } else if (results.dateMismatched > 0) {
+      message = `${modeText} সম্পন্ন হয়েছে (${results.targetDate})। নির্বাচিত তারিখের সাথে ফিডের তারিখ মেলেনি (${results.dateMismatched}টি অমিল)। সর্বশেষ সব সংবাদ পেতে তারিখ ফিল্টারে 'যে কোনো তারিখ (All)' সিলেক্ট করুন।`;
+    } else {
+      message = `${modeText} সম্পন্ন হয়েছে। কোনো নতুন সংবাদ পাওয়া যায়নি। মোট সময়: ${(results.durationMs / 1000).toFixed(1)}s`;
+    }
+
     return {
       success: true,
-      message: `${modeText} সম্পন্ন হয়েছে (${results.targetDate})। সংকলিত: ${results.saved}টি, অপ্রাসঙ্গিক/অপরাধ ফিল্টারড: ${results.filteredExamNoise || 0}টি, তারিখ অমিল: ${results.dateMismatched}টি, ডুপ্লিকেট বাদ: ${results.skipped}টি। মোট সময়: ${(results.durationMs / 1000).toFixed(1)}s`,
+      message,
       data: results,
     };
   } catch (err: any) {

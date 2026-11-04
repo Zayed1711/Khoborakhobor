@@ -14,7 +14,7 @@ const parser = new Parser({
     "User-Agent":
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) KhoboraKhoborEdTechSpider/1.0 (+http://localhost:3000)",
   },
-  timeout: 12000,
+  timeout: 6000,
 });
 
 export interface NewspaperSource {
@@ -338,7 +338,7 @@ export async function fetchAndParseArticlePage(
 
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 9000);
+    const timeout = setTimeout(() => controller.abort(), 3500);
 
     const res = await fetch(url, {
       signal: controller.signal,
@@ -720,6 +720,74 @@ function isDateMatching(pubDateStr?: string, targetDateStr?: string): boolean {
 }
 
 /**
+ * Helper to fetch a single newspaper RSS/JSON feed with a strict 6-second timeout
+ */
+async function fetchFeedForSource(source: NewspaperSource): Promise<{ source: NewspaperSource; items: any[]; error?: string }> {
+  try {
+    console.log(`[FEED] Fetching: ${source.name} [${source.feedUrl}]`);
+    let feedItems: any[] = [];
+
+    if (
+      source.feedUrl.includes("/api/v1/stories") ||
+      source.feedUrl.includes("format=json") ||
+      source.feedUrl.endsWith(".json")
+    ) {
+      const res = await fetch(source.feedUrl, {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) KhoboraKhoborEdTechSpider/1.0 (+http://localhost:3000)",
+          Accept: "application/json",
+        },
+        signal: AbortSignal.timeout(6000),
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status} ${res.statusText}`);
+      }
+
+      const jsonData = await res.json();
+      const stories = Array.isArray(jsonData.stories)
+        ? jsonData.stories
+        : Array.isArray(jsonData)
+        ? jsonData
+        : [];
+
+      feedItems = stories.map((s: any) => {
+        const pubTime = s["published-at"] || s["last-published-at"];
+        const pubDate = pubTime
+          ? new Date(typeof pubTime === "number" ? pubTime : pubTime).toISOString()
+          : new Date().toISOString();
+
+        let link = s.url || "";
+        if (!link && s.slug) {
+          link = s.slug.startsWith("http") ? s.slug : `https://www.prothomalo.com/${s.slug}`;
+        }
+
+        return {
+          title: s.headline || s.title || "",
+          link,
+          pubDate,
+          isoDate: pubDate,
+          summary: s.subheadline || "",
+          content: s.subheadline || "",
+          categories: Array.isArray(s.sections)
+            ? s.sections.map((sec: any) => sec.name || sec["display-name"] || sec.slug)
+            : [],
+        };
+      });
+    } else {
+      const feed = await parser.parseURL(source.feedUrl);
+      feedItems = feed.items || [];
+    }
+
+    return { source, items: feedItems };
+  } catch (err: any) {
+    console.warn(`Could not crawl ${source.name}: ${err.message}`);
+    return { source, items: [], error: err.message };
+  }
+}
+
+/**
  * Run News Spider with Date Filter, Category Filter, and Dry-Run support
  */
 export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
@@ -762,67 +830,31 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
   const categories = await prisma.category.findMany();
   const catMap = new Map(categories.map((c) => [c.slug, c.id]));
 
-  for (const source of sources) {
-    try {
-      console.log(`[FEED] Fetching: ${source.name} [${source.feedUrl}]`);
-      let feedItems: any[] = [];
+  // Process sources in concurrent batches of 4 to maximize throughput and minimize latency
+  const BATCH_SIZE = 4;
+  for (let b = 0; b < sources.length; b += BATCH_SIZE) {
+    if (Date.now() - startTime > 35000) {
+      console.log(`[SPIDER] 35s execution safety threshold reached before batch ${b}.`);
+      break;
+    }
 
-      if (
-        source.feedUrl.includes("/api/v1/stories") ||
-        source.feedUrl.includes("format=json") ||
-        source.feedUrl.endsWith(".json")
-      ) {
-        const res = await fetch(source.feedUrl, {
-          headers: {
-            "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) KhoboraKhoborEdTechSpider/1.0 (+http://localhost:3000)",
-            Accept: "application/json",
-          },
-          signal: AbortSignal.timeout(15000),
-        });
+    const batchSources = sources.slice(b, b + BATCH_SIZE);
+    const feedResults = await Promise.all(batchSources.map((s) => fetchFeedForSource(s)));
 
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status} ${res.statusText}`);
-        }
-
-        const jsonData = await res.json();
-        const stories = Array.isArray(jsonData.stories)
-          ? jsonData.stories
-          : Array.isArray(jsonData)
-          ? jsonData
-          : [];
-
-        feedItems = stories.map((s: any) => {
-          const pubTime = s["published-at"] || s["last-published-at"];
-          const pubDate = pubTime
-            ? new Date(typeof pubTime === "number" ? pubTime : pubTime).toISOString()
-            : new Date().toISOString();
-
-          let link = s.url || "";
-          if (!link && s.slug) {
-            link = s.slug.startsWith("http") ? s.slug : `https://www.prothomalo.com/${s.slug}`;
-          }
-
-          return {
-            title: s.headline || s.title || "",
-            link,
-            pubDate,
-            isoDate: pubDate,
-            summary: s.subheadline || "",
-            content: s.subheadline || "",
-            categories: Array.isArray(s.sections)
-              ? s.sections.map((sec: any) => sec.name || sec["display-name"] || sec.slug)
-              : [],
-          };
-        });
-      } else {
-        const feed = await parser.parseURL(source.feedUrl);
-        feedItems = feed.items || [];
+    for (const { source, items: feedItems, error } of feedResults) {
+      if (error) {
+        results.errors++;
+        continue;
       }
 
       let countFromThisSource = 0;
 
       for (const item of feedItems) {
+        if (Date.now() - startTime > 35000) {
+          console.log(`[SPIDER] 35s hard deadline reached inside article loop.`);
+          break;
+        }
+
         if (countFromThisSource >= limitPerSource) break;
 
         results.crawled++;
@@ -1017,9 +1049,6 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
           results.items.push(`[টেস্ট প্রিভিউ: ${categoryName}] ${title} (${source.name})`);
         }
       }
-    } catch (err: any) {
-      console.warn(`Could not crawl ${source.name}: ${err.message}`);
-      results.errors++;
     }
   }
 

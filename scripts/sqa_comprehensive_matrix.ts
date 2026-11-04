@@ -16,6 +16,7 @@ import { loadNewspaperRegistry, testFeedSource } from '../src/lib/scraper/spider
 import { evaluateExamRelevance } from '../src/lib/scraper/examFilter';
 
 const prisma = new PrismaClient();
+const BASE_URL = process.env.TEST_BASE_URL || 'https://www.kkhobor.com';
 
 interface TestResult {
   category: string;
@@ -190,7 +191,7 @@ async function runTestSuite() {
   for (const route of routesToTest) {
     const t0 = performance.now();
     try {
-      const res = await fetch(`http://localhost:3000${route.path}`, { signal: AbortSignal.timeout(12000) });
+      const res = await fetch(`${BASE_URL}${route.path}`, { signal: AbortSignal.timeout(12000) });
       const passed = res.status === 200;
       recordTest('System Smoke', `Route Integrity: ${route.path} (${route.label})`, passed, performance.now() - t0, `HTTP ${res.status}`);
     } catch (e: any) {
@@ -208,7 +209,7 @@ async function runTestSuite() {
     const t0 = performance.now();
     if (testArticle) {
       try {
-        const articleUrl = `http://localhost:3000/article/${encodeURIComponent(testArticle.slug)}`;
+        const articleUrl = `${BASE_URL}/article/${encodeURIComponent(testArticle.slug)}`;
         const res = await fetch(articleUrl);
         const html = await res.text();
         const $ = cheerio.load(html);
@@ -229,7 +230,7 @@ async function runTestSuite() {
     const t0 = performance.now();
     if (testArticle) {
       try {
-        const articleUrl = `http://localhost:3000/article/${encodeURIComponent(testArticle.slug)}`;
+        const articleUrl = `${BASE_URL}/article/${encodeURIComponent(testArticle.slug)}`;
         const res = await fetch(articleUrl);
         const html = await res.text();
         
@@ -246,7 +247,7 @@ async function runTestSuite() {
   {
     const t0 = performance.now();
     try {
-      const res = await fetch('http://localhost:3000/');
+      const res = await fetch(`${BASE_URL}/`);
       const html = await res.text();
       // Regex for emoji ranges
       const emojiRegex = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
@@ -279,9 +280,9 @@ async function runTestSuite() {
   // 5.2 Server-Side Response Latency Benchmark (Homepage SSR Warm Hit)
   {
     // Warm up the route first
-    await fetch('http://localhost:3000/');
+    await fetch(`${BASE_URL}/`);
     const t0 = performance.now();
-    const res = await fetch('http://localhost:3000/');
+    const res = await fetch(`${BASE_URL}/`);
     const latencyMs = performance.now() - t0;
     // Development mode (next dev) recompiles React trees on-demand; production threshold is 800ms, dev is 2000ms
     const thresholdMs = 2000;
@@ -358,7 +359,7 @@ async function runTestSuite() {
   {
     const t0 = performance.now();
     try {
-      const res = await fetch('http://localhost:3000/');
+      const res = await fetch(`${BASE_URL}/`);
       const html = await res.text();
       const $ = cheerio.load(html);
       const viewportMeta = $('meta[name="viewport"]').attr('content');
@@ -374,7 +375,7 @@ async function runTestSuite() {
     const t0 = performance.now();
     if (testArticle) {
       try {
-        const articleUrl = `http://localhost:3000/article/${encodeURIComponent(testArticle.slug)}`;
+        const articleUrl = `${BASE_URL}/article/${encodeURIComponent(testArticle.slug)}`;
         const res = await fetch(articleUrl);
         const html = await res.text();
         const $ = cheerio.load(html);
@@ -391,7 +392,7 @@ async function runTestSuite() {
   {
     const t0 = performance.now();
     try {
-      const res = await fetch('http://localhost:3000/');
+      const res = await fetch(`${BASE_URL}/`);
       const html = await res.text();
       const $ = cheerio.load(html);
       // Verify MobileBottomNav has md:hidden class
@@ -448,11 +449,11 @@ async function runTestSuite() {
     const t0 = performance.now();
     try {
       // 1. Unauthenticated request must return 401
-      const resUnauth = await fetch('http://localhost:3000/api/cron/spider');
+      const resUnauth = await fetch(`${BASE_URL}/api/cron/spider`);
       const unauthBlocked = resUnauth.status === 401;
 
       // 2. Invalid secret request must return 401
-      const resInvalid = await fetch('http://localhost:3000/api/cron/spider?secret=malicious_spoofed_token_999');
+      const resInvalid = await fetch(`${BASE_URL}/api/cron/spider?secret=malicious_spoofed_token_999`);
       const invalidBlocked = resInvalid.status === 401;
 
       const passed = unauthBlocked && invalidBlocked;
@@ -501,7 +502,7 @@ async function runTestSuite() {
   {
     const t0 = performance.now();
     try {
-      const res = await fetch('http://localhost:3000/');
+      const res = await fetch(`${BASE_URL}/`);
       const html = await res.text();
       const hasQuizContainer = html.includes('আজকের কুইজ চ্যালেঞ্জ');
       const hasShrinkProtection = html.includes('shrink-0');
@@ -516,7 +517,7 @@ async function runTestSuite() {
   {
     const t0 = performance.now();
     try {
-      const res = await fetch('http://localhost:3000/');
+      const res = await fetch(`${BASE_URL}/`);
       const html = await res.text();
       const hasDateDropdown = html.includes('select') || html.includes('সব আর্কাইভ') || html.includes('আজকের সংবাদ') || html.includes('আর্কাইভ');
       recordTest('UAT & Usability', 'Central Date Dropdown Integration (Clean Compact Date Selection)', hasDateDropdown, performance.now() - t0);
@@ -529,7 +530,7 @@ async function runTestSuite() {
   {
     const t0 = performance.now();
     try {
-      const res = await fetch('http://localhost:3000/');
+      const res = await fetch(`${BASE_URL}/`);
       const html = await res.text();
       // The bulky old category tab had 'id="category-filter-bar"' which was removed
       const hasOldCategoryBar = html.includes('id="category-filter-bar"');
@@ -544,11 +545,11 @@ async function runTestSuite() {
   {
     const t0 = performance.now();
     try {
-      const resBn = await fetch('http://localhost:3000/');
+      const resBn = await fetch(`${BASE_URL}/`);
       const htmlBn = await resBn.text();
       const hasBanglaArticles = htmlBn.includes('খবরাখবর') || htmlBn.includes('জাতীয় পরিক্রমা');
 
-      const resEn = await fetch('http://localhost:3000/?lang=en');
+      const resEn = await fetch(`${BASE_URL}/?lang=en`);
       const htmlEn = await resEn.text();
       const hasEnglishParamHandled = resEn.status === 200;
 
