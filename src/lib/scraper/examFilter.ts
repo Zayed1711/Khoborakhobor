@@ -392,6 +392,190 @@ export function evaluateExamRelevance(
 // 3. Automated High-Yield Fact Sheet & Table Extractor
 // -------------------------------------------------------------
 
+interface SectorProfile {
+  id: string;
+  keywords: string[];
+  institutionBn: string;
+  institutionEn: string;
+  statutoryBn: string;
+  statutoryEn: string;
+  syllabusBn: string;
+  syllabusRelevanceBn: string;
+  syllabusEn: string;
+  syllabusRelevanceEn: string;
+}
+
+const SECTOR_PROFILES: SectorProfile[] = [
+  {
+    id: "energy",
+    keywords: ["গ্যাস", "পেট্রোবাংলা", "বাপেক্স", "তেল", "জ্বালানি", "বিদ্যুৎ", "বিপিসি", "পিডিবি", "নেসকো", "ডিপিডিসি", "ডেসকো", "কয়লা", "এলএনজি", "খনন", "কূপ", "সঞ্চালন", "gas", "petrobangla", "bapex", "lng", "power", "energy", "petroleum"],
+    institutionBn: "বিদ্যুৎ, জ্বালানি ও খনিজ সম্পদ মন্ত্রণালয়, পেট্রোবাংলা ও বাপেক্স",
+    institutionEn: "Ministry of Power, Energy & Mineral Resources, Petrobangla & BAPEX",
+    statutoryBn: "জাতীয় জ্বালানি নীতি, গ্যাস বিপণন বিধিমালা ও অনশোর/অফশোর পিএসসি কাঠামো",
+    statutoryEn: "National Energy Policy & Production Sharing Contract (PSC) Framework",
+    syllabusBn: "বিসিএস লিখিত বাংলাদেশ বিষয়াবলি: বিদ্যুৎ ও জ্বালানি সম্পদ ব্যবস্থাপনা এবং বৈদেশিক মুদ্রা সাশ্রয়",
+    syllabusRelevanceBn: "লিখিত পরীক্ষায় 'জ্বালানি নিরাপত্তা ও বিকল্প উৎস' প্রশ্নে উচ্চ-ফলনশীল ডেটা ও কেস স্টাডি",
+    syllabusEn: "BCS Written & Competitive Exams: Natural Resource Economics & Energy Security",
+    syllabusRelevanceEn: "High-yield analytical reference for energy security, balance of payments and fiscal outlay",
+  },
+  {
+    id: "finance",
+    keywords: ["অর্থ মন্ত্রণালয়", "বাজেট", "রাজস্ব", "এনবিআর", "কর", "ভ্যাট", "শুল্ক", "মূল্যস্ফীতি", "রিজার্ভ", "ব্যাংক", "মুদ্রানীতি", "অর্থনীতি", "অর্থনৈতিক", "আইএমএফ", "বিশ্বব্যাংক", "জিডিপি", "টাকা", "ডলার", "রেমিট্যান্স", "রপ্তানি", "আমদানি", "পুঁজিবাজার", "শেয়ারবাজার", "বিএসইসি", "ডিএসই", "বিনিয়োগ", "finance", "revenue", "nbr", "imf", "inflation", "banking", "gdp", "remittance", "fiscal"],
+    institutionBn: "অর্থ মন্ত্রণালয়, জাতীয় রাজস্ব বোর্ড (NBR) ও বাংলাদেশ ব্যাংক",
+    institutionEn: "Ministry of Finance, National Board of Revenue (NBR) & Bangladesh Bank",
+    statutoryBn: "আয়কর আইন ২০২৩, জাতীয় রাজস্ব অধ্যাদেশ ও সামষ্টিক অর্থনৈতিক ফ্রেমওয়ার্ক",
+    statutoryEn: "Income Tax Act 2023, Customs Act & Medium-Term Macroeconomic Framework",
+    syllabusBn: "বিসিএস লিখিত ও বাংলাদেশ ব্যাংক এডি: সামষ্টিক অর্থনীতি, মুদ্রানীতি ও রাজস্ব খাত",
+    syllabusRelevanceBn: "লিখিত সামষ্টিক অর্থনীতি পর্বে ও ব্যাংক অফিসার নিয়োগ পরীক্ষায় পরিসংখ্যানিক বিশ্লেষণ",
+    syllabusEn: "BCS & Central Bank Examinations: Macroeconomics, Fiscal Policy & Monetary Framework",
+    syllabusRelevanceEn: "Crucial reference for economic essay writing, financial analysis and analytical viva",
+  },
+  {
+    id: "judiciary",
+    keywords: ["সুপ্রিম কোর্ট", "হাইকোর্ট", "আইন মন্ত্রণালয়", "বিচারক", "আদালত", "রায়", "আইন", "অধ্যাদেশ", "দণ্ডবিধি", "কারাগার", "অ্যাটর্নি জেনারেল", "বিচার বিভাগ", "রিট", "জামিন", "মামলা", "মামলার", "court", "judiciary", "law", "justice", "supreme court", "verdict", "tribunal"],
+    institutionBn: "বাংলাদেশ সুপ্রিম কোর্ট ও আইন, বিচার ও সংসদ বিষয়ক মন্ত্রণালয়",
+    institutionEn: "Supreme Court of Bangladesh & Ministry of Law, Justice and Parliamentary Affairs",
+    statutoryBn: "গণপ্রজাতন্ত্রী বাংলাদেশের সংবিধান (অনুচ্ছেদ ৯৪-১১৭) ও দেওয়ানি/ফৌজদারি কার্যবিধি",
+    statutoryEn: "Constitution of Bangladesh (Articles 94–117) & Statutory Judicial Procedures",
+    syllabusBn: "বিসিএস বাংলাদেশ বিষয়াবলি ও সুশাসন: সাংবিধানিক বিধান, বিচার বিভাগের স্বাধীনতা ও আইনের শাসন",
+    syllabusRelevanceBn: "লিখিত সুশাসন ও সাংবিধানিক প্রতিষ্ঠান অংশের জন্য অপরিহার্য তাত্ত্বিক রেফারেন্স",
+    syllabusEn: "BCS Governance & Law: Constitutional Provisions, Judicial Independence & Rule of Law",
+    syllabusRelevanceEn: "Direct citation material for institutional governance, civil rights and written essays",
+  },
+  {
+    id: "security",
+    keywords: ["স্বরাষ্ট্র মন্ত্রণালয়", "পুলিশ", "আইজিপি", "র‍্যাব", "বিজিবি", "আনসার", "আইনশৃঙ্খলা", "অপরাধ", "তদন্ত", "গ্রেপ্তার", "পুলিশের", "police", "security", "home affairs", "law enforcement", "cid", "rab"],
+    institutionBn: "স্বরাষ্ট্র মন্ত্রণালয় ও বাংলাদেশ পুলিশ হেডকোয়ার্টার্স (PHQ)",
+    institutionEn: "Ministry of Home Affairs & Bangladesh Police Headquarters",
+    statutoryBn: "পুলিশ রেগুলেশনস অব বেঙ্গল (PRB), ফৌজদারি কার্যবিধি ও জাতীয় নিরাপত্তা রূপরেখা",
+    statutoryEn: "Police Regulations of Bengal (PRB), CrPC & Public Safety Framework",
+    syllabusBn: "বিসিএস সুশাসন ও প্রশাসন: অভ্যন্তরীণ জননিরাপত্তা, পুলিশ সংস্কার ও আইন প্রয়োগের জবাবদিহিতা",
+    syllabusRelevanceBn: "লিখিত সুশাসন অংশে আইন প্রয়োগকারী সংস্থার আধুনিকায়ন ও নাগরিক অধিকারে প্রাসঙ্গিক ডেটা",
+    syllabusEn: "BCS Internal Security & Governance: Law Enforcement Reforms & Public Safety",
+    syllabusRelevanceEn: "Key evidence for criminal justice, institutional accountability and public safety",
+  },
+  {
+    id: "diplomacy",
+    keywords: ["পররাষ্ট্র", "কূটনীতি", "রাষ্ট্রদূত", "যুক্তরাষ্ট্র", "চীন", "ভারত", "মিয়ানমার", "রোহিঙ্গা", "জাতিসংঘ", "নিরাপত্তা পরিষদ", "দ্বিপাক্ষিক", "চুক্তি", "সীমান্ত", "মধ্যপ্রাচ্য", "ইউরোপ", "রাশিয়া", "ইউক্রেন", "গাজা", "ফিলিস্তিন", "মার্কিন", "foreign affairs", "diplomacy", "bilateral", "united nations", "un", "geopolitics", "treaty", "ambassador"],
+    institutionBn: "পররাষ্ট্র মন্ত্রণালয় (MOFA), সংশ্লিষ্ট মিশন ও জাতিসংঘ (UN)",
+    institutionEn: "Ministry of Foreign Affairs (MOFA), Diplomatic Missions & United Nations",
+    statutoryBn: "ভিয়েনা কূটনৈতিক কনভেনশন ১৯৬১ ও আন্তর্জাতিক সনদ/চুক্তি ফ্রেমওয়ার্ক",
+    statutoryEn: "Vienna Convention on Diplomatic Relations (1961) & Multilateral Treaties",
+    syllabusBn: "বিসিএস আন্তর্জাতিক বিষয়াবলি: সমকালীন ভূ-রাজনীতি, দ্বিপাক্ষিক কূটনীতি ও পরাশক্তি সমীকরণ",
+    syllabusRelevanceBn: "লিখিত আন্তর্জাতিক অংশে পরাশক্তি দ্বন্দ্ব, বহুপাক্ষিক জোট ও বাংলাদেশের অবস্থান বিশ্লেষণে আবশ্যক",
+    syllabusEn: "BCS International Affairs: Contemporary Geopolitics, Strategic Diplomacy & Global Alliances",
+    syllabusRelevanceEn: "Mandatory reference for bilateral relations, power equations and foreign policy questions",
+  },
+  {
+    id: "governance",
+    keywords: ["নির্বাচন কমিশন", "ইসি", "ভোট", "নির্বাচন", "উপজেলা", "জেলা প্রশাসক", "ডিসি", "ইউএনও", "জনপ্রশাসন", "সচিব", "মন্ত্রণালয়", "সংস্কার কমিশন", "গণঅভ্যুত্থান", "শাসনব্যবস্থা", "election", "commission", "governance", "public administration", "vote"],
+    institutionBn: "বাংলাদেশ নির্বাচন কমিশন (ইসি) ও জনপ্রশাসন মন্ত্রণালয়",
+    institutionEn: "Bangladesh Election Commission (EC) & Ministry of Public Administration",
+    statutoryBn: "গণপ্রতিনিধিত্ব আদেশ (RPO), সরকারি কর্মচারী আইন ও প্রশাসনিক সুশাসন রূপরেখা",
+    statutoryEn: "Representation of the People Order (RPO) & Public Service Act",
+    syllabusBn: "বিসিএস বাংলাদেশ বিষয়াবলি ও নৈতিকতা: জনপ্রশাসন সংস্কার, নির্বাচন কাঠামো ও প্রশাসনিক স্বচ্ছতা",
+    syllabusRelevanceBn: "লিখিত প্রশাসনিক কার্যকারিতা ও নির্বাচনী ব্যবস্থার উন্নয়ন প্রশ্নে অপরিহার্য উদ্ধৃতি",
+    syllabusEn: "BCS Governance & Public Administration: Civil Service Reforms & Electoral Integrity",
+    syllabusRelevanceEn: "Essential citation for institutional reform, bureaucratic accountability and statecraft",
+  },
+  {
+    id: "industry",
+    keywords: ["পোশাক", "তৈরি পোশাক", "গার্মেন্টস", "বিজিএমইএ", "বিকেএমইএ", "শ্রমিক", "মজুরি", "কারখানা", "ইপিজেড", "শিল্প", "শ্রম", "বাণিজ্য", "রপ্তানি উন্নয়ন ব্যুরো", "রমজি", "rmg", "bgmea", "wage", "labor", "worker", "garment", "industry", "export"],
+    institutionBn: "শ্রম ও কর্মসংস্থান মন্ত্রণালয়, ন্যূনতম মজুরি বোর্ড ও বিজিএমইএ",
+    institutionEn: "Ministry of Labour and Employment, Minimum Wage Board & BGMEA",
+    statutoryBn: "বাংলাদেশ শ্রম আইন ২০০৬ (সংশোধিত), ইপিজেড শ্রম আইন ও জাতীয় মজুরি বিধিমালা",
+    statutoryEn: "Bangladesh Labour Act 2006 (Amended), EPZ Labour Act & Wage Framework",
+    syllabusBn: "বিসিএস লিখিত বাংলাদেশ বিষয়াবলি: তৈরি পোশাক খাত, শ্রমিক অধিকার ও অর্থনৈতিক উৎপাদনশীলতা",
+    syllabusRelevanceBn: "লিখিত বাংলাদেশ ও অর্থনীতি অংশে শিল্প খাতের কর্মসংস্থান ও কমপ্লায়েন্স বিশ্লেষণে প্রয়োজনীয়",
+    syllabusEn: "BCS Written & Bank Exams: RMG Sector, Export Diversification & Labor Economics",
+    syllabusRelevanceEn: "Core reference for industrial compliance, tripartite wage governance and export metrics",
+  },
+  {
+    id: "health",
+    keywords: ["স্বাস্থ্য", "হাসপাতাল", "চিকিৎসা", "ঔষধ", "ওষুধ", "রোগ", "আইইডিসিআর", "ডিজিএইচএস", "স্বাস্থ্য অধিদপ্তর", "ডেঙ্গু", "ভ্যাকসিন", "স্বাস্থ্যসেবা", "ডাক্তার", "জীববিজ্ঞান", "চুল", "শ্রবণশক্তি", "রোগতত্ত্ব", "health", "hospital", "dghs", "who", "medical", "epidemic", "doctor"],
+    institutionBn: "স্বাস্থ্য ও পরিবার কল্যাণ মন্ত্রণালয়, স্বাস্থ্য অধিদপ্তর (DGHS) ও আইইডিসিআর",
+    institutionEn: "Ministry of Health and Family Welfare, DGHS & Biomedical Research Councils",
+    statutoryBn: "জাতীয় স্বাস্থ্য নীতি ও আন্তর্জাতিক স্বাস্থ্য সংস্থা (WHO) মহামারি নজরদারি ফ্রেমওয়ার্ক",
+    statutoryEn: "National Health Policy & WHO International Health Regulations (IHR)",
+    syllabusBn: "বিসিএস সাধারণ বিজ্ঞান ও সুশাসন: জাতীয় জনস্বাস্থ্য পরিকাঠামো, মহামারি প্রতিরোধ ও এসডিজি-৩",
+    syllabusRelevanceBn: "লিখিত বিজ্ঞান ও সুশাসন পর্বে সার্বজনীন স্বাস্থ্যসেবা ও রোগ নজরদারির মানদণ্ডে সহায়ক",
+    syllabusEn: "BCS General Science & Governance: Public Health Infrastructure, Epidemiology & SDG-3",
+    syllabusRelevanceEn: "Critical citation for health system resilience, epidemiological surveillance and public policy",
+  },
+  {
+    id: "transport",
+    keywords: ["সড়ক", "মহাসড়ক", "বিআরটিএ", "সেতু", "মেট্রোরেল", "রেল", "রেলপথ", "বিমান", "বিমানবন্দর", "বেবিচক", "জাহাজ", "নৌপথ", "পরিবহন", "দুর্ঘটনা", "যানজট", "চালকের", "transport", "brta", "railway", "aviation", "highway", "traffic", "accident"],
+    institutionBn: "সড়ক পরিবহন ও সেতু মন্ত্রণালয়, রেলপথ মন্ত্রণালয় ও বিআরটিএ",
+    institutionEn: "Ministry of Road Transport and Bridges, Ministry of Railways & BRTA",
+    statutoryBn: "সড়ক পরিবহন আইন ২০১৮ ও জাতীয় সমন্বিত যোগাযোগ নীতিমালা",
+    statutoryEn: "Road Transport Act 2018 & National Integrated Multimodal Transport Policy",
+    syllabusBn: "বিসিএস লিখিত রচনা ও বাংলাদেশ বিষয়াবলি: যোগাযোগ পরিকাঠামো উন্নয়ন, মেগা প্রকল্প ও সড়ক নিরাপত্তা",
+    syllabusRelevanceBn: "লিখিত উভয় রচনায় লজিস্টিকস সক্ষমতা ও জাতীয় দুর্ঘটনা হ্রাসের পদক্ষেপে কোটেশনযোগ্য",
+    syllabusEn: "BCS Infrastructure & Essay Writing: Multimodal Transport, Mega Projects & Road Safety",
+    syllabusRelevanceEn: "Direct empirical data for economic connectivity, urban logistics and structural projects",
+  },
+  {
+    id: "environment",
+    keywords: ["পরিবেশ", "জলবায়ু", "বন্যা", "ঘূর্ণিঝড়", "নদী", "বন", "দূষণ", "বায়ুদূষণ", "কার্বন", "কপ", "তাপমাত্রা", "দুর্যোগ", "আবহাওয়া", "কুয়াশা", "শীত", "বৃষ্টি", "environment", "climate", "cop", "pollution", "disaster", "weather", "temperature", "emissions"],
+    institutionBn: "পরিবেশ, বন ও জলবায়ু পরিবর্তন মন্ত্রণালয়, পরিবেশ অধিদপ্তর ও আবহাওয়া অধিদপ্তর",
+    institutionEn: "Ministry of Environment, Forest and Climate Change & Department of Environment",
+    statutoryBn: "বাংলাদেশ পরিবেশ সংরক্ষণ আইন ১৯৯৫ ও বৈশ্বিক জলবায়ু ফ্রেমওয়ার্ক (COP/NDC)",
+    statutoryEn: "Bangladesh Environment Conservation Act 1995 & COP Climate Framework",
+    syllabusBn: "বিসিএস ভূগোল, পরিবেশ ও দুর্যোগ ব্যবস্থাপনা: বৈশ্বিক উষ্ণায়ন, জলবায়ু কূটনীতি ও অভিযোজন",
+    syllabusRelevanceBn: "লিখিত ভূগোল ও আন্তর্জাতিক অংশে লস অ্যান্ড ড্যামেজ এবং জলবায়ু ট্রাস্ট তহবিলের বিশ্লেষণে ব্যবহার্য",
+    syllabusEn: "BCS Geography & Disaster Management: Climate Adaptation, Loss & Damage and Green Transition",
+    syllabusRelevanceEn: "Fundamental context for climate change vulnerability, COP negotiations and environmental governance",
+  },
+  {
+    id: "education",
+    keywords: ["শিক্ষা", "বিশ্ববিদ্যালয়", "ইউজিসি", "স্কুল", "কলেজ", "পরীক্ষা", "সিলেবাস", "শিক্ষাক্রম", "প্রাথমিক", "উচ্চশিক্ষা", "গবেষণা", "বিসিএস", "ভর্তি", "শিক্ষক", "ছাত্র", "education", "university", "ugc", "curriculum", "academic", "student", "school"],
+    institutionBn: "শিক্ষা মন্ত্রণালয়, প্রাথমিক ও গণশিক্ষা মন্ত্রণালয় এবং বিশ্ববিদ্যালয় মঞ্জুরী কমিশন (UGC)",
+    institutionEn: "Ministry of Education & University Grants Commission (UGC)",
+    statutoryBn: "জাতীয় শিক্ষানীতি, বিশ্ববিদ্যালয় মঞ্জুরী কমিশন আইন ও এনসিটিবি ফ্রেমওয়ার্ক",
+    statutoryEn: "National Education Policy, UGC Act & NCTB Curriculum Framework",
+    syllabusBn: "বিসিএস লিখিত রচনা ও বাংলাদেশ বিষয়াবলি: মানবসম্পদ উন্নয়ন, শিক্ষা সংস্কার ও জাতীয় অগ্রগতি",
+    syllabusRelevanceBn: "বাংলা ও ইংরেজি লিখিত রচনায় ডেমোগ্রাফিক ডিভিডেন্ড ও দক্ষ জনশক্তি অর্জনে উদ্ধৃতিযোগ্য",
+    syllabusEn: "BCS Written Essays: Human Capital Development, Education Reforms & Demographic Dividend",
+    syllabusRelevanceEn: "High-yield quantitative reference for socio-economic development and national literacy policies",
+  },
+  {
+    id: "ict",
+    keywords: ["প্রযুক্তি", "টেলিকম", "বিটিআরসি", "ইন্টারনেট", "এআই", "কৃত্রিম বুদ্ধিমত্তা", "সফটওয়্যার", "সাইবার", "মোবাইল", "আইসিটি", "ডিজিটাল", "কম্পিউটার", "tech", "ict", "telecom", "btrc", "internet", "ai", "cyber", "software", "digital"],
+    institutionBn: "ডাক, টেলিযোগাযোগ ও তথ্যপ্রযুক্তি মন্ত্রণালয় এবং বিটিআরসি (BTRC)",
+    institutionEn: "Ministry of Posts, Telecommunications and Information Technology & BTRC",
+    statutoryBn: "সাইবার নিরাপত্তা আইন, বাংলাদেশ টেলিযোগাযোগ নিয়ন্ত্রণ আইন ও জাতীয় এআই কৌশল",
+    statutoryEn: "Cyber Security Act, Telecommunication Act & National AI Strategy",
+    syllabusBn: "বিসিএস সাধারণ বিজ্ঞান ও আইসিটি: কৃত্রিম বুদ্ধিমত্তা, সাইবার নিরাপত্তা ও ডিজিটাল অর্থনীতি",
+    syllabusRelevanceBn: "প্রিলিমিনারি কম্পিউটার অংশ এবং লিখিত আইসিটি অংশে প্রযুক্তিগত প্রশ্নের জন্য সরাসরি সহায়ক",
+    syllabusEn: "BCS ICT & Applied Technology: Artificial Intelligence, Cyber Security & Digital Economy",
+    syllabusRelevanceEn: "Direct applicability for ICT prelims, cybersecurity frameworks and technological innovation",
+  },
+  {
+    id: "sports",
+    keywords: ["ক্রিকেট", "বিসিবি", "ফুটবল", "বাফুফে", "ফিফা", "আইসিসি", "খেলা", "টুর্নামেন্ট", "বিশ্বকাপ", "অলিম্পিক", "ক্রীড়া", "ম্যাচ", "রান", "উইকেট", "cricket", "football", "fifa", "icc", "sports", "match", "tournament"],
+    institutionBn: "যুব ও ক্রীড়া মন্ত্রণালয়, জাতীয় ক্রীড়া ফেডারেশন (BCB/BFF) ও আন্তর্জাতিক ক্রীড়া পরিষদ",
+    institutionEn: "Ministry of Youth and Sports, National Sports Federations & Governing Bodies",
+    statutoryBn: "জাতীয় ক্রীড়া পরিষদ আইন ও আন্তর্জাতিক ফেডারেশন সংবিধান",
+    statutoryEn: "National Sports Council Act & International Federation Charters",
+    syllabusBn: "বিসিএস প্রিলিমিনারি সাধারণ জ্ঞান: সমসাময়িক জাতীয় ও বৈশ্বিক ক্রীড়াঙ্গন",
+    syllabusRelevanceBn: "নৈর্ব্যক্তিক পর্বে সাম্প্রতিক টুর্নামেন্ট, রেকর্ড ও আন্তর্জাতিক চ্যাম্পিয়নশিপের তথ্য",
+    syllabusEn: "BCS Preliminary & GK: Contemporary National & Global Sports Competitions",
+    syllabusRelevanceEn: "Quick-recall facts for preliminary GK, international trophies and athletic milestones",
+  },
+  {
+    id: "culture",
+    keywords: ["সাহিত্য", "লেখক", "বই", "উপন্যাস", "সংস্কৃতি", "চলচ্চিত্র", "শিল্পকলা", "ঐতিহ্য", "জাদুঘর", "নাটক", "গান", "সিনেমা", "চিত্রনাট্য", "literature", "culture", "author", "book", "film", "cinema", "art", "heritage"],
+    institutionBn: "সংস্কৃতি বিষয়ক মন্ত্রণালয়, বাংলা একাডেমি ও জাতীয় গ্রন্থকেন্দ্র",
+    institutionEn: "Ministry of Cultural Affairs, Bangla Academy & National Cultural Bodies",
+    statutoryBn: "বাংলা একাডেমি আইন ও আন্তর্জাতিক সাংস্কৃতিক ঐতিহ্য সনদ",
+    statutoryEn: "Bangla Academy Act & Cultural Protection Conventions",
+    syllabusBn: "বিসিএস প্রিলিমিনারি ও লিখিত: বাংলা ও বিশ্ব সাহিত্যের সাম্প্রতিক অগ্রগতি ও ক্লাসিক পর্যালোচনা",
+    syllabusRelevanceBn: "ভাষা ও সাহিত্য পর্বে বিশিষ্ট গ্রন্থ, সাহিত্যিক আন্দোলন ও সাংস্কৃতিক উত্তরাধিকার বিশ্লেষণে সহায়ক",
+    syllabusEn: "BCS Literature & Cultural Studies: Contemporary & Classical World Literature",
+    syllabusRelevanceEn: "Enriched academic insight for literature questions, critical reviews and creative arts",
+  },
+];
+
 export function extractFactTable(
   title: string,
   content: string = "",
@@ -663,107 +847,137 @@ export function extractFactTable(
     ];
   }
 
-  // 11. Universal Smart Dynamic Synthesizer (For all other articles)
-  const rows: FactTableRow[] = [];
+  // 11. Comprehensive Multi-Sector Intelligent Knowledge Synthesizer
+  const isBn = /[\u0980-\u09FF]/.test(title + " " + plain);
 
-  // Row 1: Primary Institution or Authority
-  let institution = "জাতীয় ও আন্তর্জাতিক নীতিনির্ধারণী কর্তৃপক্ষ";
-  if (/অর্থ\s*মন্ত্রণালয়/i.test(plain)) institution = "অর্থ মন্ত্রণালয় ও অভ্যন্তরীণ সম্পদ বিভাগ";
-  else if (/নির্বাচন\s*কমিশন/i.test(plain)) institution = "বাংলাদেশ নির্বাচন কমিশন (ইসি)";
-  else if (/বিআরটিএ/i.test(plain)) institution = "বাংলাদেশ সড়ক পরিবহন কর্তৃপক্ষ (BRTA)";
-  else if (/ইউজিসি|বিশ্ববিদ্যালয়\s*মঞ্জুরী\s*কমিশন/i.test(plain)) institution = "বিশ্ববিদ্যালয় মঞ্জুরী কমিশন (UGC)";
-  else if (/দুদক|দুর্নীতি\s*দমন/i.test(plain)) institution = "দুর্নীতি দমন কমিশন (দুদক)";
-  else if (/জাতিসংঘ|UN/i.test(plain)) institution = "জাতিসংঘ (United Nations) ও সাধারণ পরিষদ";
-  else if (/আইএমএফ|IMF/i.test(plain)) institution = "আন্তর্জাতিক মুদ্রা তহবিল (IMF)";
-  else if (/বিশ্বব্যাংক|World\s*Bank/i.test(plain)) institution = "বিশ্বব্যাংক গ্রুপ (World Bank)";
-  else if (/ফিফা|FIFA/i.test(plain)) institution = "ফিফা (FIFA) ও আন্তর্জাতিক ক্রীড়া পরিষদ";
-  else if (/ইউনেস্কো|UNESCO/i.test(plain)) institution = "ইউনেস্কো (UNESCO)";
-  else {
-    const subjectWords = title.split(/[:–—\s]/).filter((w) => w.length > 2);
-    if (subjectWords.length > 0) {
-      institution = `${subjectWords[0]} সংক্রান্ত সংশ্লিষ্ট কর্তৃপক্ষ ও অংশীজন`;
+  // Multi-Sector Matcher
+  let matchedSector: SectorProfile | null = null;
+  let maxScore = 0;
+
+  for (const sector of SECTOR_PROFILES) {
+    let score = 0;
+    for (const kw of sector.keywords) {
+      if (title.toLowerCase().includes(kw)) score += 5; // Title keyword has highest weight
+      else if (text.includes(kw)) score += 1;
+    }
+    if (score > maxScore) {
+      maxScore = score;
+      matchedSector = sector;
     }
   }
 
-  rows.push({
-    parameter: "নিয়ন্ত্রণকারী সংস্থা / প্রধান পক্ষ",
-    value: institution,
-    relevance: "সংবিধিবদ্ধ প্রাতিষ্ঠানিক এখতিয়ার, সুশাসন ও নির্বাহী কর্তৃত্ব",
-  });
+  // Fallback sector based on category if keyword score was weak
+  if (!matchedSector || maxScore === 0) {
+    const catLower = (categoryName || "").toLowerCase();
+    if (catLower.includes("অর্থনীতি") || catLower.includes("বাণিজ্য") || catLower.includes("economy") || catLower.includes("business")) {
+      matchedSector = SECTOR_PROFILES.find((s) => s.id === "finance")!;
+    } else if (catLower.includes("আন্তর্জাতিক") || catLower.includes("world") || catLower.includes("global")) {
+      matchedSector = SECTOR_PROFILES.find((s) => s.id === "diplomacy")!;
+    } else if (catLower.includes("বিজ্ঞান") || catLower.includes("প্রযুক্তি") || catLower.includes("tech") || catLower.includes("science")) {
+      matchedSector = SECTOR_PROFILES.find((s) => s.id === "ict")!;
+    } else if (catLower.includes("রাজনীতি") || catLower.includes("সুশাসন") || catLower.includes("politics") || catLower.includes("governance")) {
+      matchedSector = SECTOR_PROFILES.find((s) => s.id === "governance")!;
+    } else if (catLower.includes("খেলা") || catLower.includes("sports")) {
+      matchedSector = SECTOR_PROFILES.find((s) => s.id === "sports")!;
+    } else if (catLower.includes("সাহিত্য") || catLower.includes("বিনোদন") || catLower.includes("culture") || catLower.includes("arts")) {
+      matchedSector = SECTOR_PROFILES.find((s) => s.id === "culture")!;
+    } else {
+      matchedSector = SECTOR_PROFILES.find((s) => s.id === "governance")!;
+    }
+  }
 
-  // Row 2: Numerical Metrics, Rates or Core Decision
-  let statValue = "";
-  let statRelevance = "";
+  // Row 1: Governing Authority
+  const institutionParam = isBn ? "নিয়ন্ত্রণকারী সংস্থা / প্রধান পক্ষ" : "Governing Authority & Primary Stakeholders";
+  const institutionVal = isBn ? matchedSector.institutionBn : matchedSector.institutionEn;
+  const institutionRel = isBn
+    ? "সংবিধিবদ্ধ প্রাতিষ্ঠানিক এখতিয়ার, নীতি প্রণয়ন ও নির্বাহী কর্তৃত্ব"
+    : "Statutory jurisdiction, policy governance and regulatory mandate";
 
-  const percentMatch = plain.match(/([০-৯0-9]+(?:\.[০-৯0-9]+)?\s*%\s*(?:বৃদ্ধি|হ্রাস|বৃদ্ধি পেয়ে|হ্রাস পেয়ে)?)/);
-  const moneyMatch = plain.match(/([০-৯0-9]+(?:\.[০-৯0-9]+)?\s*(?:হাজার\s*)?(?:কোটি|বিলিয়ন|মিলিয়ন)\s*(?:টাকা|ডলার))/);
-  const surveyMatch = plain.match(/([০-৯0-9,]+\s*(?:জন|টি|শতাংশ)\s*(?:নিহত|আহত|ক্ষতিগ্রস্ত|অংশগ্রহণকারী|সদস্য|আসন))/);
+  // Row 2: Specific Data / Key Decision / Core Metrics
+  const metricParam = isBn ? "সুনির্দিষ্ট উপাত্ত / মূল সিদ্ধান্ত" : "Key Empirical Data & Core Decision";
+  let metricVal = "";
+  let metricRel = "";
 
-  if (percentMatch) {
-    statValue = `সূচক পরিবর্তন: ${percentMatch[1]}`;
-    statRelevance = "সামষ্টিক অর্থনীতি ও পরিসংখ্যানভিত্তিক সরাসরি প্রশ্ন";
+  const dualMoneyMatch = plain.match(/([০-৯0-9]+(?:\.[০-৯0-9]+)?\s*(?:হাজার\s*)?কোটি\s*টাকা[^\n।!?]*?[০-৯0-9]+(?:\.[০-৯0-9]+)?\s*(?:হাজার\s*)?কোটি\s*টাকা)/);
+  const moneyMatch = plain.match(/([০-৯0-9]+(?:\.[০-৯0-9]+)?\s*(?:হাজার\s*)?(?:কোটি|বিলিয়ন|মিলিয়ন|ট্রিলিয়ন)\s*(?:টাকা|ডলার|euro|usd|bdt|taka))/i);
+  const percentMatch = plain.match(/([০-৯0-9]+(?:\.[০-৯0-9]+)?\s*%\s*(?:বৃদ্ধি|হ্রাস|বৃদ্ধি পেয়ে|হ্রাস পেয়ে|growth|decline|inflation)?)/i);
+  const headcountMatch = plain.match(/([০-৯0-9,]+\s*(?:জন|টি|শতাংশ|কিলোমিটার|মেগাওয়াট|ঘনফুট|টিসিএফ|bcf|tcf)\s*(?:নিহত|আহত|ক্ষতিগ্রস্ত|অংশগ্রহণকারী|সদস্য|আসন|উৎপাদন|মজুত)?)/i);
+
+  if (dualMoneyMatch) {
+    metricVal = isBn
+      ? `বিনিয়োগ ও সম্ভাব্য উৎপাদন: ${dualMoneyMatch[1].trim()}`
+      : `Investment & Yield Projection: ${dualMoneyMatch[1].trim()}`;
+    metricRel = isBn
+      ? "বাজেট বরাদ্দ ও জাতীয় অর্থনৈতিক সাশ্রয় সংক্রান্ত উপাত্ত"
+      : "Fiscal outlay and national economic return metric";
+  } else if (title.includes("কোটি টাকা") && title.includes("গ্যাস")) {
+    metricVal = isBn
+      ? `বিনিয়োগ ও সম্ভাব্য অর্থনৈতিক অর্জন: ${title}`
+      : `Investment & Expected Energy Return: ${title}`;
+    metricRel = isBn
+      ? "জাতীয় জ্বালানি নিরাপত্তা ও আমদানি সাশ্রয় বিশ্লেষণ"
+      : "National energy security and foreign reserve saving analysis";
+  } else if (percentMatch) {
+    metricVal = isBn
+      ? `সূচক পরিবর্তন / অনুপাত: ${percentMatch[1].trim()}`
+      : `Index Movement / Percentage Shift: ${percentMatch[1].trim()}`;
+    metricRel = isBn
+      ? "সামষ্টিক অর্থনীতি ও পরিসংখ্যানভিত্তিক সরাসরি প্রশ্ন"
+      : "Quantitative indicator for macroeconomic assessment";
   } else if (moneyMatch) {
-    statValue = `বরাদ্দ / আর্থিক পরিমাণ: ${moneyMatch[1]}`;
-    statRelevance = "বাজেট, অর্থনীতি ও উন্নয়ন প্রকল্প সংক্রান্ত উপাত্ত";
-  } else if (surveyMatch) {
-    statValue = `জরিপ / গণনার উপাত্ত: ${surveyMatch[1]}`;
-    statRelevance = "লিখিত পরীক্ষার রচনা ও বিশ্লেষণে ব্যবহারের সুনির্দিষ্ট ডেটা";
+    metricVal = isBn
+      ? `আর্থিক পরিমাণ / লেনদেন: ${moneyMatch[1].trim()}`
+      : `Financial Allocation / Fiscal Amount: ${moneyMatch[1].trim()}`;
+    metricRel = isBn
+      ? "বাজেট, অর্থনীতি ও উন্নয়ন প্রকল্প সংক্রান্ত উপাত্ত"
+      : "Budgetary outlay and project financing evidence";
+  } else if (headcountMatch) {
+    metricVal = isBn
+      ? `পরিসংখ্যানিক গণনা / উপাত্ত: ${headcountMatch[1].trim()}`
+      : `Statistical Count / Empirical Finding: ${headcountMatch[1].trim()}`;
+    metricRel = isBn
+      ? "লিখিত পরীক্ষার রচনা ও বিশ্লেষণে ব্যবহারের সুনির্দিষ্ট উপাত্ত"
+      : "Empirical reference for analytical essays and critical arguments";
   } else {
     const sentences = plain
       .split(/[।!?\n]/)
       .map((s) => s.trim())
-      .filter((s) => s.length > 20 && s.length < 120);
-    statValue = sentences[0] || `${title} সংক্রান্ত প্রধান প্রাতিষ্ঠানিক খবরাখবর ও সুনির্দিষ্ট ফলাফল।`;
-    if (statValue.length > 95) statValue = statValue.slice(0, 90) + "...";
-    statRelevance = "সমসাময়িক ঘটনাপ্রবাহ ও নীতিগত সিদ্ধান্তের তথ্য";
+      .filter((s) => s.length > 25 && s.length < 130);
+
+    const actionSentence = sentences.find((s) =>
+      /(অনুমোদন|সিদ্ধান্ত|ঘোষণা|উদ্বোধন|সুপারিশ|চুক্তি|উদ্যোগ|কার্যক্রম|approved|decided|announced|launched|recommended|initiative)/i.test(s)
+    );
+
+    metricVal = actionSentence || (isBn ? `মূল সিদ্ধান্ত: ${title}` : `Core Finding: ${title}`);
+    if (metricVal.length > 105) metricVal = metricVal.slice(0, 100) + "...";
+    metricRel = isBn
+      ? "সমসাময়িক ঘটনাপ্রবাহ ও নীতিগত সিদ্ধান্তের তথ্য"
+      : "Key policy development and institutional outcome";
   }
 
-  rows.push({
-    parameter: "সুনির্দিষ্ট উপাত্ত / মূল সিদ্ধান্ত",
-    value: statValue,
-    relevance: statRelevance,
-  });
+  // Row 3: Statutory Framework & Effective Timeline
+  const timelineParam = isBn ? "কার্যকর সময়কাল / আইনি ভিত্তি" : "Statutory Framework & Timeline";
+  let timelineVal = isBn ? matchedSector.statutoryBn : matchedSector.statutoryEn;
+  const timelineRel = isBn
+    ? "সরকারি নীতি কার্যকর ও জাতীয় প্রাতিষ্ঠানিক বাস্তবায়ন কাঠামো"
+    : "Government policy implementation schedule and legal framework";
 
-  // Row 3: Statutory / Effective Timeline or Law
-  let timeline = "চলতি অর্থবছর ও সমসাময়িক পরিক্রমা";
   const dateMatch = plain.match(/([০-৯0-9]{1,2}\s*(?:জানুয়ারি|ফেব্রুয়ারি|মার্চ|এপ্রিল|মে|জুন|জুলাই|আগস্ট|সেপ্টেম্বর|অক্টোবর|নভেম্বর|ডিসেম্বর|January|February|March|April|May|June|July|August|September|October|November|December)\s*[০-৯0-9]{4}?)/i);
   if (dateMatch) {
-    timeline = `ঘোষিত / কার্যকর সময়কাল: ${dateMatch[1]}`;
-  } else if (/অধ্যাদেশ|গেজেট/i.test(plain)) {
-    timeline = "রাষ্ট্রপতির অধ্যাদেশ ও সরকারি গেজেট নোটিফিকেশন";
-  } else if (/আইন|বিধিমালা|ধারা/i.test(plain)) {
-    timeline = "বিদ্যমান জাতীয় আইনি কাঠামো ও প্রশাসনিক বিধিমালা";
+    timelineVal = isBn
+      ? `ঘোষিত সময়রেখা: ${dateMatch[1]} • ${timelineVal}`
+      : `Effective Date: ${dateMatch[1]} • ${timelineVal}`;
   }
 
-  rows.push({
-    parameter: "কার্যকর সময়কাল / আইনি ভিত্তি",
-    value: timeline,
-    relevance: "সরকারি নীতি কার্যকর ও জাতীয় বাস্তবায়ন সময়রেখা",
-  });
+  // Row 4: BCS & Admission Exam Syllabus Angle
+  const syllabusParam = isBn ? "বিসিএস ও ভর্তি পরীক্ষার সিলেবাস কোণ" : "BCS & Competitive Exam Syllabus Angle";
+  const syllabusVal = isBn ? matchedSector.syllabusBn : matchedSector.syllabusEn;
+  const syllabusRel = isBn ? matchedSector.syllabusRelevanceBn : matchedSector.syllabusRelevanceEn;
 
-  // Row 4: Exam Relevance & Target Angle
-  let examAngle = `বিসিএস প্রিলিমিনারি ও লিখিত (${categoryName})`;
-  let examDetail = "পরীক্ষার খাতায় উচ্চ নম্বর নিশ্চিতকরণে উদ্ধৃতিযোগ্য তথ্য";
-
-  if (/জরিপ|সমীক্ষা|গবেষণা|বুয়েট|নিসচা/i.test(plain)) {
-    examAngle = "বিসিএস লিখিত: বাংলাদেশ বিষয়াবলি ও রচনায় কোটেশনযোগ্য ডেটা";
-    examDetail = "বাংলাদেশ বিষয়াবলি ও ইংরেজি essay রচনায় তথ্যভিত্তিক বিশ্লেষণ";
-  } else if (/মুদ্রানীতি|ব্যাংক|রিজার্ভ|মূল্যস্ফীতি/i.test(plain)) {
-    examAngle = "বাংলাদেশ ব্যাংক এডি ও বিসিএস অর্থনীতি পর্ব";
-    examDetail = "সামষ্টিক অর্থনীতি ও ব্যাংক নিয়োগ পরীক্ষার লিখিত অংশে সরাসরি সহায়ক";
-  } else if (/পুরস্কার|ব্যালন|অলিম্পিক|শিরোপা/i.test(plain)) {
-    examAngle = "আন্তর্জাতিক পরিক্রমা ও সাম্প্রতিক ক্রীড়া পুরস্কার";
-    examDetail = "প্রিলিমিনারি সাধারণ জ্ঞান ও সাম্প্রতিক ঘটনাপ্রবাহ";
-  } else if (/আন্তর্জাতিক|কূটনীতি|পররাষ্ট্র|জাতিসংঘ/i.test(plain)) {
-    examAngle = "বিসিএস আন্তর্জাতিক বিষয়াবলি ও বিশ্ব ভূ-রাজনীতি";
-    examDetail = "লিখিত আন্তর্জাতিক পর্বে দ্বিপাক্ষিক ও বহুপাক্ষিক সম্পর্ক প্রশ্নে আবশ্যক";
-  }
-
-  rows.push({
-    parameter: "বিসিএস ও ভর্তি পরীক্ষার সিলেবাস কোণ",
-    value: examAngle,
-    relevance: examDetail,
-  });
-
-  return rows;
+  return [
+    { parameter: institutionParam, value: institutionVal, relevance: institutionRel },
+    { parameter: metricParam, value: metricVal, relevance: metricRel },
+    { parameter: timelineParam, value: timelineVal, relevance: timelineRel },
+    { parameter: syllabusParam, value: syllabusVal, relevance: syllabusRel },
+  ];
 }
