@@ -10,6 +10,11 @@ import ThemeSwitcher from "./ThemeSwitcher";
 import ProAuthGateModal from "./ProAuthGateModal";
 import { getCurrentSession } from "@/actions/auth";
 import { useAppMode } from "@/context/LanguageContext";
+import { 
+  TrendingHashtagsData, 
+  TrendingHashtagItem, 
+  getTrendingHashtagsAction 
+} from "@/actions/search";
 
 export interface DailyFeaturedQuizItem {
   id?: string;
@@ -29,6 +34,7 @@ interface RightStudyRailProps {
   streakDays?: number;
   featuredQuiz?: DailyFeaturedQuizItem;
   featuredEnglishQuiz?: DailyFeaturedQuizItem;
+  initialTrending?: TrendingHashtagsData;
 }
 
 const DEFAULT_GK_QUIZ: DailyFeaturedQuizItem = {
@@ -65,36 +71,52 @@ const DEFAULT_ENGLISH_QUIZ: DailyFeaturedQuizItem = {
   explanation: '"Rein in" একটি অত্যন্ত গুরুত্বপূর্ণ ইংরেজি phrasal verb, যার অর্থ লাগাম টেনে ধরা বা কোনো কিছুকে নিয়ন্ত্রণে রাখা।',
 };
 
-const GK_TRENDING_HASHTAGS = [
-  { tag: "বিসিএস৫২", count: "১২টি বিশ্লেষণ" },
-  { tag: "মুদ্রানীতি", count: "৮টি প্রতিবেদন" },
-  { tag: "মেট্রোরেল", count: "৫টি সংবাদ" },
-  { tag: "কৃত্রিম_বুদ্ধিমত্তা", count: "১৪টি প্রবন্ধ" },
-  { tag: "মধ্যপ্রাচ্য_কূটনীতি", count: "৯টি আপডেট" },
+const DEFAULT_GK_HASHTAGS: TrendingHashtagItem[] = [
+  { tag: "বিসিএস", query: "বিসিএস", count: 1182, countLabel: "১,১৮২টি বিশ্লেষণ" },
+  { tag: "অর্থনীতি", query: "অর্থনীতি", count: 274, countLabel: "২৭৪টি প্রতিবেদন" },
+  { tag: "আন্তর্জাতিক", query: "আন্তর্জাতিক", count: 376, countLabel: "৩৭৬টি আপডেট" },
+  { tag: "সুশাসন", query: "সুশাসন", count: 336, countLabel: "৩৩৬টি নিবন্ধ" },
+  { tag: "বাণিজ্য", query: "বাণিজ্য", count: 116, countLabel: "১১৬টি সংবাদ" },
 ];
 
-const ENGLISH_TRENDING_HASHTAGS = [
-  { tag: "TheDailyStar_Editorial", count: "১৫টি বিশ্লেষণ" },
-  { tag: "Vocabulary_Builder", count: "২৮টি নতুন শব্দ" },
-  { tag: "TBS_Business", count: "১০টি প্রতিবেদন" },
-  { tag: "IELTS_Reading", count: "১৮টি প্যাসেজ" },
-  { tag: "Global_Diplomacy", count: "১২টি খবর" },
+const DEFAULT_EN_HASHTAGS: TrendingHashtagItem[] = [
+  { tag: "Bangladesh", query: "Bangladesh", count: 100, countLabel: "100 articles" },
+  { tag: "National", query: "National", count: 46, countLabel: "46 briefs" },
+  { tag: "Education", query: "Education", count: 14, countLabel: "14 readings" },
+  { tag: "Business", query: "Business", count: 9, countLabel: "9 reports" },
+  { tag: "Trade", query: "Trade", count: 8, countLabel: "8 analyses" },
 ];
 
 export default function RightStudyRail({
   streakDays = 14,
   featuredQuiz,
   featuredEnglishQuiz,
+  initialTrending,
 }: RightStudyRailProps) {
   const { isEnglishMode } = useAppMode();
   const [selectedOpt, setSelectedOpt] = useState<number | null>(null);
   const [answered, setAnswered] = useState(false);
   const [isProGateOpen, setIsProGateOpen] = useState(false);
+  const [trending, setTrending] = useState<TrendingHashtagsData>(
+    initialTrending || { bn: DEFAULT_GK_HASHTAGS, en: DEFAULT_EN_HASHTAGS }
+  );
 
   const activeQuiz =
     (isEnglishMode ? featuredEnglishQuiz : featuredQuiz) ||
     (isEnglishMode ? DEFAULT_ENGLISH_QUIZ : DEFAULT_GK_QUIZ);
-  const activeHashtags = isEnglishMode ? ENGLISH_TRENDING_HASHTAGS : GK_TRENDING_HASHTAGS;
+  const activeHashtags = isEnglishMode ? trending.en : trending.bn;
+
+  useEffect(() => {
+    if (!initialTrending) {
+      getTrendingHashtagsAction()
+        .then((data) => {
+          if (data && data.bn && data.bn.length > 0) {
+            setTrending(data);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [initialTrending]);
 
   useEffect(() => {
     setSelectedOpt(null);
@@ -297,7 +319,7 @@ export default function RightStudyRail({
                 if (typeof window !== "undefined") {
                   window.dispatchEvent(
                     new CustomEvent("khobor_open_search", {
-                      detail: { query: h.tag.replace(/_/g, " ") },
+                      detail: { query: h.query || h.tag.replace(/_/g, " ") },
                     })
                   );
                 }
@@ -309,7 +331,7 @@ export default function RightStudyRail({
                 #{h.tag}
               </span>
               <span className="text-[10px] text-[#788191] font-mono group-hover:text-[#842323] transition-colors">
-                {h.count}
+                {h.countLabel}
               </span>
             </button>
           ))}

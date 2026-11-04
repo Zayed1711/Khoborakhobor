@@ -6,6 +6,7 @@ import SocialFeedStream from "@/components/SocialFeedStream";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import { getPublishedArticles, getDateArchiveStatsAction } from "@/actions/articles";
 import { getCurrentSession } from "@/actions/auth";
+import { getTrendingHashtagsAction } from "@/actions/search";
 import { prisma } from "@/lib/prisma";
 import { getDailyChallengeQuiz } from "@/lib/quiz/generator";
 
@@ -45,6 +46,7 @@ export default async function Home() {
   const capsuleArticles = articles.filter((a) => a.isCapsule);
   const dailyBnQuiz = getDailyChallengeQuiz({ mode: "bn", articles });
   const dailyEnQuiz = getDailyChallengeQuiz({ mode: "en", articles });
+  const trendingHashtags = await getTrendingHashtagsAction();
 
   return (
     <div className="min-h-screen bg-[#fbf9f5] flex flex-col font-sans pb-16 md:pb-0">
@@ -75,6 +77,7 @@ export default async function Home() {
           streakDays={session.student?.streakDays || 0}
           featuredQuiz={dailyBnQuiz}
           featuredEnglishQuiz={dailyEnQuiz}
+          initialTrending={trendingHashtags}
         />
       </main>
 

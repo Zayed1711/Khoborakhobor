@@ -7,6 +7,7 @@ import MobileBottomNav from "@/components/MobileBottomNav";
 import { prisma } from "@/lib/prisma";
 import { getArticlesByCategory } from "@/actions/articles";
 import { getCurrentSession } from "@/actions/auth";
+import { getTrendingHashtagsAction } from "@/actions/search";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, BookOpen } from "lucide-react";
@@ -20,6 +21,7 @@ interface Props {
 export default async function CategoryPage({ params }: Props) {
   const { slug } = await params;
   const session = await getCurrentSession();
+  const trendingHashtags = await getTrendingHashtagsAction();
 
   const category = await prisma.category.findUnique({
     where: { slug },
@@ -99,7 +101,7 @@ export default async function CategoryPage({ params }: Props) {
         </div>
 
         {/* Right Column: Widgets & Trends */}
-        <RightStudyRail streakDays={session.student?.streakDays || 0} />
+        <RightStudyRail streakDays={session.student?.streakDays || 0} initialTrending={trendingHashtags} />
       </main>
 
       {/* Mobile Sticky Bottom Bar */}
