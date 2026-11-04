@@ -81,7 +81,7 @@ export default function KhoborLogo({
           <div className="flex items-center gap-1.5">
             <span
               className={`text-lg sm:text-2xl font-black font-serif tracking-tight leading-none whitespace-nowrap ${textColor}`}
-              style={{ fontFamily: "'Noto Serif Bengali', 'SolaimanLipi', Georgia, serif" }}
+              style={{ fontFamily: "var(--font-heading), 'Noto Serif Bengali', Georgia, serif" }}
             >
               খবরাখবর
             </span>
@@ -150,7 +150,7 @@ export default function KhoborLogo({
         <div className="flex flex-col text-left justify-center">
           <span
             className="text-2xl sm:text-3xl font-black font-serif tracking-tight leading-none text-white"
-            style={{ fontFamily: "'Noto Serif Bengali', 'SolaimanLipi', Georgia, serif" }}
+            style={{ fontFamily: "var(--font-heading), 'Noto Serif Bengali', Georgia, serif" }}
           >
             খবরাখবর
           </span>

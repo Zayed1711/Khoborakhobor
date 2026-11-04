@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Zap, Sparkles } from "lucide-react";
 import { useAppMode } from "@/context/LanguageContext";
-import { isBengaliText, translateTitleToBengali } from "@/lib/bilingual";
+import { translateTitleToBengali } from "@/lib/bilingual";
 
 interface CapsuleStoryPillsProps {
   capsuleArticles: {
@@ -58,20 +58,29 @@ export default function CapsuleStoryPills({ capsuleArticles }: CapsuleStoryPills
                 : "from-[#c29547] via-[#842323] to-[#ef4444]"
             } group-hover:scale-105 transition-transform duration-200`}>
               <div className="w-full h-full rounded-full overflow-hidden bg-white p-0.5">
-                <img
-                  src={
-                    art.featuredImage ||
-                    "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=200&q=80"
-                  }
-                  alt={art.title}
-                  className="w-full h-full object-cover rounded-full"
-                />
+                {art.featuredImage ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- remote news images from many hosts
+                  <img
+                    src={art.featuredImage}
+                    alt={art.title}
+                    loading="lazy"
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                ) : (
+                  // No stock photo stand-in: show the category's first letter instead
+                  <span
+                    aria-hidden="true"
+                    className="w-full h-full rounded-full bg-[#f3ede2] text-[#842323] font-serif text-xl flex items-center justify-center"
+                  >
+                    {Array.from(art.category?.name || art.title)[0]}
+                  </span>
+                )}
               </div>
             </div>
 
             {/* Micro Caption */}
             <span className="text-xs text-[#404652] font-semibold line-clamp-1 w-full group-hover:text-[#1e40af] transition-colors leading-tight">
-              {isEnglishMode ? art.title : (isBengaliText(art.title) ? art.title : translateTitleToBengali(art.title))}
+              {isEnglishMode ? art.title : translateTitleToBengali(art.title, (art as { titleBn?: string | null }).titleBn)}
             </span>
           </Link>
         ))}

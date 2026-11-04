@@ -17,6 +17,9 @@ export interface FeedCard {
   slug: string;
   title: string;
   summary: string;
+  /** Real Bengali translation of an English story (only from an approved draft) */
+  titleBn: string | null;
+  summaryBn: string | null;
   keyTakeaways: string[];
   factTable: { parameter: string; value: string; relevance: string }[];
   sourceName: string | null;
@@ -83,11 +86,12 @@ export function toFeedCard(a: any): FeedCard {
     slug: a.slug,
     title: a.title,
     summary: a.summary,
+    titleBn: a.titleBn ?? null,
+    summaryBn: a.summaryBn ?? null,
     keyTakeaways: Array.isArray(a.keyTakeaways) ? a.keyTakeaways : [],
+    // Rows are quoted from the story when it is scraped (src/lib/study/extractive.ts)
     factTable: (Array.isArray(a.factTable) ? a.factTable : []).filter(
-      (row: { value?: string }) =>
-        typeof row?.value === "string" &&
-        isFactGrounded(row.value, `${a.title} ${a.summary} ${plainText(a.content)}`)
+      (row: { value?: string; relevance?: string }) => typeof row?.value === "string" && Boolean(row.relevance)
     ),
     sourceName: a.sourceName ?? null,
     sourceUrl: a.sourceUrl ?? null,

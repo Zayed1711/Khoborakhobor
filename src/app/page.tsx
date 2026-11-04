@@ -8,7 +8,7 @@ import { getPublishedArticles, getDateArchiveStatsAction } from "@/actions/artic
 import { getCurrentSession } from "@/actions/auth";
 import { getTrendingHashtagsAction } from "@/actions/search";
 import { prisma } from "@/lib/prisma";
-import { getDailyChallengeQuiz } from "@/lib/quiz/generator";
+import { pickDailyQuiz } from "@/lib/study/daily";
 import { toFeedCard } from "@/lib/feed-card";
 
 export const dynamic = "force-dynamic";
@@ -44,10 +44,10 @@ export default async function Home() {
     console.error("[HOME] Categories error:", e);
   }
 
-  // Daily challenges are built from the full articles on the server; the client only
-  // receives slim feed cards (no bodies, vocabulary or quiz answers).
-  const dailyBnQuiz = getDailyChallengeQuiz({ mode: "bn", articles });
-  const dailyEnQuiz = getDailyChallengeQuiz({ mode: "en", articles });
+  // The daily challenge is one of today's real (extracted) quizzes; the client otherwise
+  // receives slim feed cards with no bodies, vocabulary or quiz answers.
+  const dailyBnQuiz = pickDailyQuiz(articles, "bn");
+  const dailyEnQuiz = pickDailyQuiz(articles, "en");
   const feedCards = articles.map(toFeedCard);
   const capsuleArticles = feedCards.filter((a) => a.isCapsule);
   const trendingHashtags = await getTrendingHashtagsAction();

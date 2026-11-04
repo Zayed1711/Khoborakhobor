@@ -49,90 +49,54 @@ const HEADLINE_REPLACEMENTS: [RegExp, string][] = [
   [/Motorcycle recovered near Turag river; police checking whether it belonged to Tahsif/i, "তুরাগ নদের তীরে মোটরসাইকেল উদ্ধার; তাহসিফের কিনা যাচাই করছে পুলিশ"],
   [/Wedding celebration planned for December or January, but Barsha dies beforehand/i, "ডিসেম্বর-জানুয়ারিতে বিয়ের প্রস্তুতি ছিল, তবে তার আগেই বর্ষার মর্মান্তিক মৃত্যু"],
 
-  // Broad semantic pattern matchers
-  [/\bgovt\b/gi, "সরকার"],
-  [/\belection\b/gi, "নির্বাচন"],
-  [/\bparliament\b/gi, "জাতীয় সংসদ"],
-  [/\binflation\b/gi, "মূল্যস্ফীতি"],
-  [/\bpolice\b/gi, "পুলিশ"],
-  [/\bcourt\b/gi, "আদালত"],
-  [/\bsupreme court\b/gi, "সুপ্রিম কোর্ট"],
-  [/\bhigh court\b/gi, "হাইকোর্ট"],
-  [/\bcentral bank\b/gi, "বাংলাদেশ ব্যাংক"],
-  [/\bbudget\b/gi, "জাতীয় বাজেট"],
-  [/\breserves\b/gi, "বৈদেশিক মুদ্রার রিজার্ভ"],
-  [/\bminister\b/gi, "মন্ত্রী"],
-  [/\bdeath\b/gi, "মৃত্যু"],
-  [/\barrested\b/gi, "গ্রেফতার"],
-  [/\bprotest\b/gi, "বিক্ষোভ ও সমাবেশ"],
-  [/\bsummit\b/gi, "শীর্ষ সম্মেলন"],
-  [/\bdiplomacy\b/gi, "কূটনীতি"],
-  [/\buniversity\b/gi, "বিশ্ববিদ্যালয়"],
+  // Single-word rules (e.g. arrested -> "গ্রেফতার") were removed: they replaced the whole
+  // headline with one word. Only full, hand-written headline translations remain.
 ];
 
 /**
- * Fast contextual Bengali translation of English article headline
+ * Real Bengali headline for an English story, or null when none exists.
+ * Sources, in order: a translation saved on the article (titleBn), then the
+ * hand-written list above. Nothing is templated, so the UI offers a "বাংলা" view
+ * only when a genuine translation exists.
  */
-export function translateTitleToBengali(englishTitle: string): string {
+export function knownBengaliTitle(englishTitle: string, titleBn?: string | null): string | null {
   if (isBengaliText(englishTitle)) return englishTitle;
-
+  if (titleBn && titleBn.trim()) return titleBn.trim();
   const trimmed = englishTitle.trim();
   for (const [regex, bn] of HEADLINE_REPLACEMENTS) {
-    if (regex.test(trimmed)) {
-      return bn;
-    }
+    regex.lastIndex = 0;
+    if (regex.test(trimmed)) return bn;
   }
+  return null;
+}
 
-  // If already customized
-  return `[অনুবাদ] ${trimmed}`;
+/** Bengali headline when one exists, otherwise the original English headline. */
+export function translateTitleToBengali(englishTitle: string, titleBn?: string | null): string {
+  return knownBengaliTitle(englishTitle, titleBn) ?? englishTitle;
 }
 
 /**
- * Generates an academic, fluent Bengali summary & overview from an English article
+ * Bengali summary only when a real translation was saved; otherwise the original.
+ * (This used to return a fixed template that pretended to summarise the story.)
  */
 export function translateSummaryToBengali(
-  englishTitle: string,
+  _englishTitle: string,
   englishSummary: string,
-  categoryName: string = "জাতীয় পরিক্রমা"
+  _categoryName?: string,
+  summaryBn?: string | null
 ): string {
-  if (isBengaliText(englishSummary)) return englishSummary;
-
-  const bnTitle = translateTitleToBengali(englishTitle);
-  const cleanTitle = bnTitle.replace(/^\[অনুবাদ\]\s*/, "");
-
-  return `প্রতিবেদনটির সারসংক্ষেপ: "${cleanTitle}" শীর্ষক এই বিশ্লেষণে সমসাময়িক ${categoryName} ক্ষেত্রের বাস্তব নীতিগত চ্যালেঞ্জ, প্রাতিষ্ঠানিক জবাবদিহিতা ও সার্বিক জাতীয় প্রভাব সম্পর্কে তথ্যনিষ্ঠ পর্যালোচনা তুলে ধরা হয়েছে। বিসিএস ও চাকরির লিখিত পরীক্ষার জন্য এর মূল ঘটনাপ্রবাহ ও নীতিগত প্রভাব অত্যন্ত প্রাসঙ্গিক।`;
+  return summaryBn && summaryBn.trim() ? summaryBn : englishSummary;
 }
 
 /**
- * Renders an educational bilingual Bengali structured content translation
+ * Bengali body only when a real translation was saved; otherwise the original HTML.
+ * (This used to return a template box labelled "Academic Bengali Translation".)
  */
 export function translateContentToBengaliHtml(
   englishContent: string,
-  bnTitle: string,
-  categoryName: string = "জাতীয় পরিক্রমা"
+  _bnTitle?: string,
+  _categoryName?: string,
+  contentBn?: string | null
 ): string {
-  if (isBengaliText(englishContent)) return englishContent;
-
-  const esc = (v: string) =>
-    v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-  const cleanTitle = esc(bnTitle.replace(/^\[অনুবাদ\]\s*/, ""));
-  categoryName = esc(categoryName);
-
-  return `
-    <div class="kk-bilingual-translation-box p-4 bg-[#fbf9f5] border-l-4 border-[#842323] rounded-md my-4 space-y-4">
-      <div class="flex items-center gap-2 pb-2 border-b border-[#eee9df]">
-        <span class="text-xs font-bold uppercase tracking-wider text-[#842323]">প্রাতিষ্ঠানিক বাংলা ভাবানুবাদ (Academic Bengali Translation)</span>
-      </div>
-      <p class="text-sm text-[#2d333e] leading-relaxed font-serif">
-        <strong>মূল প্রেক্ষাপট:</strong> "${cleanTitle}" শীর্ষক আন্তর্জাতিক/ইংরেজি প্রতিবেদনে সমসাময়িক বাস্তব ঘটনাপ্রবাহ ও ${categoryName}-সম্পর্কিত গুরুত্বপূর্ণ তথ্যাবলী তুলে ধরা হয়েছে।
-      </p>
-      <p class="text-sm text-[#2d333e] leading-relaxed font-serif">
-        <strong>বিশ্লেষণ ও প্রভাব:</strong> সংশ্লিষ্ট কর্তৃপক্ষ ও আন্তর্জাতিক অংশীদারদের সাম্প্রতিক পদক্ষেপ, বাজার ও নীতিমালার ওপর এর সরাসরি প্রভাব এবং রাষ্ট্রীয় সংস্কারের ক্ষেত্রে এটি একটি অত্যন্ত গুরুত্বপূর্ণ আলোচ্য বিষয়। বিসিএস লিখিত পরীক্ষার সাম্প্রতিক সাধারণ জ্ঞান ও অনুবাদ অংশে এ ধরনের নিবন্ধ প্রায়শই সংযোজিত হয়।
-      </p>
-      <div class="p-3 bg-white border border-[#ded8cb] rounded text-xs text-[#525a68] leading-relaxed">
-        <strong>শিক্ষার্থী নোট:</strong> মূল ইংরেজি সংস্করণটি পাঠ করতে উপরের <em>"English Original"</em> বোতামে চাপুন এবং কঠিন শব্দের ওপর ক্লিক করে শব্দভাণ্ডার সমৃদ্ধ করুন।
-      </div>
-    </div>
-  `;
+  return contentBn && contentBn.trim() ? contentBn : englishContent;
 }
-

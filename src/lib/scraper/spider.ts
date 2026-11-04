@@ -7,9 +7,9 @@ import { isPublicHttpUrl, assertPublicHttpUrl } from "@/lib/url-safety";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { generateContextualMicroQuiz } from "@/lib/quiz/generator";
-import { evaluateExamRelevance, extractFactTable } from "@/lib/scraper/examFilter";
+import { evaluateExamRelevance } from "@/lib/scraper/examFilter";
 import { extractVocabularyTableRows } from "@/lib/vocabulary-table-engine";
-import { generateScaffoldedEnglishQuiz } from "@/lib/quiz/scaffolded-english-quiz";
+import { cleanArticleBody, extractFacts, extractTakeaways, buildExtractiveQuiz } from "@/lib/study/extractive";
 
 const parser = new Parser({
   headers: {
@@ -945,6 +945,12 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
         results.crawled++;
         const title = extractSafeFeedTitle(item.title);
         if (!title) continue;
+        // Link-out model: readers open the full story at the publisher, so a story
+        // without its own link cannot be offered.
+        if (!item.link || !isPublicHttpUrl(item.link)) {
+          results.skipped++;
+          continue;
+        }
 
         // Check date match
         if (!isDateMatching(item.pubDate || item.isoDate, targetDate)) {
@@ -1013,8 +1019,14 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
           imageUrl = parsed.imageUrl;
         }
 
+        // Drop publisher chrome (share prompts, copyright lines) and repeated paragraphs.
+        // Short stories are skipped below, never padded with invented text.
+        const cleaned = cleanArticleBody(cleanContent);
+        cleanContent = cleaned.html;
+        const bodyText = cleaned.paragraphs.join(" ");
+
         // Quality Gate: Ensure article has sufficient analytical depth (> 250 characters of text)
-        const pureText = cleanContent.replace(/<[^>]+>/g, " ").trim();
+        const pureText = bodyText;
         if (pureText.length < 250) {
           console.log(`[SQA GATEKEEPER] Skipped shallow news with only ${pureText.length} chars: "${title.slice(0, 45)}"`);
           results.skipped++;
@@ -1034,11 +1046,13 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
           item.contentSnippet?.slice(0, 180) ||
           cleanContent.replace(/<[^>]*>/g, " ").slice(0, 180) + "...";
 
-        const takeaways = extractStudentTakeaways(title, cleanContent || summary, categoryName);
-        const factTable = extractFactTable(title, cleanContent || summary, categoryName, source.name);
+        // Study material is quoted from the article itself (src/lib/study/extractive.ts)
+        const takeaways = extractTakeaways(title, summary, bodyText);
+        const factTable = extractFacts(title, bodyText);
+        const extractiveQuiz = buildExtractiveQuiz(title, bodyText);
         const isEnglishNews = !isBengaliText(title);
         let vocabList: { term: string; definition: string; context?: string | null }[] = [];
-        let quizList: { question: string; options: string[]; correctOption: number; explanation?: string }[] = [];
+        let quizList: { question: string; options: string[]; correctOption: number; explanation?: string; sourceSentence?: string }[] = [];
 
         if (isEnglishNews) {
           const vocabRows = extractVocabularyTableRows(title, cleanContent || summary);
@@ -1047,26 +1061,21 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
             definition: `${r.banglaMeaning} | ${r.englishDefinition}`,
             context: r.freshExampleEn,
           }));
-
-          const scaffoldQuizzes = generateScaffoldedEnglishQuiz(title, cleanContent || summary);
-          quizList = scaffoldQuizzes.map((sq) => ({
-            question: sq.question,
-            options: sq.options,
-            correctOption: sq.correctOption,
-            explanation: sq.explanation,
-          }));
         } else {
-          vocabList = extractVocabulary(title + " " + cleanContent);
-          const singleQuiz = generateContextualMicroQuiz(title, cleanContent || summary, categoryName, takeaways);
-          quizList = [singleQuiz];
+          vocabList = extractVocabulary(title + " " + bodyText);
         }
+        // No quiz is better than an unrelated one: only add it when a real sentence supports it
+        quizList = extractiveQuiz ? [extractiveQuiz] : [];
 
 
-        const fallbackImg = CATEGORY_EDITORIAL_IMAGES[targetCategorySlug] || CATEGORY_EDITORIAL_IMAGES["national"];
+        // Only the publisher's own image; no stock photo that looks like it shows this event.
+        // An empty value makes the UI show a plain category placeholder instead.
         const featuredImg =
           imageUrl && (imageUrl.startsWith("http://") || imageUrl.startsWith("https://"))
             ? imageUrl
-            : item.enclosure?.url || fallbackImg;
+            : item.enclosure?.url && /^https?:///.test(item.enclosure.url)
+            ? item.enclosure.url
+            : "";
 
         const finalSlug = `${rawSlug}-${Math.floor(Math.random() * 900 + 100)}`;
 
@@ -1087,14 +1096,16 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
               slug: finalSlug,
               title,
               summary,
-              // Paragraph text came from $(el).text(), which decodes entities, so a feed
-              // containing "&lt;script&gt;" would otherwise become live HTML here.
-              content: sanitizeArticleHtml(cleanContent),
+              // Link-out model: the publisher's full text is read to build the study
+              // material above but is not stored or republished.
+              content: "",
               keyTakeaways: JSON.stringify(takeaways),
               factTable: JSON.stringify(factTable),
               sourceName: source.name,
               sourceUrl: item.link || null,
-              examTags: relevance.suggestedExamTrack || source.examTrack,
+              // The old exam-track strings were the same on most stories, so they carried no information
+              examTags: null,
+              contentOrigin: "scraped",
               featuredImage: featuredImg,
               imageCaption: `উৎস: ${source.name} • বিভাগ: ${categoryName}`,
               publishedAt: articlePublishedDate.toLocaleDateString("bn-BD", {
@@ -1103,7 +1114,7 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
                 year: "numeric",
               }),
               createdAt: articlePublishedDate,
-              readTime: "৩ মিনিট",
+              readTime: `${Math.max(1, Math.round(bodyText.split(/\s+/).length / 180))} মিনিট`,
               isCapsule: true,
               isLead,
               categoryId,
@@ -1131,6 +1142,8 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
                 options: JSON.stringify(q.options),
                 correctOption: q.correctOption,
                 explanation: q.explanation || null,
+                origin: "extracted",
+                sourceSentence: q.sourceSentence || null,
               },
             });
           }

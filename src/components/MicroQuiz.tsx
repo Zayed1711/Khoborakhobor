@@ -10,9 +10,11 @@ interface MicroQuizProps {
   studentId: string;
   isEnglishMode?: boolean;
   onAuthRequired?: () => void;
+  /** Hide the built-in heading and badges when the page already titles the quiz */
+  compact?: boolean;
 }
 
-export default function MicroQuiz({ questions, studentId, isEnglishMode = false, onAuthRequired }: MicroQuizProps) {
+export default function MicroQuiz({ questions, studentId, isEnglishMode = false, onAuthRequired, compact = false }: MicroQuizProps) {
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, number>>({});
   const [results, setResults] = useState<
     Record<string, { isCorrect: boolean; correctOption: number; explanation?: string | null }>
@@ -75,7 +77,8 @@ export default function MicroQuiz({ questions, studentId, isEnglishMode = false,
   const selectedBorder = isEnglishMode ? "bg-blue-50 border-[#1e40af] text-[#1e40af]" : "bg-[#f5ebeb] border-[#842323] text-[#842323]";
 
   return (
-    <div className="my-10 p-5 bg-[#ffffff] border border-[#e2dcd0] rounded-2xl shadow-2xs">
+    <div className={`${compact ? "" : "my-10 "}p-5 bg-[#ffffff] border border-[#e2dcd0] rounded-2xl shadow-2xs`}>
+      {!compact && (
       <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b border-[#ece7dc]">
         <div className="flex items-center gap-2 min-w-0">
           {isEnglishMode ? (
@@ -109,6 +112,7 @@ export default function MicroQuiz({ questions, studentId, isEnglishMode = false,
           </span>
         </div>
       </div>
+      )}
 
       <div className="space-y-6">
         {questions.map((q, idx) => {

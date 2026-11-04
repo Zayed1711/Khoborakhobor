@@ -25,7 +25,7 @@ import { generateContextualMicroQuiz } from "@/lib/quiz/generator";
 import Link from "next/link";
 import { Clock, ArrowLeft, Lightbulb, Highlighter, Check, Edit3, X, Globe, ExternalLink, BookOpen, Volume2, Share2 } from "lucide-react";
 import { useAppMode } from "@/context/LanguageContext";
-import { isBengaliText, translateTitleToBengali, translateSummaryToBengali, translateContentToBengaliHtml } from "@/lib/bilingual";
+import { isBengaliText, knownBengaliTitle, translateSummaryToBengali, translateContentToBengaliHtml } from "@/lib/bilingual";
 import { getNewspaperSourceInfo } from "@/lib/sources";
 
 interface ArticleReaderViewProps {
@@ -90,13 +90,16 @@ export default function ArticleReaderView({
 
   const { mode, isEnglishMode } = useAppMode();
   const isEnglish = !isBengaliText(article.title);
-  const [readerTranslation, setReaderTranslation] = useState(isEnglish && !isEnglishMode);
+  // A Bengali reading view exists only when a real translation of the body was saved
+  const articleBn = article as { titleBn?: string | null; summaryBn?: string | null; contentBn?: string | null };
+  const hasTranslation = isEnglish && Boolean(articleBn.contentBn && articleBn.contentBn.trim());
+  const [readerTranslation, setReaderTranslation] = useState(hasTranslation && !isEnglishMode);
 
   useEffect(() => {
-    if (isEnglish) {
+    if (hasTranslation) {
       setReaderTranslation(!isEnglishMode);
     }
-  }, [isEnglishMode, isEnglish]);
+  }, [isEnglishMode, hasTranslation]);
 
   // Determine if we should present the English Learning experience
   // Determine if we should present the English Learning experience:
@@ -194,21 +197,21 @@ export default function ArticleReaderView({
     setIsDictModalOpen(true);
   };
 
-  const displayTitle = (isEnglish && readerTranslation)
-    ? translateTitleToBengali(article.title)
+  const displayTitle = readerTranslation
+    ? knownBengaliTitle(article.title, articleBn.titleBn) ?? article.title
     : article.title;
 
   const displaySummary = (isEnglish && readerTranslation)
-    ? translateSummaryToBengali(article.title, article.summary, article.category?.name)
+    ? translateSummaryToBengali(article.title, article.summary, article.category?.name, articleBn.summaryBn)
     : article.summary;
 
   const renderedArticleHtml = useMemo(() => {
     let baseHtml = article.content;
     if (isEnglish && readerTranslation) {
-      baseHtml = translateContentToBengaliHtml(article.content, article.title, article.category?.name);
+      baseHtml = translateContentToBengaliHtml(article.content, article.title, article.category?.name, articleBn.contentBn);
     }
     return applyHighlightsToHtml(baseHtml, notes);
-  }, [article.content, article.title, article.category?.name, isEnglish, readerTranslation, notes]);
+  }, [article.content, article.title, article.category?.name, articleBn.contentBn, isEnglish, readerTranslation, notes]);
 
   const sourceInfo = getNewspaperSourceInfo(article.imageCaption, article.title);
 
@@ -321,7 +324,7 @@ export default function ArticleReaderView({
       ? "text-xl sm:text-2xl leading-[2.1]"
       : fontSize === "large"
       ? "text-lg sm:text-xl leading-[1.95]"
-      : "text-base sm:text-[1.125rem] leading-[1.8]";
+      : "text-[17px] sm:text-[1.125rem] leading-[1.8]";
 
   return (
     <div className="min-h-screen bg-[#fbf9f5] flex flex-col font-sans transition-all duration-300 pb-16 md:pb-0">
@@ -435,7 +438,7 @@ export default function ArticleReaderView({
               </div>
 
               {/* Bilingual Reader Switcher for English Articles (Only in Job Prep mode) */}
-              {isEnglish && !isEnglishMode && (
+              {hasTranslation && !isEnglishMode && (
                 <div className="mb-4 p-3 bg-gradient-to-r from-amber-50/80 to-[#fdfbf7] border border-amber-200/90 rounded-xl flex flex-wrap items-center justify-between gap-3 shadow-2xs">
                   <div className="flex items-center gap-2">
                     <Globe className="w-4 h-4 text-[#842323]" />
@@ -565,7 +568,7 @@ export default function ArticleReaderView({
                   setTimeout(() => setToastMessage(""), 2800);
                 }}
               />
-            ) : (
+            ) : article.factTable && article.factTable.length > 0 ? (
               <FactSheetTable
                 factTable={article.factTable}
                 articleSlug={article.slug}
@@ -589,10 +592,10 @@ export default function ArticleReaderView({
                   setTimeout(() => setToastMessage(""), 2800);
                 }}
               />
-            )}
+            ) : null}
 
             {/* Featured Image (Hidden in Focus Mode) */}
-            {!isFocusMode && (
+            {!isFocusMode && article.featuredImage && (
               <figure className="mb-8 rounded-md overflow-hidden bg-[#eee9df] border border-[#e4ded3]">
                 <img
                   src={article.featuredImage}
@@ -605,6 +608,12 @@ export default function ArticleReaderView({
                   </figcaption>
                 )}
               </figure>
+            )}
+
+            {(article as { contentOrigin?: string }).contentOrigin === "summary_only" && (
+              <p className="mb-5 px-4 py-3 rounded-lg bg-[#f7f4ed] border border-[#e4ded3] text-sm text-[#525a68] leading-relaxed">
+                এই খবরের পূর্ণ লেখা সংগ্রহ করা যায়নি, তাই শুধু মূল সারসংক্ষেপ দেখানো হচ্ছে।
+              </p>
             )}
 
             {/* Main Article Body:
@@ -632,7 +641,7 @@ export default function ArticleReaderView({
               </div>
             ) : (
               <article
-                className={`prose prose-neutral max-w-none text-[#23272e] space-y-5 font-serif transition-all duration-200 select-text ${fontClass}`}
+                className={`prose prose-neutral max-w-none text-[#23272e] space-y-5 font-sans transition-all duration-200 select-text ${fontClass}`}
                 dangerouslySetInnerHTML={{ __html: renderedArticleHtml }}
                 onClick={handleArticleClick}
               />

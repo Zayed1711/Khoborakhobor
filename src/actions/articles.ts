@@ -2,9 +2,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { extractStudentTakeaways } from "@/lib/scraper/spider";
-import { generateContextualMicroQuiz, shuffleQuizOptions } from "@/lib/quiz/generator";
-import { extractFactTable } from "@/lib/scraper/examFilter";
+import { shuffleQuizOptions } from "@/lib/quiz/generator";
+import { extractFacts, extractTakeaways, buildExtractiveQuiz, plainText } from "@/lib/study/extractive";
 import { requireAdmin } from "@/lib/guards";
 import { toFeedCard, FeedCard } from "@/lib/feed-card";
 import { sanitizeArticleHtml, textToParagraphHtml } from "@/lib/sanitize-html";
@@ -31,6 +30,7 @@ export interface DateArchiveStats {
 export async function getDateArchiveStatsAction(): Promise<DateArchiveStats> {
   try {
     const articles = await prisma.article.findMany({
+      where: { sourceUrl: { not: null } }, // link-out model: listed stories must link to the original
       select: {
         title: true,
         createdAt: true,
@@ -94,6 +94,7 @@ export async function getArticlesByDateAction(dateKey: string): Promise<FeedCard
 
     const articles = await prisma.article.findMany({
       where: {
+        sourceUrl: { not: null },
         createdAt: {
           gte: startOfDay,
           lte: endOfDay,
@@ -102,7 +103,7 @@ export async function getArticlesByDateAction(dateKey: string): Promise<FeedCard
       include: {
         category: true,
         vocabulary: true,
-        quizQuestions: true,
+        quizQuestions: { where: { origin: { not: "legacy" } } }, // legacy = old template quiz kept only for attempt history
       },
       orderBy: {
         createdAt: "desc",
@@ -112,6 +113,8 @@ export async function getArticlesByDateAction(dateKey: string): Promise<FeedCard
 
     const parsed = articles.map((a) => ({
       ...a,
+      // Link-out model: the publisher's full text is never sent to the browser
+      content: "",
       createdAtIso: a.createdAt instanceof Date ? a.createdAt.toISOString() : new Date(a.createdAt).toISOString(),
       keyTakeaways: safeParseJson(a.keyTakeaways, []),
       factTable: safeParseJson((a as any).factTable, []),
@@ -138,11 +141,12 @@ export async function getArticlesByDateAction(dateKey: string): Promise<FeedCard
 export async function getPublishedArticles(limit: number = 150) {
   try {
     const articles = await prisma.article.findMany({
+      where: { sourceUrl: { not: null } }, // link-out model: listed stories must link to the original
       take: limit,
       include: {
         category: true,
         vocabulary: true,
-        quizQuestions: true,
+        quizQuestions: { where: { origin: { not: "legacy" } } }, // legacy = old template quiz kept only for attempt history
       },
       orderBy: {
         createdAt: "desc",
@@ -151,6 +155,8 @@ export async function getPublishedArticles(limit: number = 150) {
 
     const parsed = articles.map((a) => ({
       ...a,
+      // Link-out model: the publisher's full text is never sent to the browser
+      content: "",
       createdAtIso: a.createdAt instanceof Date ? a.createdAt.toISOString() : new Date(a.createdAt).toISOString(),
       keyTakeaways: safeParseJson(a.keyTakeaways, []),
       factTable: safeParseJson((a as any).factTable, []),
@@ -185,7 +191,7 @@ export async function getArticleBySlug(rawSlug: string) {
       include: {
         category: true,
         vocabulary: true,
-        quizQuestions: true,
+        quizQuestions: { where: { origin: { not: "legacy" } } }, // legacy = old template quiz kept only for attempt history
       },
     });
 
@@ -195,7 +201,7 @@ export async function getArticleBySlug(rawSlug: string) {
         include: {
           category: true,
           vocabulary: true,
-          quizQuestions: true,
+          quizQuestions: { where: { origin: { not: "legacy" } } }, // legacy = old template quiz kept only for attempt history
         },
       });
     }
@@ -204,7 +210,8 @@ export async function getArticleBySlug(rawSlug: string) {
 
     return {
       ...article,
-      content: sanitizeArticleHtml(article.content),
+      // Link-out model: readers open the full story on the publisher's site
+      content: "",
       keyTakeaways: safeParseJson(article.keyTakeaways, []),
       factTable: safeParseJson((article as any).factTable, []),
       examTagsList: article.examTags ? article.examTags.split(",").map((t) => t.trim()) : [],
@@ -225,6 +232,7 @@ export async function getArticlesByCategory(categorySlug: string) {
   try {
     const articles = await prisma.article.findMany({
       where: {
+        sourceUrl: { not: null },
         category: {
           slug: categorySlug,
         },
@@ -239,6 +247,7 @@ export async function getArticlesByCategory(categorySlug: string) {
 
     return articles.map((a) => ({
       ...a,
+      content: "",
       keyTakeaways: safeParseJson(a.keyTakeaways, []),
     }));
   } catch (err) {
@@ -258,7 +267,8 @@ export async function ingestArticleAction(formData: FormData) {
   const summary = (formData.get("summary") as string)?.trim();
   const content = (formData.get("content") as string)?.trim();
   const imageUrl = (formData.get("imageUrl") as string)?.trim();
-  const examTags = (formData.get("examTags") as string)?.trim() || "বিসিএস, সাধারণ জ্ঞান";
+  // Tags only when the editor sets them; a blanket default carried no information
+  const examTags = (formData.get("examTags") as string)?.trim() || null;
   const rawKeyTakeaways = formData.get("keyTakeaways") as string;
   const isCapsule = formData.get("isCapsule") === "true";
   const isLead = formData.get("isLead") === "true";
@@ -297,11 +307,11 @@ export async function ingestArticleAction(formData: FormData) {
 
   const takeawaysList = rawKeyTakeaways && rawKeyTakeaways.trim()
     ? rawKeyTakeaways.split("\n").map((t) => t.trim()).filter(Boolean)
-    : extractStudentTakeaways(title, content || summary, category.name);
+    : extractTakeaways(title, summary, plainText(content || summary));
 
   const sourceName = (formData.get("sourceName") as string)?.trim() || "খবরাখবর বিশেষ সংকলন";
   const sourceUrl = (formData.get("sourceUrl") as string)?.trim() || null;
-  const factTable = extractFactTable(title, content || summary, category.name, sourceName);
+  const factTable = extractFacts(title, plainText(content || summary));
 
   const article = await prisma.article.create({
     data: {
@@ -314,9 +324,9 @@ export async function ingestArticleAction(formData: FormData) {
       sourceName,
       sourceUrl,
       examTags,
-      featuredImage:
-        imageUrl ||
-        "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=800&q=80",
+      contentOrigin: "edited",
+      // No stock photo stand-in: an empty value shows a plain category placeholder
+      featuredImage: imageUrl || "",
       imageCaption: `উৎস: ${sourceName} • বিভাগ: ${category.name}`,
       publishedAt: "এইমাত্র প্রকাশিত",
       readTime: "৩ মিনিট",
@@ -354,16 +364,21 @@ export async function ingestArticleAction(formData: FormData) {
       },
     });
   } else {
-    const autoQuiz = generateContextualMicroQuiz(title, content, category.name || "জাতীয় পরিক্রমা", takeawaysList);
-    await prisma.quizQuestion.create({
-      data: {
-        articleId: article.id,
-        question: autoQuiz.question,
-        options: JSON.stringify(autoQuiz.options),
-        correctOption: autoQuiz.correctOption,
-        explanation: autoQuiz.explanation,
-      },
-    });
+    // Only build a quiz when a sentence in the article supports the answer
+    const autoQuiz = buildExtractiveQuiz(title, plainText(content || summary));
+    if (autoQuiz) {
+      await prisma.quizQuestion.create({
+        data: {
+          articleId: article.id,
+          question: autoQuiz.question,
+          options: JSON.stringify(autoQuiz.options),
+          correctOption: autoQuiz.correctOption,
+          explanation: autoQuiz.explanation,
+          origin: "extracted",
+          sourceSentence: autoQuiz.sourceSentence,
+        },
+      });
+    }
   }
 
   revalidatePath("/");

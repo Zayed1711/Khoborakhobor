@@ -11,7 +11,7 @@ import {
 import ShareStudyModal from "./ShareStudyModal";
 import { submitQuizAnswerAction } from "@/actions/student";
 import { useLanguage } from "@/context/LanguageContext";
-import { isBengaliText, translateTitleToBengali, translateSummaryToBengali } from "@/lib/bilingual";
+import { isBengaliText, knownBengaliTitle, translateSummaryToBengali } from "@/lib/bilingual";
 import { getNewspaperSourceInfo } from "@/lib/sources";
 
 interface SocialFeedCardProps {
@@ -20,6 +20,8 @@ interface SocialFeedCardProps {
     slug: string;
     title: string;
     summary: string;
+    titleBn?: string | null;
+    summaryBn?: string | null;
     content?: string;
     keyTakeaways?: string[];
     factTable?: { parameter: string; value: string; relevance: string }[];
@@ -59,17 +61,20 @@ export default function SocialFeedCard({
 
   const { language } = useLanguage();
   const isEnglish = !isBengaliText(article.title);
-  const [showTranslation, setShowTranslation] = useState(isEnglish && language === "bn");
+  // Offer a Bengali view only when a genuine translation exists; never a template.
+  const bengaliTitle = isEnglish ? knownBengaliTitle(article.title, article.titleBn) : null;
+  const hasTranslation = Boolean(bengaliTitle);
+  const [showTranslation, setShowTranslation] = useState(hasTranslation && language === "bn");
 
   useEffect(() => {
-    if (isEnglish) {
+    if (hasTranslation) {
       setShowTranslation(language === "bn");
     }
-  }, [language, isEnglish]);
+  }, [language, hasTranslation]);
 
-  const displayTitle = (isEnglish && showTranslation) ? translateTitleToBengali(article.title) : article.title;
-  const displaySummary = (isEnglish && showTranslation)
-    ? translateSummaryToBengali(article.title, article.summary, article.category?.name)
+  const displayTitle = showTranslation && bengaliTitle ? bengaliTitle : article.title;
+  const displaySummary = showTranslation
+    ? translateSummaryToBengali(article.title, article.summary, article.category?.name, article.summaryBn)
     : article.summary;
 
   const sourceInfo = getNewspaperSourceInfo(article.imageCaption, article.title);
@@ -174,8 +179,8 @@ export default function SocialFeedCard({
 
       {/* 2. Content & Headline Body */}
       <div className="p-4 sm:p-5 pt-3.5 space-y-3">
-        {/* Bilingual Translation Toggle for English Articles */}
-        {isEnglish && (
+        {/* Bilingual toggle: only for English stories that have a real Bengali headline */}
+        {hasTranslation && (
           <div className="flex items-center justify-between bg-[#fbf9f5] border border-[#e2dcd0] p-1.5 px-3 rounded-lg text-xs">
             <span className="font-medium text-[#717887] text-xs flex items-center gap-1.5">
               <Globe className="w-3.5 h-3.5 text-[#842323]" />

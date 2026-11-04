@@ -1,9 +1,25 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
+import { Anek_Bangla, Hind_Siliguri } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/context/LanguageContext";
 import PomodoroWidget from "@/components/PomodoroWidget";
 import GamifiedOnboardingTour from "@/components/GamifiedOnboardingTour";
+
+// Bengali type pairing chosen by the team: Anek Bangla for headlines, Hind Siliguri for text.
+// next/font self-hosts both, so no request goes to Google and text does not jump while loading.
+const headingFont = Anek_Bangla({
+  subsets: ["bengali", "latin"],
+  variable: "--font-heading",
+  display: "swap",
+});
+
+const bodyFont = Hind_Siliguri({
+  subsets: ["bengali", "latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-body",
+  display: "swap",
+});
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -46,7 +62,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="bn" className="h-full antialiased" suppressHydrationWarning>
+    <html lang="bn" className={`h-full antialiased ${headingFont.variable} ${bodyFont.variable}`} suppressHydrationWarning>
       <head>
         <Script
           id="theme-initializer"
@@ -63,7 +79,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-full flex flex-col bg-[#f9f8f5] text-[#1f2328] relative">
+      <body className="min-h-full flex flex-col bg-[#f9f8f5] text-[#1f2328] relative font-sans">
         <LanguageProvider>
           {children}
           <PomodoroWidget />

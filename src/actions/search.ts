@@ -43,6 +43,7 @@ export async function searchArticlesAction(query: string): Promise<SearchResultI
     const executeQuery = async (term: string) => {
       const articles = await prisma.article.findMany({
         where: {
+          sourceUrl: { not: null },
           OR: [
             { title: { contains: term } },
             { summary: { contains: term } },
@@ -118,6 +119,7 @@ export async function getTrendingHashtagsAction(): Promise<TrendingHashtagsData>
         bnTopics.map(async (item) => {
           const count = await prisma.article.count({
             where: {
+              sourceUrl: { not: null },
               OR: [
                 { title: { contains: item.query } },
                 { summary: { contains: item.query } },
@@ -138,6 +140,7 @@ export async function getTrendingHashtagsAction(): Promise<TrendingHashtagsData>
         enTopics.map(async (item) => {
           const count = await prisma.article.count({
             where: {
+              sourceUrl: { not: null },
               OR: [
                 { title: { contains: item.query } },
                 { summary: { contains: item.query } },

@@ -73,6 +73,17 @@ model Article {
   isBreaking    Boolean   @default(false)
   isLead        Boolean   @default(false)
   isCapsule     Boolean   @default(false) // Daily 5-min briefing feature
+
+  // Content integrity: where the body text came from. Never show generated text as reporting.
+  //   scraped      = text taken from the publisher
+  //   summary_only = publisher text could not be fetched; only the real summary is kept
+  //   edited       = written or edited by our editors in the desk
+  contentOrigin String    @default("scraped")
+  // Real translation of an English story, filled only from an approved StudyDraft
+  titleBn       String?
+  summaryBn     String?
+  contentBn     String?
+  studyDrafts   StudyDraft[]
   
   categoryId    String
   category      Category  @relation(fields: [categoryId], references: [id])
@@ -125,6 +136,9 @@ model QuizQuestion {
   options       String    // JSON array of 4 multiple-choice options
   correctOption Int       // 0, 1, 2, or 3
   explanation   String?   // Why this is the correct answer
+  // extracted = built from a sentence in the article; generated = from an approved StudyDraft
+  origin        String    @default("extracted")
+  sourceSentence String?  // The article sentence that proves the answer
   
   attempts      QuizAttempt[]
 }
@@ -231,3 +245,24 @@ model NewsletterSubscriber {
   createdAt DateTime @default(now())
 }
 
+
+// -------------------------------------------------------------
+// 10. Generated study material awaiting editorial review
+// -------------------------------------------------------------
+// Optional Claude-generated quiz / takeaways / translation. Nothing here is shown to
+// students until an admin approves it; approval copies it onto the article.
+model StudyDraft {
+  id         String   @id @default(cuid())
+  articleId  String
+  article    Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  kind       String   // "study_pack" (quiz + takeaways) or "translation"
+  payload    String   // JSON
+  model      String
+  status     String   @default("pending") // pending, approved, rejected
+  reviewNote String?
+  createdAt  DateTime @default(now())
+  reviewedAt DateTime?
+
+  @@index([status])
+  @@index([articleId])
+}

@@ -11,7 +11,9 @@
     "scrape": "node scripts/scrape_real_news.js",
     "backup": "node scripts/backup_db.js",
     "backup:stats": "node scripts/backup_db.js --stats",
-    "lint": "eslint"
+    "lint": "eslint",
+    "check:content": "node scripts/check_content_integrity.js",
+    "fix:content": "node scripts/content_integrity_cleanup.js"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

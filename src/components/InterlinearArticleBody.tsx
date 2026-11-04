@@ -61,7 +61,7 @@ export default function InterlinearArticleBody({
       ? "text-xl sm:text-2xl leading-[2.1]"
       : fontSize === "large"
       ? "text-lg sm:text-xl leading-[1.95]"
-      : "text-base sm:text-lg leading-[1.85]";
+      : "text-[17px] sm:text-lg leading-[1.85]";
 
   const handleWordClick = (word: string) => {
     if (!word || !onWordClick) return;

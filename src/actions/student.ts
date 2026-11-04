@@ -472,7 +472,7 @@ export async function saveMarkerHighlightAction(
 // -------------------------------------------------------------
 export async function getDailyCapsuleArticles() {
   let articles = await prisma.article.findMany({
-    where: { isCapsule: true },
+    where: { isCapsule: true, sourceUrl: { not: null } },
     include: {
       category: true,
       vocabulary: true,
@@ -483,6 +483,7 @@ export async function getDailyCapsuleArticles() {
 
   if (articles.length < 4) {
     articles = await prisma.article.findMany({
+      where: { sourceUrl: { not: null } },
       include: {
         category: true,
         vocabulary: true,
@@ -494,6 +495,7 @@ export async function getDailyCapsuleArticles() {
 
   return articles.map((a) => ({
     ...a,
+    content: "", // link-out model
     keyTakeaways: safeParseJson<string[]>(a.keyTakeaways, []),
   }));
 }

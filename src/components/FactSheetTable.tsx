@@ -80,7 +80,7 @@ export default function FactSheetTable({
     `--------------------------------------------------`,
     ...factTable.map((row, i) => {
       const tier = ROW_TIER_STYLES[i % ROW_TIER_STYLES.length];
-      return `• ${row.parameter}: ${row.value}\n  └ গুরুত্ব: ${row.relevance}`;
+      return `• ${row.parameter}: ${row.value}\n  └ সূত্র বাক্য: ${row.relevance}`;
     }),
     `--------------------------------------------------`,
     `উৎস: ${sourceName || "খবরাখবর একাডেমিক সংকলন"}`,
@@ -190,9 +190,9 @@ export default function FactSheetTable({
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-[#eae4d8] bg-[#faf6ee] text-xs font-bold uppercase tracking-wider text-[#525a68]">
-              <th className="py-2.5 px-4 sm:px-5 w-1/4">ক্ষেত্র / সূচক</th>
-              <th className="py-2.5 px-4 sm:px-5 w-5/12 text-[#1c1d21]">সুনির্দিষ্ট তথ্য ও পরিসংখ্যান</th>
-              <th className="py-2.5 px-4 sm:px-5 w-1/3">পরীক্ষার প্রাসঙ্গিকতা</th>
+              <th className="py-2.5 px-4 sm:px-5 w-1/4">ধরন</th>
+              <th className="py-2.5 px-4 sm:px-5 w-1/4 text-[#1c1d21]">তথ্য</th>
+              <th className="py-2.5 px-4 sm:px-5 w-1/2">প্রতিবেদনের যে বাক্য থেকে নেওয়া</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#ece6db] text-xs sm:text-[13px]">
@@ -211,9 +211,6 @@ export default function FactSheetTable({
                       </div>
                       <div>
                         <span className="text-[#1c1d21] font-bold block">{row.parameter}</span>
-                        <span className="text-xs text-[#717887] font-normal block sm:hidden">
-                          {tier.label}
-                        </span>
                       </div>
                     </div>
                   </td>
@@ -225,7 +222,7 @@ export default function FactSheetTable({
                   <td className="py-3 px-4 sm:px-5 text-[#5e6675] leading-relaxed align-top">
                     <div className="flex items-center gap-1.5 text-xs text-[#4b5563]">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#842323] shrink-0" />
-                      <span className="italic">{row.relevance}</span>
+                      <span>“{row.relevance}”</span>
                     </div>
                   </td>
                 </tr>
@@ -240,7 +237,7 @@ export default function FactSheetTable({
         <Lightbulb className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
         <div className="text-xs text-[#524b3a] leading-relaxed">
           <span className="font-bold text-[#842323]">পরীক্ষার প্রস্তুতিতে যেভাবে ব্যবহার করবেন: </span>
-          বিসিএস লিখিত পরীক্ষায় বাংলাদেশ ও আন্তর্জাতিক বিষয়াবলিতে কিংবা ইংরেজি রচনায় (Essay) এই সুনির্দিষ্ট উপাত্ত, প্রতিষ্ঠান ও সাল ভূমিকা বা উপসংহারে উদ্ধৃতি (Quotation) হিসেবে জুড়ে দিলে খাতায় উচ্চ নম্বর প্রাপ্তি নিশ্চিত হয়।
+          প্রতিটি তথ্য এই প্রতিবেদন থেকে হুবহু নেওয়া। লিখিত উত্তরে বা রচনায় উদাহরণ হিসেবে ব্যবহার করতে পারেন; ব্যবহারের সময় মূল পত্রিকার নাম সূত্র হিসেবে উল্লেখ করুন।
         </div>
       </div>
 

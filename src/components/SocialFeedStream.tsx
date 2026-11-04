@@ -211,7 +211,7 @@ export default function SocialFeedStream({
               <div className="grid grid-cols-1 gap-1.5">
                 {activeQuiz.options?.map((opt: string, idx: number) => {
                   const isSelected = mobileQuizSelected === idx;
-                  const isCorrect = idx === activeQuiz.correctIndex;
+                  const isCorrect = idx === activeQuiz.correctOption;
                   let btnStyle = "border-[#ded8cb] bg-[#faf8f4] hover:bg-[#f4efe4] text-[#1c1d21]";
 
                   if (mobileQuizAnswered) {
