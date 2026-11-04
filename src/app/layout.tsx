@@ -1,22 +1,23 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Anek_Bangla, Hind_Siliguri } from "next/font/google";
+import { Galada, Noto_Sans_Bengali } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/context/LanguageContext";
 import PomodoroWidget from "@/components/PomodoroWidget";
 import GamifiedOnboardingTour from "@/components/GamifiedOnboardingTour";
 
-// Bengali type pairing chosen by the team: Anek Bangla for headlines, Hind Siliguri for text.
-// next/font self-hosts both, so no request goes to Google and text does not jump while loading.
-const headingFont = Anek_Bangla({
+// Bengali type pairing chosen by the team: Galada (calligraphic) for headlines,
+// Noto Sans Bengali for all other text. next/font self-hosts both, so no request
+// goes to Google and text does not jump while loading.
+const headingFont = Galada({
   subsets: ["bengali", "latin"],
+  weight: "400", // Galada has a single weight; see the font-synthesis rule in globals.css
   variable: "--font-heading",
   display: "swap",
 });
 
-const bodyFont = Hind_Siliguri({
+const bodyFont = Noto_Sans_Bengali({
   subsets: ["bengali", "latin"],
-  weight: ["400", "500", "600", "700"],
   variable: "--font-body",
   display: "swap",
 });
