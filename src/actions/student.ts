@@ -2,7 +2,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
+import { requireAdmin, requireStudent, canReadStudent, getSessionStudent, toPublicStudent } from "@/lib/guards";
+import { writeSession } from "@/lib/session";
 
 function safeParseJson<T>(value: any, fallback: T): T {
   if (!value) return fallback;
@@ -33,7 +34,8 @@ export async function getArticleVocabulary(articleSlug: string) {
   });
 }
 
-export async function saveWordToBankAction(studentId: string, termId: string) {
+export async function saveWordToBankAction(claimedStudentId: string, termId: string) {
+  const studentId = (await requireStudent(claimedStudentId)).id;
   const existing = await prisma.savedWord.findUnique({
     where: {
       studentId_termId: {
@@ -65,15 +67,17 @@ export async function saveWordToBankAction(studentId: string, termId: string) {
 }
 
 export async function toggleWordMasteredAction(savedWordId: string, mastered: boolean) {
-  await prisma.savedWord.update({
-    where: { id: savedWordId },
-    data: { mastered },
+  const student = await requireStudent();
+  await prisma.savedWord.updateMany({
+    where: { id: savedWordId, studentId: student.id },
+    data: { mastered: Boolean(mastered) },
   });
   revalidatePath("/saved");
   return { success: true };
 }
 
-export async function resetWordBankProgressAction(studentId: string) {
+export async function resetWordBankProgressAction(claimedStudentId: string) {
+  const studentId = (await requireStudent(claimedStudentId)).id;
   await prisma.savedWord.updateMany({
     where: { studentId },
     data: { mastered: false },
@@ -83,6 +87,7 @@ export async function resetWordBankProgressAction(studentId: string) {
 }
 
 export async function getStudentWordBank(studentId: string) {
+  if (!(await canReadStudent(studentId))) return [];
   const words = await prisma.savedWord.findMany({
     where: { studentId },
     include: {
@@ -137,6 +142,7 @@ export async function submitQuizAnswerAction(
   const isCorrect = question.correctOption === chosenOption;
 
   if (studentId) {
+    studentId = (await requireStudent(studentId)).id;
     await prisma.quizAttempt.create({
       data: {
         studentId,
@@ -170,6 +176,9 @@ export async function submitQuizAnswerAction(
 // 3. Quiz Performance & Weakness Analytics Service
 // -------------------------------------------------------------
 export async function getStudentQuizAnalytics(studentId: string) {
+  if (!(await canReadStudent(studentId))) {
+    throw new Error("অননুমোদিত অ্যাক্সেস।");
+  }
   const attempts = await prisma.quizAttempt.findMany({
     where: { studentId },
     include: {
@@ -250,6 +259,7 @@ export async function getStudentQuizAnalytics(studentId: string) {
 // 4. Cloud Study Notebook & Personal Highlighting
 // -------------------------------------------------------------
 export async function getArticleStudyNotes(studentId: string, articleSlug: string) {
+  if (!(await canReadStudent(studentId))) return [];
   const article = await prisma.article.findUnique({
     where: { slug: articleSlug },
     select: { id: true },
@@ -267,11 +277,12 @@ export async function getArticleStudyNotes(studentId: string, articleSlug: strin
 }
 
 export async function createStudyNoteAction(
-  studentId: string,
+  claimedStudentId: string,
   articleSlug: string,
   quoteText: string,
   memo?: string
 ) {
+  const studentId = (await requireStudent(claimedStudentId)).id;
   const article = await prisma.article.findUnique({
     where: { slug: articleSlug },
     select: { id: true },
@@ -306,8 +317,9 @@ export async function createStudyNoteAction(
 }
 
 export async function deleteStudyNoteAction(noteId: string, articleSlug?: string) {
-  await prisma.studyNote.delete({
-    where: { id: noteId },
+  const student = await requireStudent();
+  await prisma.studyNote.deleteMany({
+    where: { id: noteId, studentId: student.id },
   });
 
   if (articleSlug) {
@@ -318,12 +330,13 @@ export async function deleteStudyNoteAction(noteId: string, articleSlug?: string
 }
 
 export async function saveCustomDictionaryTermAction(
-  studentId: string,
+  claimedStudentId: string,
   articleSlug: string,
   term: string,
   definition: string,
   context?: string
 ) {
+  const studentId = (await requireStudent(claimedStudentId)).id;
   const article = await prisma.article.findUnique({
     where: { slug: articleSlug },
     select: { id: true },
@@ -378,10 +391,11 @@ export async function saveCustomDictionaryTermAction(
 }
 
 export async function saveArticleSummaryReflectionAction(
-  studentId: string,
+  claimedStudentId: string,
   articleSlug: string,
   summaryText: string
 ) {
+  const studentId = (await requireStudent(claimedStudentId)).id;
   if (!summaryText.trim()) {
     throw new Error("সারসংক্ষেপ খালি হতে পারে না।");
   }
@@ -410,12 +424,13 @@ export async function saveArticleSummaryReflectionAction(
 }
 
 export async function saveMarkerHighlightAction(
-  studentId: string,
+  claimedStudentId: string,
   articleSlug: string,
   quoteText: string,
   colorName: "হলুদ মার্কার" | "সবুজ মার্কার" | "বেগুনি মার্কার",
   memo?: string
 ) {
+  const studentId = (await requireStudent(claimedStudentId)).id;
   const article = await prisma.article.findUnique({
     where: { slug: articleSlug },
     select: { id: true },
@@ -487,18 +502,19 @@ export async function getDailyCapsuleArticles() {
 // 6. Student Identity, Profiles & Track Switcher
 // -------------------------------------------------------------
 export async function getAllStudentsAction() {
-  return await prisma.student.findMany({
+  await requireAdmin();
+  const students = await prisma.student.findMany({
     orderBy: { name: "asc" },
   });
+  return students.map((s) => toPublicStudent(s));
 }
 
+/** Admin-only: impersonate a student (replaces the admin's own session). */
 export async function switchActiveStudentAction(studentId: string) {
-  const cookieStore = await cookies();
-  cookieStore.set("khobor_student_id", studentId, {
-    path: "/",
-    sameSite: "lax",
-    httpOnly: true,
-  });
+  await requireAdmin();
+  const student = await prisma.student.findUnique({ where: { id: studentId }, select: { id: true, role: true } });
+  if (!student) throw new Error("ব্যবহারকারী পাওয়া যায়নি।");
+  await writeSession(student.id, student.role === "admin" ? "admin" : "student");
 
   revalidatePath("/");
   revalidatePath("/saved");
@@ -507,13 +523,14 @@ export async function switchActiveStudentAction(studentId: string) {
 }
 
 export async function updateStudentProfileAction(
-  studentId: string,
+  claimedStudentId: string,
   data: {
     name: string;
     targetTrack: string;
     institution: string;
   }
 ) {
+  const studentId = (await requireStudent(claimedStudentId)).id;
   const updated = await prisma.student.update({
     where: { id: studentId },
     data: {
@@ -525,21 +542,12 @@ export async function updateStudentProfileAction(
 
   revalidatePath("/");
   revalidatePath("/saved");
-  return updated;
+  return toPublicStudent(updated);
 }
 
+/** The logged-in student for this request (without the password hash), or null. */
 export async function getActiveStudent() {
-  const cookieStore = await cookies();
-  const cookieId = cookieStore.get("khobor_student_id")?.value;
-
-  if (cookieId) {
-    const student = await prisma.student.findUnique({
-      where: { id: cookieId },
-    });
-    if (student) return student;
-  }
-
-  return null;
+  return getSessionStudent();
 }
 
 // -------------------------------------------------------------
@@ -633,6 +641,7 @@ export async function getStudentActivityStatsAction(studentId?: string) {
     targetId = active?.id;
   }
   if (!targetId) return null;
+  if (!(await canReadStudent(targetId))) return null;
 
   const student = await prisma.student.findUnique({
     where: { id: targetId },
@@ -706,6 +715,7 @@ export async function getStudentStudyWrappedAction(studentId?: string) {
     targetId = active?.id;
   }
   if (!targetId) return null;
+  if (!(await canReadStudent(targetId))) return null;
 
   let telemetry = await prisma.studyTelemetry.findUnique({
     where: { userId: targetId },

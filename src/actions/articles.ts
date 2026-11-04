@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { extractStudentTakeaways } from "@/lib/scraper/spider";
 import { generateContextualMicroQuiz, shuffleQuizOptions } from "@/lib/quiz/generator";
 import { extractFactTable } from "@/lib/scraper/examFilter";
+import { requireAdmin } from "@/lib/guards";
+import { sanitizeArticleHtml, textToParagraphHtml } from "@/lib/sanitize-html";
 
 function safeParseJson<T>(value: any, fallback: T): T {
   if (!value) return fallback;
@@ -200,6 +202,7 @@ export async function getArticleBySlug(rawSlug: string) {
 
     return {
       ...article,
+      content: sanitizeArticleHtml(article.content),
       keyTakeaways: safeParseJson(article.keyTakeaways, []),
       factTable: safeParseJson((article as any).factTable, []),
       examTagsList: article.examTags ? article.examTags.split(",").map((t) => t.trim()) : [],
@@ -246,6 +249,8 @@ export async function getArticlesByCategory(categorySlug: string) {
 // Streamlined Content Ingestion Desk Action
 // -------------------------------------------------------------
 export async function ingestArticleAction(formData: FormData) {
+  await requireAdmin();
+
   const title = (formData.get("title") as string)?.trim();
   const categorySlug = formData.get("categorySlug") as string;
   const summary = (formData.get("summary") as string)?.trim();
@@ -301,7 +306,7 @@ export async function ingestArticleAction(formData: FormData) {
       title,
       slug: `${slug}-${Math.floor(Math.random() * 1000)}`,
       summary,
-      content: content.startsWith("<p>") ? content : `<p>${content}</p>`,
+      content: content && content.startsWith("<") ? sanitizeArticleHtml(content) : textToParagraphHtml(content || summary),
       keyTakeaways: JSON.stringify(takeawaysList),
       factTable: JSON.stringify(factTable),
       sourceName,

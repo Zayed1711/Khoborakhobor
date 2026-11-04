@@ -7,11 +7,12 @@ export const maxDuration = 120;
 
 export async function POST(req: NextRequest) {
   try {
-    // Basic session guard (Admin or authenticated session check)
     const session = await getCurrentSession();
     if (session.role !== "admin") {
-      // In local dev or command center, allow if configured or reject unauthorized
-      // For ease of administration on VPS command center:
+      return NextResponse.json(
+        { success: false, message: "অননুমোদিত অ্যাক্সেস।" },
+        { status: 401 }
+      );
     }
 
     const body = (await req.json().catch(() => ({}))) as SpiderOptions;

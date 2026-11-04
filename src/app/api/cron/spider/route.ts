@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runNewsSpiderWithDateFilter } from "@/lib/scraper/spider";
 import { revalidatePath } from "next/cache";
+import { safeEqual } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -20,13 +21,13 @@ function isAuthorized(req: NextRequest): boolean {
 
     // 1. Check Bearer Token (Standard Vercel Cron behavior)
     const authHeader = req.headers.get("authorization");
-    if (authHeader && authHeader === `Bearer ${cronSecret}`) {
+    if (authHeader && safeEqual(authHeader, `Bearer ${cronSecret}`)) {
       return true;
     }
 
     // 2. Check query parameter ?secret=
     const secretParam = req.nextUrl.searchParams.get("secret");
-    if (secretParam && secretParam === cronSecret) {
+    if (secretParam && safeEqual(secretParam, cronSecret)) {
       return true;
     }
 

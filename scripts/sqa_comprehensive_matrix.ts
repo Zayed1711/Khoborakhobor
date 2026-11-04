@@ -654,10 +654,11 @@ async function runTestSuite() {
       const { requestMagicLinkAction, verifyMagicLinkAction } = await import('../src/actions/auth');
       const testEmail = `magic.student.${Date.now()}@gmail.com`;
       const magicRes = await requestMagicLinkAction(testEmail);
-      const hasToken = magicRes.success && typeof magicRes.token === 'string';
-      const verifyRes = await verifyMagicLinkAction(magicRes.token || '');
-      const passed = hasToken && verifyRes.success && verifyRes.student?.email === testEmail;
-      recordTest('Marketing & Auth Gate', 'In-App Webview Fix: Email Magic Link Generation & 1-Click Verification', passed, performance.now() - t0);
+      // Security: the token must never be returned to the caller.
+      const tokenNotLeaked = !('token' in magicRes) && !magicRes.magicUrl;
+      const bogusVerify = await verifyMagicLinkAction('not-a-real-token');
+      const passed = tokenNotLeaked && !bogusVerify.success;
+      recordTest('Marketing & Auth Gate', 'Magic Link: token is not exposed to the requester', passed, performance.now() - t0);
     } catch (e: any) {
       recordTest('Marketing & Auth Gate', 'In-App Webview Fix: Email Magic Link Generation & 1-Click Verification', false, performance.now() - t0, e.message);
     }

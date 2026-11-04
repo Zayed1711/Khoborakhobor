@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getCurrentSession } from "@/actions/auth";
+import { requireAdmin, toPublicStudent } from "@/lib/guards";
 import { hashPassword } from "@/lib/auth-crypto";
 import { revalidatePath } from "next/cache";
 
@@ -11,17 +11,6 @@ function safeRevalidateAdmin() {
   } catch {
     // Graceful fallback for test runner / background execution
   }
-}
-
-/**
- * Ensure the requester is an authorized administrator
- */
-async function requireAdmin() {
-  const session = await getCurrentSession();
-  if (session.role !== "admin") {
-    throw new Error("অননুমোদিত অ্যাক্সেস! শুধুমাত্র অ্যাডমিনিস্ট্রেটরদের এই অনুমতি রয়েছে।");
-  }
-  return session;
 }
 
 export interface AdminUserFilters {
@@ -171,7 +160,7 @@ export async function getAdminUserDetailAction(studentId: string) {
       return { success: false, error: "ব্যবহারকারী অ্যাকাউন্ট পাওয়া যায়নি।" };
     }
 
-    return { success: true, user };
+    return { success: true, user: toPublicStudent(user) };
   } catch (err: any) {
     return { success: false, error: err.message };
   }
@@ -193,7 +182,7 @@ export async function updateUserStatusAction(studentId: string, status: "active"
     return {
       success: true,
       message: `অ্যাকাউন্টের স্ট্যাটাস পরিবর্তিত হয়ে "${status}" হয়েছে।`,
-      user: updated,
+      user: toPublicStudent(updated),
     };
   } catch (err: any) {
     return { success: false, error: err.message || "স্ট্যাটাস পরিবর্তন করা যায়নি।" };
@@ -216,7 +205,7 @@ export async function updateUserRoleAction(studentId: string, role: "student" | 
     return {
       success: true,
       message: `ব্যবহারকারীর রোল "${role}" হিসেবে হালনাগাদ করা হয়েছে।`,
-      user: updated,
+      user: toPublicStudent(updated),
     };
   } catch (err: any) {
     return { success: false, error: err.message || "রোল পরিবর্তন করা যায়নি।" };
@@ -271,7 +260,7 @@ export async function updateUserDetailsAction(
     return {
       success: true,
       message: "ব্যবহারকারীর তথ্য সফলভাবে হালনাগাদ করা হয়েছে।",
-      user: updated,
+      user: toPublicStudent(updated),
     };
   } catch (err: any) {
     return { success: false, error: err.message || "তথ্য হালনাগাদ ব্যর্থ হয়েছে।" };
@@ -342,7 +331,7 @@ export async function adminCreateUserAction(data: {
     return {
       success: true,
       message: `"${newUser.name}"-এর নতুন অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে।`,
-      user: newUser,
+      user: toPublicStudent(newUser),
     };
   } catch (err: any) {
     return { success: false, error: err.message || "নতুন ব্যবহারকারী তৈরি করা সম্ভব হয়নি।" };

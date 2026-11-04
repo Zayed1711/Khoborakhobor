@@ -10,10 +10,13 @@ import {
   SpiderOptions,
 } from "@/lib/scraper/spider";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/guards";
+import { assertPublicHttpUrl } from "@/lib/url-safety";
 import { revalidatePath } from "next/cache";
 
 export async function triggerSpiderCrawlAction(options?: SpiderOptions) {
   try {
+    await requireAdmin();
     const results = await runNewsSpiderWithDateFilter(options);
     const modeText = results.dryRun ? "টেস্ট রান (ড্রাই-রান)" : "সংবাদ সংকলন";
 
@@ -43,6 +46,7 @@ export async function triggerSpiderCrawlAction(options?: SpiderOptions) {
 
 export async function testFeedSourceAction(feedUrl: string) {
   try {
+    await requireAdmin();
     const res = await testFeedSource(feedUrl);
     return res;
   } catch (err: any) {
@@ -55,6 +59,7 @@ export async function testFeedSourceAction(feedUrl: string) {
 
 export async function getAllSourcesAction() {
   try {
+    await requireAdmin();
     const sources = loadNewspaperRegistry("all");
     return { success: true, sources };
   } catch (err: any) {
@@ -72,6 +77,13 @@ export async function addSourceToRegistryAction(data: {
   dateFormat?: string;
 }) {
   try {
+    await requireAdmin();
+    assertPublicHttpUrl(data.feedUrl);
+    const badChars = /[\r\n,]/;
+    const badLineChars = /[\r\n]/;
+    if (badChars.test(data.feedUrl) || badChars.test(data.categorySlug + (data.articleSelector || "") + (data.dateFormat || "")) || badLineChars.test(data.name + data.examTrack)) {
+      throw new Error("উৎসের তথ্যে অবৈধ অক্ষর রয়েছে।");
+    }
     addSourceToRegistry(data);
     revalidatePath("/admin");
     return { success: true, message: `"${data.name}" সফলভাবে যুক্ত হয়েছে।` };
@@ -82,6 +94,7 @@ export async function addSourceToRegistryAction(data: {
 
 export async function removeSourceFromRegistryAction(feedUrl: string, language: "bn" | "en") {
   try {
+    await requireAdmin();
     const ok = removeSourceFromRegistry(feedUrl, language);
     if (!ok) {
       return { success: false, message: "উৎসটি খুঁজে পাওয়া যায়নি।" };
@@ -95,6 +108,7 @@ export async function removeSourceFromRegistryAction(feedUrl: string, language: 
 
 export async function getCrawlLogsAction() {
   try {
+    await requireAdmin();
     const logs = getCrawlLogs();
     return { success: true, logs };
   } catch (err: any) {
@@ -104,6 +118,7 @@ export async function getCrawlLogsAction() {
 
 export async function getAdminStatsAction() {
   try {
+    await requireAdmin();
     const [articleCount, quizCount, vocabCount, studentCount] = await Promise.all([
       prisma.article.count(),
       prisma.quizQuestion.count(),
@@ -138,6 +153,7 @@ export async function getAdminStatsAction() {
 
 export async function getAdminRecentArticlesAction(limit = 50) {
   try {
+    await requireAdmin();
     const articles = await prisma.article.findMany({
       take: limit,
       orderBy: { createdAt: "desc" },
@@ -162,6 +178,7 @@ export async function getAdminRecentArticlesAction(limit = 50) {
 
 export async function deleteArticleAction(id: string) {
   try {
+    await requireAdmin();
     await prisma.article.delete({
       where: { id },
     });
@@ -176,6 +193,10 @@ export async function deleteArticleAction(id: string) {
 
 export async function toggleArticleFlagAction(id: string, flag: "isLead" | "isCapsule") {
   try {
+    await requireAdmin();
+    if (flag !== "isLead" && flag !== "isCapsule") {
+      return { success: false, message: "অবৈধ ফ্ল্যাগ।" };
+    }
     const article = await prisma.article.findUnique({ where: { id } });
     if (!article) return { success: false, message: "প্রতিবেদন পাওয়া যায়নি।" };
 

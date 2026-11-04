@@ -1,12 +1,40 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { hashPassword, verifyPassword } from "@/lib/auth-crypto";
+import { readSession, writeSession, clearSession, safeEqual, rateLimit, clientKey } from "@/lib/session";
 import crypto from "crypto";
 
-const ADMIN_SECRET_PASSCODE = process.env.ADMIN_PASSCODE || "072429";
+const SESSION_DISABLED_ERROR =
+  "লগইন সেবা সাময়িকভাবে বন্ধ রয়েছে (সার্ভার কনফিগারেশন অসম্পূর্ণ)। অনুগ্রহ করে পরে আবার চেষ্টা করুন।";
+const RATE_LIMIT_ERROR = "অনেকবার চেষ্টা করা হয়েছে। অনুগ্রহ করে কিছুক্ষণ পর আবার চেষ্টা করুন।";
+
+function revalidateSessionPaths() {
+  try {
+    revalidatePath("/");
+    revalidatePath("/saved");
+    revalidatePath("/desk");
+    revalidatePath("/admin");
+  } catch {
+    // Outside a Next.js request (test runner / background script)
+  }
+}
+
+/**
+ * Issue a signed session cookie for a student. Returns false only when sessions are
+ * disabled because SESSION_SECRET is missing in production.
+ */
+async function startStudentSession(studentId: string, dbRole: string): Promise<boolean> {
+  try {
+    const ok = await writeSession(studentId, dbRole === "admin" ? "admin" : "student");
+    if (!ok) return false;
+  } catch {
+    // cookies() is unavailable outside a request (test runner / background script)
+  }
+  revalidateSessionPaths();
+  return true;
+}
 
 export type SessionRole = "student" | "admin" | null;
 
@@ -90,27 +118,9 @@ export async function studentSignupAction(data: {
     },
   });
 
-  const sessionRole: SessionRole = student.role === "admin" ? "admin" : "student";
-
-  try {
-    const cookieStore = await cookies();
-    cookieStore.set("khobor_session_role", sessionRole, {
-      path: "/",
-      sameSite: "lax",
-      httpOnly: true,
-    });
-    cookieStore.set("khobor_student_id", student.id, {
-      path: "/",
-      sameSite: "lax",
-      httpOnly: true,
-    });
-
-    revalidatePath("/");
-    revalidatePath("/saved");
-    revalidatePath("/desk");
-    revalidatePath("/admin");
-  } catch {
-    // Graceful fallback when executed in test runner / background script
+  const sessionStarted = await startStudentSession(student.id, student.role);
+  if (!sessionStarted) {
+    return { success: false as const, error: SESSION_DISABLED_ERROR };
   }
 
   return {
@@ -141,6 +151,11 @@ export async function studentLoginAction(emailOrInput: string, passwordInput?: s
 
   if (!password) {
     return { success: false, error: "পাসওয়ার্ড প্রদান আবশ্যক।" };
+  }
+
+  const ip = await clientKey();
+  if (!rateLimit(`login:ip:${ip}`, 30, 15 * 60 * 1000) || !rateLimit(`login:email:${email}`, 10, 15 * 60 * 1000)) {
+    return { success: false, error: RATE_LIMIT_ERROR };
   }
 
   const student = await prisma.student.findUnique({
@@ -188,27 +203,9 @@ export async function studentLoginAction(emailOrInput: string, passwordInput?: s
     },
   });
 
-  const sessionRole: SessionRole = student.role === "admin" ? "admin" : "student";
-
-  try {
-    const cookieStore = await cookies();
-    cookieStore.set("khobor_session_role", sessionRole, {
-      path: "/",
-      sameSite: "lax",
-      httpOnly: true,
-    });
-    cookieStore.set("khobor_student_id", student.id, {
-      path: "/",
-      sameSite: "lax",
-      httpOnly: true,
-    });
-
-    revalidatePath("/");
-    revalidatePath("/saved");
-    revalidatePath("/desk");
-    revalidatePath("/admin");
-  } catch {
-    // Graceful fallback when executed in test runner / background script
+  const sessionStarted = await startStudentSession(student.id, student.role);
+  if (!sessionStarted) {
+    return { success: false as const, error: SESSION_DISABLED_ERROR };
   }
 
   return {
@@ -232,7 +229,21 @@ export async function studentLoginAction(emailOrInput: string, passwordInput?: s
  * Log in as System Administrator with strictly confidential passcode
  */
 export async function adminLoginAction(passcode: string) {
-  if (passcode.trim() !== ADMIN_SECRET_PASSCODE) {
+  const configured = process.env.ADMIN_PASSCODE?.trim();
+  if (!configured || configured.length < 12) {
+    console.error("[AUTH] ADMIN_PASSCODE is not set (or shorter than 12 characters); passcode login is disabled.");
+    return {
+      success: false,
+      error: "অ্যাডমিন পাসকোড লগইন সার্ভারে কনফিগার করা নেই।",
+    };
+  }
+
+  const ip = await clientKey();
+  if (!rateLimit(`admin-login:${ip}`, 5, 15 * 60 * 1000)) {
+    return { success: false, error: RATE_LIMIT_ERROR };
+  }
+
+  if (!safeEqual((passcode || "").trim(), configured)) {
     return {
       success: false,
       error: "ভুল পাসকোড! সঠিক অ্যাডমিন সিক্রেট পাসকোড প্রদান করুন।",
@@ -240,18 +251,12 @@ export async function adminLoginAction(passcode: string) {
   }
 
   try {
-    const cookieStore = await cookies();
-    cookieStore.set("khobor_session_role", "admin", {
-      path: "/",
-      sameSite: "lax",
-      httpOnly: true,
-    });
-
-    revalidatePath("/");
-    revalidatePath("/admin");
+    const ok = await writeSession(null, "admin");
+    if (!ok) return { success: false, error: SESSION_DISABLED_ERROR };
   } catch {
     // Graceful fallback for test runner
   }
+  revalidateSessionPaths();
 
   return { success: true };
 }
@@ -261,37 +266,36 @@ export async function adminLoginAction(passcode: string) {
  */
 export async function logoutAction() {
   try {
-    const cookieStore = await cookies();
-    cookieStore.delete("khobor_session_role");
-    cookieStore.delete("khobor_student_id");
-
-    revalidatePath("/");
-    revalidatePath("/saved");
-    revalidatePath("/admin");
+    await clearSession();
   } catch {
     // Graceful fallback for test runner
   }
+  revalidateSessionPaths();
 
   return { success: true };
 }
 
 /**
- * Get current session state (server-side)
+ * Get current session state (server-side). The role always comes from the signed
+ * session plus the student's current database role, never from a plain cookie.
  */
 export async function getCurrentSession(): Promise<UserSession> {
   try {
-    const cookieStore = await cookies();
-    const roleCookie = cookieStore.get("khobor_session_role")?.value as SessionRole;
-    const studentId = cookieStore.get("khobor_student_id")?.value;
+    const session = await readSession();
 
-    if (studentId) {
+    if (!session) {
+      if (process.env.NODE_ENV !== "production" && process.env.TEST_ROLE === "admin") {
+        return { role: "admin", student: null };
+      }
+      return { role: null, student: null };
+    }
+
+    if (session.sid) {
       const student = await prisma.student.findUnique({
-        where: { id: studentId },
+        where: { id: session.sid },
       });
-      if (student) {
-        // Effective role: if student.role is admin in database or roleCookie is admin
-        const effectiveRole: SessionRole =
-          student.role === "admin" || roleCookie === "admin" ? "admin" : "student";
+      if (student && student.status !== "suspended") {
+        const effectiveRole: SessionRole = student.role === "admin" ? "admin" : "student";
 
         return {
           role: effectiveRole,
@@ -309,17 +313,16 @@ export async function getCurrentSession(): Promise<UserSession> {
           },
         };
       }
+      return { role: null, student: null };
     }
 
-    if (roleCookie === "admin" || (!roleCookie && process.env.TEST_ROLE === "admin")) {
-      return {
-        role: "admin",
-        student: null,
-      };
+    // Passcode-only admin session
+    if (session.role === "admin") {
+      return { role: "admin", student: null };
     }
   } catch {
     // If called in testing script without request context
-    if (process.env.TEST_ROLE === "admin") {
+    if (process.env.NODE_ENV !== "production" && process.env.TEST_ROLE === "admin") {
       return { role: "admin", student: null };
     }
   }
@@ -350,6 +353,22 @@ export async function requestMagicLinkAction(email: string) {
     return { success: false, error: "সঠিক ইমেইল ঠিকানা প্রদান করুন।" };
   }
 
+  // SECURITY: a magic-link token must only ever be delivered to the mailbox it was
+  // requested for. Returning it to the caller (as this action used to) let anyone log
+  // in as any email address. No email provider is wired up yet, so the flow is
+  // disabled until one is; the token is never sent back to the browser.
+  if (!process.env.EMAIL_API_KEY) {
+    return {
+      success: false,
+      error: "ইমেইল ম্যাজিক লিংক সেবা এখনো চালু হয়নি। অনুগ্রহ করে আপনার জিমেইল ও পাসওয়ার্ড দিয়ে লগইন বা নিবন্ধন করুন।",
+    };
+  }
+
+  const ip = await clientKey();
+  if (!rateLimit(`magic:${ip}`, 5, 15 * 60 * 1000) || !rateLimit(`magic:${cleanEmail}`, 3, 15 * 60 * 1000)) {
+    return { success: false, error: RATE_LIMIT_ERROR };
+  }
+
   const token = crypto.randomBytes(24).toString("hex");
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
 
@@ -361,10 +380,11 @@ export async function requestMagicLinkAction(email: string) {
     },
   });
 
+  // TODO: send `/login?magicToken=${token}` to cleanEmail through the email provider.
+
   return {
     success: true,
-    token,
-    magicUrl: `/login?magicToken=${token}`,
+    magicUrl: undefined as string | undefined,
   };
 }
 
@@ -419,25 +439,10 @@ export async function verifyMagicLinkAction(token: string) {
     });
   }
 
-  const sessionRole: SessionRole = student.role === "admin" ? "admin" : "student";
-
-  try {
-    const cookieStore = await cookies();
-    cookieStore.set("khobor_session_role", sessionRole, {
-      path: "/",
-      sameSite: "lax",
-      httpOnly: true,
-    });
-    cookieStore.set("khobor_student_id", student.id, {
-      path: "/",
-      sameSite: "lax",
-      httpOnly: true,
-    });
-    revalidatePath("/");
-    revalidatePath("/saved");
-    revalidatePath("/desk");
-    revalidatePath("/admin");
-  } catch {}
+  const sessionStarted = await startStudentSession(student.id, student.role);
+  if (!sessionStarted) {
+    return { success: false as const, error: SESSION_DISABLED_ERROR };
+  }
 
   return {
     success: true,
@@ -472,7 +477,7 @@ export async function requestPhoneOtpAction(rawPhone: string) {
     };
   }
 
-  const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+  const otpCode = crypto.randomInt(100000, 1000000).toString();
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
   await prisma.authOtp.create({
@@ -490,6 +495,10 @@ export async function verifyPhoneOtpAction(rawPhone: string, otpCode: string) {
   const cleanOtp = otpCode.trim();
   if (!cleanOtp || cleanOtp.length < 4) {
     return { success: false, error: "সঠিক ওটিপি কোড প্রদান করুন।" };
+  }
+
+  if (!rateLimit(`otp-verify:${phone}`, 5, 15 * 60 * 1000)) {
+    return { success: false, error: RATE_LIMIT_ERROR };
   }
 
   // Find latest valid OTP
@@ -558,25 +567,10 @@ export async function verifyPhoneOtpAction(rawPhone: string, otpCode: string) {
     });
   }
 
-  const sessionRole: SessionRole = student.role === "admin" ? "admin" : "student";
-
-  try {
-    const cookieStore = await cookies();
-    cookieStore.set("khobor_session_role", sessionRole, {
-      path: "/",
-      sameSite: "lax",
-      httpOnly: true,
-    });
-    cookieStore.set("khobor_student_id", student.id, {
-      path: "/",
-      sameSite: "lax",
-      httpOnly: true,
-    });
-    revalidatePath("/");
-    revalidatePath("/saved");
-    revalidatePath("/desk");
-    revalidatePath("/admin");
-  } catch {}
+  const sessionStarted = await startStudentSession(student.id, student.role);
+  if (!sessionStarted) {
+    return { success: false as const, error: SESSION_DISABLED_ERROR };
+  }
 
   return {
     success: true,

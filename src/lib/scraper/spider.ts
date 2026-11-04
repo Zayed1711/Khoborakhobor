@@ -2,6 +2,8 @@ import fs from "fs";
 import path from "path";
 import Parser from "rss-parser";
 import * as cheerio from "cheerio";
+import { sanitizeArticleHtml } from "@/lib/sanitize-html";
+import { isPublicHttpUrl, assertPublicHttpUrl } from "@/lib/url-safety";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { generateContextualMicroQuiz } from "@/lib/quiz/generator";
@@ -196,6 +198,7 @@ export function removeSourceFromRegistry(feedUrl: string, language: "bn" | "en")
  * - Atom feeds with <entry> and <published>
  */
 export async function parseRobustFeed(feedUrl: string, timeoutMs: number = 8000) {
+  assertPublicHttpUrl(feedUrl);
   const res = await fetch(feedUrl, {
     headers: {
       "User-Agent":
@@ -462,7 +465,7 @@ export async function fetchAndParseArticlePage(
   url?: string,
   fallbackRawHtml?: string
 ): Promise<{ cleanContent: string; headline?: string; imageUrl?: string }> {
-  if (!url) {
+  if (!url || !isPublicHttpUrl(url)) {
     return parseHtmlContent(fallbackRawHtml || "");
   }
 
@@ -1084,7 +1087,9 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
               slug: finalSlug,
               title,
               summary,
-              content: cleanContent,
+              // Paragraph text came from $(el).text(), which decodes entities, so a feed
+              // containing "&lt;script&gt;" would otherwise become live HTML here.
+              content: sanitizeArticleHtml(cleanContent),
               keyTakeaways: JSON.stringify(takeaways),
               factTable: JSON.stringify(factTable),
               sourceName: source.name,

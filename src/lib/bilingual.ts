@@ -113,7 +113,10 @@ export function translateContentToBengaliHtml(
 ): string {
   if (isBengaliText(englishContent)) return englishContent;
 
-  const cleanTitle = bnTitle.replace(/^\[অনুবাদ\]\s*/, "");
+  const esc = (v: string) =>
+    v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  const cleanTitle = esc(bnTitle.replace(/^\[অনুবাদ\]\s*/, ""));
+  categoryName = esc(categoryName);
 
   return `
     <div class="kk-bilingual-translation-box p-4 bg-[#fbf9f5] border-l-4 border-[#842323] rounded-md my-4 space-y-4">
