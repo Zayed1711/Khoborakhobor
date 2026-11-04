@@ -49,6 +49,7 @@ export function pickDailyQuiz(articles: ArticleWithQuiz[], mode: "bn" | "en", no
     sourceName: a.sourceName || undefined,
     articleTitle: a.title,
     articleSlug: a.slug,
-    contextQuote: q.sourceSentence || undefined,
+    // No contextQuote: the source sentence contains the answer. The explanation
+    // (shown after answering) already quotes it.
   };
 }

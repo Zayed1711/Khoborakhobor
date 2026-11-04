@@ -123,17 +123,10 @@ export default function RightStudyRail({
     setAnswered(false);
   }, [isEnglishMode, activeQuiz?.question]);
 
-  const handleSelect = async (idx: number) => {
+  // Anyone can answer the daily quiz; a login wall before the first answer scared
+  // new visitors away. Saving progress is offered on the article pages instead.
+  const handleSelect = (idx: number) => {
     if (answered) return;
-    try {
-      const session = await getCurrentSession();
-      if (!session.student) {
-        setIsProGateOpen(true);
-        return;
-      }
-    } catch {
-      // safe fallback
-    }
     setSelectedOpt(idx);
     setAnswered(true);
   };
@@ -199,14 +192,6 @@ export default function RightStudyRail({
               </>
             )}
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="px-1.5 py-0.5 rounded text-xs font-bold tracking-wider uppercase bg-amber-500/10 text-amber-700 border border-amber-500/20 shrink-0">
-              PRO • FREE IN NOV
-            </span>
-            <span className="text-xs text-[#717887]">
-              {isEnglishMode ? "শব্দার্থ ও প্রয়োগ" : "একটিভ রিকল"}
-            </span>
-          </div>
         </div>
 
         {/* Source Citation & Context Sentence Box */}
@@ -237,7 +222,8 @@ export default function RightStudyRail({
             </div>
 
             {/* Context Line / Excerpt Quote */}
-            {activeQuiz.contextQuote && (
+            {/* Shown only after answering, so a quoted sentence can never give the answer away */}
+            {answered && activeQuiz.contextQuote && (
               <div className="text-xs text-[#404652] italic leading-relaxed border-l-2 border-[#842323]/60 pl-2 py-0.5 bg-white/70 rounded-r font-serif">
                 <span className="text-[#717887] not-italic block text-xs font-semibold uppercase tracking-wider mb-0.5 font-sans">
                   সংশ্লিষ্ট বাক্য / অনুচ্ছেদ উদ্ধৃতি:

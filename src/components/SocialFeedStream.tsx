@@ -199,9 +199,6 @@ export default function SocialFeedStream({
                 }`}>
                   {isEnglishMode ? "Daily English Challenge" : "বিসিএস প্রিলিমিনারি চ্যালেঞ্জ"}
                 </span>
-                <span className="text-xs text-[#717887] font-semibold">
-                  {isEnglishMode ? "10 Points" : "১০ পয়েন্ট"}
-                </span>
               </div>
 
               <p className="text-xs font-semibold text-[#1c1d21] leading-snug">
