@@ -1137,9 +1137,13 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
   });
 
   if (!dryRun) {
-    revalidatePath("/");
-    revalidatePath("/capsule");
-    revalidatePath("/admin");
+    try {
+      revalidatePath("/");
+      revalidatePath("/capsule");
+      revalidatePath("/admin");
+    } catch {
+      // Safe fallback when executed outside Next.js request context (e.g. cron-worker, standalone scripts)
+    }
   }
 
   return results;
