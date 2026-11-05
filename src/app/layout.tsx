@@ -36,12 +36,14 @@ export const metadata: Metadata = {
   description: "শিক্ষার্থী ও চিন্তাশীল পাঠকদের জন্য পরিচ্ছন্ন ও মননশীল ডিজিটাল পত্রিকা।",
   icons: {
     icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
-      { url: "/favicon.svg", type: "image/svg+xml" },
+      // "?v=" makes browsers fetch a changed icon instead of keeping the old one;
+      // raise it whenever the icon changes
+      { url: "/icon.svg?v=2", type: "image/svg+xml" },
+      { url: "/favicon.svg?v=2", type: "image/svg+xml" },
     ],
     // iPhones need a PNG for the home-screen icon (src/app/apple-icon.png)
-    apple: "/apple-icon.png",
-    shortcut: "/favicon.svg",
+    apple: "/apple-icon.png?v=2",
+    shortcut: "/favicon.svg?v=2",
   },
   openGraph: {
     title: "খবরাখবর | KhoboraKhobor",
