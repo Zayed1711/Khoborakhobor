@@ -1,4 +1,4 @@
-import type { GeneratedQuiz } from "@/lib/quiz/generator";
+import type { GeneratedQuiz } from "@/lib/quiz/shuffle";
 import { isBengaliText } from "@/lib/bilingual";
 
 /**

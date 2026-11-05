@@ -8,13 +8,12 @@
     "postinstall": "prisma generate",
     "start": "next start",
     "cron": "node scripts/cron-worker.js",
-    "scrape": "node scripts/scrape_real_news.js",
-    "backup": "node scripts/backup_db.js",
-    "backup:stats": "node scripts/backup_db.js --stats",
     "lint": "eslint",
     "check:content": "node scripts/check_content_integrity.js",
     "fix:content": "node scripts/content_integrity_cleanup.js",
-    "db:migrate": "prisma migrate deploy"
+    "db:migrate": "prisma migrate deploy",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -38,6 +37,7 @@
     "eslint-config-next": "16.4.3",
     "postcss": "^8.5.31",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   }
 }

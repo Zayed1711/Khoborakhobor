@@ -7,7 +7,8 @@ export const dynamic = "force-dynamic";
 
 /**
  * Validate incoming request authorization against CRON_SECRET
- * Supports both Vercel Cron "Bearer <token>" header and "?secret=<token>" query parameter.
+ * Accepts only an "Authorization: Bearer <token>" header. A secret in the URL would
+ * end up in access logs, so the old "?secret=" form is no longer accepted.
  */
 function isAuthorized(req: NextRequest): boolean {
   const cronSecret = process.env.CRON_SECRET;
@@ -22,12 +23,6 @@ function isAuthorized(req: NextRequest): boolean {
     // 1. Check Bearer Token (Standard Vercel Cron behavior)
     const authHeader = req.headers.get("authorization");
     if (authHeader && safeEqual(authHeader, `Bearer ${cronSecret}`)) {
-      return true;
-    }
-
-    // 2. Check query parameter ?secret=
-    const secretParam = req.nextUrl.searchParams.get("secret");
-    if (secretParam && safeEqual(secretParam, cronSecret)) {
       return true;
     }
 

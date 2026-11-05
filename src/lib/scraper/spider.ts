@@ -6,7 +6,6 @@ import { sanitizeArticleHtml } from "@/lib/sanitize-html";
 import { isPublicHttpUrl, assertPublicHttpUrl } from "@/lib/url-safety";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { generateContextualMicroQuiz } from "@/lib/quiz/generator";
 import { evaluateExamRelevance } from "@/lib/scraper/examFilter";
 import { extractVocabularyTableRows } from "@/lib/vocabulary-table-engine";
 import { cleanArticleBody, extractFacts, extractTakeaways, buildExtractiveQuiz } from "@/lib/study/extractive";
@@ -801,9 +800,6 @@ export function detectCategorySlug(item: any, fallbackSlug: string): string {
   return fallbackSlug || "national";
 }
 
-function generateMicroQuiz(title: string, categoryName: string, contentText: string = "") {
-  return generateContextualMicroQuiz(title, contentText, categoryName);
-}
 
 function extractSafeFeedTitle(raw: any): string {
   if (!raw) return "";

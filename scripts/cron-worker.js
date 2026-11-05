@@ -56,10 +56,12 @@ function triggerCron(isRetry = false) {
   console.log(`\n[${now}] ${isRetry ? "পুনরায় চেষ্টা (Retry)" : "স্বয়ংক্রিয় শিডিউলড ক্রলিং"} ট্রিগার করা হচ্ছে...`);
   isExecuting = true;
 
-  const url = `${BASE_URL}/api/cron/spider${CRON_SECRET ? `?secret=${encodeURIComponent(CRON_SECRET)}` : ""}`;
+  const url = `${BASE_URL}/api/cron/spider`;
+  // The secret goes in a header, so it never appears in access logs
+  const options = CRON_SECRET ? { headers: { Authorization: `Bearer ${CRON_SECRET}` } } : {};
 
   const req = http
-    .get(url, (res) => {
+    .get(url, options, (res) => {
       let data = "";
       res.on("data", (chunk) => (data += chunk));
       res.on("end", () => {

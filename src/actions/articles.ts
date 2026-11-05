@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { shuffleQuizOptions } from "@/lib/quiz/generator";
+import { shuffleQuizOptions } from "@/lib/quiz/shuffle";
 import { extractFacts, extractTakeaways, buildExtractiveQuiz, plainText } from "@/lib/study/extractive";
 import { requireAdmin } from "@/lib/guards";
 import { toFeedCard, FeedCard } from "@/lib/feed-card";

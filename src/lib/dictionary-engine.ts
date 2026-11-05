@@ -633,7 +633,7 @@ async function fetchSmartOnlineLexicon(query: string, isBangla: boolean): Promis
 
     // Build practical real-life example
     const finalExample = enExample
-      ? `যেমন: বাস্তব জীবনে ও আন্তর্জাতিক সংবাদে "${enFormatted}" প্রত্যয়টি এভাবে ব্যবহৃত হয়— "${enExample}"`
+      ? `যেমন: বাস্তব জীবনে ও আন্তর্জাতিক সংবাদে "${enFormatted}" শব্দটি এভাবে ব্যবহৃত হয়— "${enExample}"`
       : ""; // no real example found: show none
 
     return {
@@ -730,16 +730,19 @@ export async function lookupConceptDictionary(rawQuery: string): Promise<Diction
     };
   }
 
-  // Check In-Memory Cache first for instant response
-  const queryLower = query.toLowerCase();
+  // Check In-Memory Cache first for instant response. NFC so the two Unicode forms of
+  // letters like য় (one or two code points) match the same entry.
+  const queryLower = query.toLowerCase().normalize("NFC");
   if (DYNAMIC_CACHE.has(queryLower)) {
     return DYNAMIC_CACHE.get(queryLower)!;
   }
 
-  // 1. Check Curated High-Yield Lexicon
+  // 1. Check Curated High-Yield Lexicon: the term itself, or an inflected form that
+  // contains the whole term (e.g. "মূল্যস্ফীতির" -> "মূল্যস্ফীতি"). Never the reverse: a short
+  // query such as "নীতি" must not return the entry for a different term ("মুদ্রানীতি").
   for (const [key, entry] of Object.entries(CURATED_LEXICON)) {
-    const keyLower = key.toLowerCase();
-    if (queryLower === keyLower || queryLower.includes(keyLower) || keyLower.includes(queryLower)) {
+    const keyLower = key.toLowerCase().normalize("NFC");
+    if (queryLower === keyLower || (keyLower.length >= 3 && queryLower.includes(keyLower))) {
       const fullEntry: DictionaryEntry = {
         ...entry,
         query,
@@ -753,7 +756,9 @@ export async function lookupConceptDictionary(rawQuery: string): Promise<Diction
   const isBangla = isBengaliText(query);
   try {
     const result = await fetchSmartOnlineLexicon(query, isBangla);
-    DYNAMIC_CACHE.set(queryLower, result);
+    // Remember only real results; a "not found" (often a network blip) is retried next time
+    const found = Boolean(result.simplifiedMeaning) && result.simplifiedMeaning !== "No reliable English definition was found.";
+    if (found) DYNAMIC_CACHE.set(queryLower, result);
     return result;
   } catch {
     // Lookup failed (offline / timeout): say so plainly instead of inventing a meaning

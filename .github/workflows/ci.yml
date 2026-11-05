@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # An empty throwaway database, built from the migrations, so the build never touches real data
+      DATABASE_URL: file:/tmp/ci.db
+      SESSION_SECRET: ci-only-secret-not-used-anywhere-else-0123456789
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Database migrations apply cleanly
+        run: npx prisma migrate deploy
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Lint (report only, existing warnings are being cleaned up)
+        run: npm run lint
+        continue-on-error: true

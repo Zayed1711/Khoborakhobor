@@ -184,8 +184,14 @@ const MONTH_RE = new RegExp(`(?:${MONTHS})`, "iu");
 
 const trimSpan = (t: string) => t.trim().replace(/[.,]+$/, "");
 
+// "সকাল সাড়ে ১০টা", "বেলা ১টা": a clock time, not a figure worth learning
+const TIME_OF_DAY_BEFORE = /(?:সকাল|বেলা|দুপুর|বিকেল|বিকাল|সন্ধ্যা|রাত|ভোর|সাড়ে|সোয়া|পৌনে)\s*$/u;
+
 function quantitiesIn(sentence: string): string[] {
-  return [...sentence.matchAll(QUANTITY_RE)].map((m) => trimSpan(m[0])).filter((q) => /[০-৯0-9]/.test(q));
+  return [...sentence.matchAll(QUANTITY_RE)]
+    .filter((m) => !(/টা$/u.test(m[0].trim()) && TIME_OF_DAY_BEFORE.test(sentence.slice(0, m.index).normalize("NFC"))))
+    .map((m) => trimSpan(m[0]))
+    .filter((q) => /[০-৯0-9]/.test(q));
 }
 
 function datesIn(sentence: string): string[] {

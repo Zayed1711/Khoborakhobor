@@ -17,8 +17,15 @@ describe earlier Vercel/Netlify plans and are kept for reference only.
 python scripts/ops/deploy.py
 ```
 Key-only SSH (set `DEPLOY_HOST`, optional `DEPLOY_USER` / `DEPLOY_KEY` in your local `.env`).
-It backs up, pulls `main`, runs `prisma migrate deploy`, cleans content, builds, restarts and
-checks the site answers 200; on failure it rolls back to the previous version.
+It first asks GitHub whether CI passed for the latest `main` commit and refuses to deploy
+if CI failed or is still running (`--skip-ci` overrides this, for emergencies only). Then it
+backs up, checks out that exact commit, runs `prisma migrate deploy`, cleans content, builds,
+restarts and checks `/api/health` (site and database); on failure it rolls back.
+
+## Checks on every push (CI)
+`.github/workflows/ci.yml` applies the migrations to an empty database, then runs the type
+check, `npm test` and a production build. Run the same checks locally with
+`npm run typecheck && npm test`.
 
 ## Schema changes
 Create a migration locally with `npx prisma migrate dev --name <change>`, commit it, deploy.
@@ -32,6 +39,20 @@ crontab -e
 # 30 4 * * 0 /var/www/khoborakhobor/scripts/ops/restore-test.sh >> /var/log/kkhobor-backup.log 2>&1
 ```
 Set `RCLONE_REMOTE` (after `rclone config`) to also copy each backup off the server.
+
+## Monitoring and alerts
+`scripts/ops/watchdog.sh` checks every hour that the site and database answer, news is
+fresh, both PM2 processes run, last night's backup exists, the disk has room, and (daily)
+that the content integrity check passes. It messages Telegram when a problem starts, every
+12 hours while it lasts, and when it is fixed. On Mondays it sends a short weekly report.
+Put `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` in the server's `.env`, then:
+```bash
+crontab -e
+# 5 * * * * /var/www/khoborakhobor/scripts/ops/watchdog.sh >> /var/log/kkhobor-watchdog.log 2>&1
+# 0 3 * * 1 /var/www/khoborakhobor/scripts/ops/watchdog.sh --weekly >> /var/log/kkhobor-watchdog.log 2>&1
+```
+For an outside view (the watchdog cannot report if the whole server is down), add a free
+UptimeRobot monitor for `https://kkhobor.com/api/health`.
 
 ## One-time move to this setup
 1. SSH key login works and the root password is changed (see the commands in chat / below).
