@@ -1,21 +1,15 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Galada, Noto_Sans_Bengali } from "next/font/google";
+import { Noto_Sans_Bengali } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/context/LanguageContext";
 import PomodoroWidget from "@/components/PomodoroWidget";
 import GamifiedOnboardingTour from "@/components/GamifiedOnboardingTour";
 
-// Bengali type pairing chosen by the team: Galada (calligraphic) for headlines,
-// Noto Sans Bengali for all other text. next/font self-hosts both, so no request
-// goes to Google and text does not jump while loading.
-const headingFont = Galada({
-  subsets: ["bengali", "latin"],
-  weight: "400", // Galada has a single weight; see the font-synthesis rule in globals.css
-  variable: "--font-heading",
-  display: "swap",
-});
-
+// Text and headlines use Nirmala UI, the Bengali font built into Windows (chosen by
+// the team). Its licence does not allow hosting it, so devices without it (Android,
+// iPhone, Mac) fall back to Noto Sans Bengali, self-hosted here by next/font; it is
+// also Android's own Bengali font. See the font stacks in globals.css.
 const bodyFont = Noto_Sans_Bengali({
   subsets: ["bengali", "latin"],
   variable: "--font-body",
@@ -71,7 +65,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="bn" className={`h-full antialiased ${headingFont.variable} ${bodyFont.variable}`} suppressHydrationWarning>
+    <html lang="bn" className={`h-full antialiased ${bodyFont.variable}`} suppressHydrationWarning>
       <head>
         <Script
           id="theme-initializer"

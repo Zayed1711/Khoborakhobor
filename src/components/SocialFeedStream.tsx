@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useAppMode } from "@/context/LanguageContext";
 import { isBengaliText } from "@/lib/bilingual";
-import { getArticlesByDateAction, DateArchiveStats } from "@/actions/articles";
+import { getArticlesByDateAction, getEnglishFeedAction, DateArchiveStats } from "@/actions/articles";
 import Link from "next/link";
 
 interface SocialFeedStreamProps {
@@ -46,6 +46,41 @@ export default function SocialFeedStream({
     }
   }, [articles, selectedDate]);
 
+  // English learning mode: every collected English story, newest first, loaded in pages
+  // from the server (no daily selection, no section limits)
+  const [enFeed, setEnFeed] = useState<any[]>([]);
+  const [enNext, setEnNext] = useState<string | null | undefined>(undefined); // undefined = not loaded yet, null = end
+  const [enLoading, setEnLoading] = useState(false);
+  const loadEnglish = async () => {
+    if (enLoading || enNext === null) return;
+    setEnLoading(true);
+    try {
+      const page = await getEnglishFeedAction(enNext ?? null);
+      setEnFeed((prev) => {
+        const ids = new Set(prev.map((a) => a.id));
+        return [...prev, ...page.cards.filter((a) => !ids.has(a.id))];
+      });
+      setEnNext(page.next);
+    } catch (err) {
+      console.error("Failed to load English stories:", err);
+    } finally {
+      setEnLoading(false);
+    }
+  };
+  const isEnglishAll = isEnglishMode && selectedDate === "all";
+  useEffect(() => {
+    if (isEnglishAll && enNext === undefined) loadEnglish();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load once when English mode opens
+  }, [isEnglishAll]);
+
+  // Switching mode starts from the full feed of that mode (a chosen date belongs to the other mode)
+  const [lastMode, setLastMode] = useState(isEnglishMode);
+  if (lastMode !== isEnglishMode) {
+    setLastMode(isEnglishMode);
+    setSelectedDate("all");
+    setFeedArticles(articles);
+  }
+
   // Dynamic date selector fetching full historical records on demand
   const handleSelectDate = async (dateKey: string) => {
     setSelectedDate(dateKey);
@@ -55,7 +90,8 @@ export default function SocialFeedStream({
     }
     setIsLoadingDate(true);
     try {
-      const fetched = await getArticlesByDateAction(dateKey);
+      // English mode: every English story of that day; job mode: that day's জরুরি ১০
+      const fetched = await getArticlesByDateAction(dateKey, isEnglishMode);
       setFeedArticles(fetched);
     } catch (err) {
       console.error("Failed to load articles for date:", dateKey, err);
@@ -66,6 +102,7 @@ export default function SocialFeedStream({
 
   // Filter by platform mode and selected archive date
   const filteredArticles = useMemo(() => {
+    if (isEnglishAll) return enFeed; // already newest first
     let list = feedArticles;
 
     // 1. Date filter (past 7 days or all)
@@ -99,13 +136,17 @@ export default function SocialFeedStream({
       const timeB = new Date(b.createdAtIso || b.createdAt).getTime() || 0;
       return timeB - timeA;
     });
-  }, [feedArticles, isEnglishMode, selectedDate]);
+  }, [feedArticles, isEnglishMode, selectedDate, isEnglishAll, enFeed]);
 
   // Render the feed in pages so phones don't mount 150 cards and 100+ images at once
   const PAGE_SIZE = 10;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const hasMore = visibleCount < filteredArticles.length;
+  const hasMore = visibleCount < filteredArticles.length || (isEnglishAll && enNext !== null && enNext !== undefined);
+  const showMore = () => {
+    setVisibleCount((n) => n + PAGE_SIZE);
+    if (isEnglishAll && visibleCount + PAGE_SIZE >= enFeed.length) loadEnglish();
+  };
 
   // Start from the top page again whenever the filter changes
   const [lastFilterKey, setLastFilterKey] = useState(`${selectedDate}|${isEnglishMode}`);
@@ -120,15 +161,14 @@ export default function SocialFeedStream({
     if (!node || !hasMore || typeof IntersectionObserver === "undefined") return;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          setVisibleCount((n) => n + PAGE_SIZE);
-        }
+        if (entries.some((e) => e.isIntersecting)) showMore();
       },
       { rootMargin: "600px 0px" }
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, [hasMore, visibleCount]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- showMore reads the latest state each render
+  }, [hasMore, visibleCount, enFeed.length]);
 
   // Filter capsule stories by mode so English learners see English capsules
   const filteredCapsules = useMemo(() => {
@@ -161,7 +201,7 @@ export default function SocialFeedStream({
 
       {/* 4. Main Social Newsfeed Stream */}
       <div className="space-y-3 sm:space-y-4">
-        {isLoadingDate ? (
+        {isLoadingDate || (isEnglishAll && enLoading && enFeed.length === 0) ? (
           <div className="p-10 text-center bg-white border border-[#ded8cb] rounded-2xl space-y-3 animate-fade-in">
             <Loader2 className="w-8 h-8 text-[#842323] animate-spin mx-auto" />
             <h4 className="text-sm font-bold text-[#1c1d21]">
@@ -173,6 +213,12 @@ export default function SocialFeedStream({
           </div>
         ) : filteredArticles.length > 0 ? (
           <>
+            {isEnglishAll && (
+              <div className="px-1 pt-1">
+                <h2 className="font-serif font-bold text-lg text-[#1e40af]">Latest English news</h2>
+                <p className="text-xs text-[#717887]">Every English story we have collected, newest first.</p>
+              </div>
+            )}
             {filteredArticles.slice(0, visibleCount).map((article, index, shown) => {
               const startsTier = article.dailyTier && article.dailyTier !== shown[index - 1]?.dailyTier;
               return (
@@ -202,16 +248,22 @@ export default function SocialFeedStream({
                   : `${selectedDate === "all" ? "আজকের" : "এই দিনের"} জরুরি খবর এখানেই শেষ। বাছাই করা আরও খবর ওপরের বিভাগগুলোতে পাবেন; অন্য দিনের খবর দেখতে তারিখ বেছে নিন।`}
               </p>
             )}
+            {!hasMore && isEnglishAll && (
+              <p className="text-center text-xs text-[#717887] py-2">That&apos;s every English story we have collected.</p>
+            )}
             {hasMore && (
               <div ref={sentinelRef} className="flex justify-center py-2">
                 <button
                   type="button"
-                  onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}
+                  onClick={showMore}
+                  disabled={enLoading}
                   className={`px-5 py-2.5 rounded-xl border border-[#ded8cb] bg-white text-sm font-semibold shadow-2xs hover:bg-[#faf8f4] transition ${
                     isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"
                   }`}
                 >
-                  {isEnglishMode
+                  {isEnglishAll
+                    ? enLoading ? "Loading…" : "Load more English news"
+                    : isEnglishMode
                     ? `Load more (${filteredArticles.length - visibleCount} left)`
                     : `আরও খবর দেখুন (বাকি ${(filteredArticles.length - visibleCount).toLocaleString("bn-BD")}টি)`}
                 </button>
@@ -294,7 +346,7 @@ function FeedSectionHeading({
       : "সময় থাকলে এগুলোও পড়ে নিন।";
   return (
     <div className="px-1 pt-1">
-      <h2 className={`font-serif text-lg ${accent}`}>{title}</h2>
+      <h2 className={`font-serif font-bold text-lg ${accent}`}>{title}</h2>
       <p className="text-xs text-[#717887]">{note}</p>
     </div>
   );

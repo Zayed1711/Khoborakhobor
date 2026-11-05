@@ -85,7 +85,58 @@ export async function getDateArchiveStatsAction(): Promise<DateArchiveStats> {
   }
 }
 
-export async function getArticlesByDateAction(dateKey: string): Promise<FeedCard[]> {
+/**
+ * English learning mode: every collected English story, newest first, 20 at a time.
+ * Stories carry no language field, so the newest rows are read in batches and the
+ * ones with an English headline are kept. `before` is the cursor from the last page.
+ */
+export async function getEnglishFeedAction(
+  before?: string | null,
+  limit: number = 20
+): Promise<{ cards: FeedCard[]; next: string | null }> {
+  const BATCH = 200;
+  const cards: FeedCard[] = [];
+  const seen = new Set<string>();
+  let cursor = before ? new Date(before) : null;
+  try {
+    for (let round = 0; round < 6 && cards.length < limit; round++) {
+      const rows = await prisma.article.findMany({
+        where: { sourceUrl: { not: null }, ...(cursor ? { createdAt: { lt: cursor } } : {}) },
+        include: { category: true },
+        orderBy: { createdAt: "desc" },
+        take: BATCH,
+      });
+      for (const a of rows) {
+        cursor = a.createdAt;
+        if (/[ঀ-৿]/.test(a.title)) continue;
+        if (seen.has(a.sourceUrl!)) continue; // the same story saved twice
+        seen.add(a.sourceUrl!);
+        cards.push(
+          toFeedCard({
+            ...a,
+            content: "",
+            createdAtIso: a.createdAt.toISOString(),
+            keyTakeaways: safeParseJson(a.keyTakeaways, []),
+            factTable: safeParseJson((a as any).factTable, []),
+            quizQuestions: [], // English learning stories have no quiz
+          })
+        );
+        if (cards.length >= limit) break;
+      }
+      if (rows.length < BATCH) {
+        // Reached the oldest story: there is no next page after this one
+        if (cards.length < limit) cursor = null;
+        break;
+      }
+    }
+    return { cards, next: cursor ? cursor.toISOString() : null };
+  } catch (err) {
+    console.error("[ARTICLES] Error loading the English feed:", err);
+    return { cards, next: null };
+  }
+}
+
+export async function getArticlesByDateAction(dateKey: string, allEnglish: boolean = false): Promise<FeedCard[]> {
   try {
     if (!dateKey || dateKey === "all") {
       return urgentTier(selectDailyFeed((await getPublishedArticles(250)).map(toFeedCard), "latest"));
@@ -134,6 +185,12 @@ export async function getArticlesByDateAction(dateKey: string): Promise<FeedCard
       return timeB - timeA;
     });
 
+    // English learning mode: every English story of that day, newest first
+    if (allEnglish) {
+      return parsed
+        .filter((a) => !/[ঀ-৿]/.test(a.title))
+        .map((a) => toFeedCard({ ...a, quizQuestions: [] }));
+    }
     // A chosen day shows that day's জরুরি ১০ (the rest are on the section pages)
     return urgentTier(selectDailyFeed(parsed.map(toFeedCard), "all"));
   } catch (err) {

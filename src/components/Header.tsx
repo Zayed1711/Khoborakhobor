@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { 
   Search, Globe, Bookmark, Calendar, UserCheck, 
@@ -51,6 +51,7 @@ const ENGLISH_CATEGORY_NAMES: Record<string, string> = {
 export default function Header({ categories = DEFAULT_CATEGORIES, session, activeSection }: HeaderProps) {
   // Which part of the site the reader is in: highlighted in the section bar and menu
   const pathname = usePathname() || "/";
+  const router = useRouter();
   const current =
     activeSection ??
     (pathname === "/"
@@ -77,6 +78,10 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session, activ
   const [isMobileCategoryOpen, setIsMobileCategoryOpen] = useState(false);
   
   const { mode, setMode, isEnglishMode, lockedMode } = useAppMode();
+  // Sections belong to job/BCS mode: switching to English on a section page opens the English feed
+  useEffect(() => {
+    if (isEnglishMode && pathname.startsWith("/category/")) router.replace("/");
+  }, [isEnglishMode, pathname, router]);
   // While a story is open the mode is locked to the story's mode (see ArticleStudyView);
   // the other button explains why instead of doing nothing silently
   const [showLockNote, setShowLockNote] = useState(false);
@@ -267,6 +272,8 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session, activ
               </span>
               <ThemeSwitcher compact />
             </div>
+            {/* English learning mode has one feed and no sections */}
+            {!isEnglishMode && (<>
             <span className="text-xs font-bold text-[#717887] uppercase tracking-wider block mb-2">
               {isEnglishMode ? "Explore Tracks & Categories" : "সংবাদ ও স্টাডি বিভাগসমূহ"}
             </span>
@@ -305,6 +312,7 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session, activ
                 );
               })}
             </div>
+            </>)}
           </div>
         )}
 
@@ -488,6 +496,8 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session, activ
           </div>
         )}
 
+        {/* English learning mode has one feed and no sections, so no section bar */}
+        {!isEnglishMode && (
         <nav className="border-t border-[#ece7dc] bg-[#faf8f4] hidden md:block">
           <div className="max-w-7xl mx-auto px-4 sm:px-8 py-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -586,6 +596,7 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session, activ
             </div>
           </div>
         </nav>
+        )}
       </header>
 
       {/* Global Search Dialog Modal */}

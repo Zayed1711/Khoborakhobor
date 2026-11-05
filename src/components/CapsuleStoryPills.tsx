@@ -70,7 +70,7 @@ export default function CapsuleStoryPills({ capsuleArticles }: CapsuleStoryPills
                   // No stock photo stand-in: show the category's first letter instead
                   <span
                     aria-hidden="true"
-                    className="w-full h-full rounded-full bg-[#f3ede2] text-[#842323] font-serif text-xl flex items-center justify-center"
+                    className="w-full h-full rounded-full bg-[#f3ede2] text-[#842323] font-serif font-bold text-xl flex items-center justify-center"
                   >
                     {Array.from(art.category?.name || art.title)[0]}
                   </span>

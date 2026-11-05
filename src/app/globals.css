@@ -5,23 +5,20 @@
  * Tailwind step is raised from 12px to 13px with a matching line-height.
  */
 @theme {
-  /* Fonts are loaded in layout.tsx with next/font: Galada (headlines), Noto Sans Bengali (text) */
-  --font-sans: var(--font-body), "Noto Sans Bengali", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-serif: var(--font-heading), "Galada", "Noto Sans Bengali", system-ui, sans-serif;
+  /* Nirmala UI where the device has it (Windows); otherwise Noto Sans Bengali, loaded in
+     layout.tsx. Headlines use the same family (bold), so both stacks are the same. */
+  --font-sans: "Nirmala UI", var(--font-body), "Noto Sans Bengali", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: "Nirmala UI", var(--font-body), "Noto Sans Bengali", system-ui, -apple-system, "Segoe UI", sans-serif;
   --text-xs: 0.8125rem;
   --text-xs--line-height: 1.55;
 }
 
 /*
- * Galada ships one weight. Headlines that ask for bold would otherwise get a smeared
- * synthetic bold, and its tall strokes clip under tight line-heights. This rule is
- * unlayered, so it wins over Tailwind's font-bold / leading-* utilities on headlines.
+ * Bengali headlines need room for vowel signs above and below the line; this rule is
+ * unlayered, so it wins over tight Tailwind leading-* utilities on headlines.
  */
 .font-serif {
-  font-weight: 400;
-  font-synthesis: none;
-  line-height: 1.5;
-  letter-spacing: 0.005em;
+  line-height: 1.45;
 }
 
 /*
