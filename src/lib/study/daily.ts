@@ -21,6 +21,7 @@ type ArticleWithQuiz = {
   title: string;
   slug: string;
   sourceName?: string | null;
+  sourceUrl?: string | null;
   category?: { name: string } | null;
   quizQuestions?: QuizRow[];
 };
@@ -31,6 +32,8 @@ function dhakaDayNumber(now = new Date()): number {
 
 export function pickDailyQuiz(articles: ArticleWithQuiz[], mode: "bn" | "en", now = new Date()): GeneratedQuiz | undefined {
   const candidates = articles
+    // Only stories a student can open and read: our page (slug) plus the original (sourceUrl)
+    .filter((a) => Boolean(a.slug && a.sourceUrl))
     .filter((a) => (mode === "bn" ? isBengaliText(a.title) : !isBengaliText(a.title)))
     .map((a) => ({ a, q: (a.quizQuestions || []).find((q) => q.origin !== "legacy" && q.sourceSentence) }))
     .filter((x): x is { a: ArticleWithQuiz; q: QuizRow } => Boolean(x.q))

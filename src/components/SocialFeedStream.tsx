@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import SocialFeedCard from "./SocialFeedCard";
+import DailyQuizCard from "./DailyQuizCard";
 import CapsuleStoryPills from "./CapsuleStoryPills";
 import DateArchiveDropdown from "./DateArchiveDropdown";
 import { 
@@ -64,22 +65,8 @@ export default function SocialFeedStream({
   };
 
   // Mobile Streak & Quiz Interactive State
-  const activeQuiz = isEnglishMode ? (featuredEnglishQuiz || featuredQuiz) : featuredQuiz;
-  const [mobileQuizSelected, setMobileQuizSelected] = useState<number | null>(null);
-  const [mobileQuizAnswered, setMobileQuizAnswered] = useState(false);
-  const [isMobileQuizExpanded, setIsMobileQuizExpanded] = useState(true);
-
-  useEffect(() => {
-    setMobileQuizSelected(null);
-    setMobileQuizAnswered(false);
-  }, [isEnglishMode, activeQuiz?.question]);
-
-  const handleMobileQuizSelect = (idx: number) => {
-    if (mobileQuizAnswered) return;
-    setMobileQuizSelected(idx);
-    setMobileQuizAnswered(true);
-  };
-
+  // Same language as the feed; never show a Bengali quiz in English mode or the reverse
+  const activeQuiz = isEnglishMode ? featuredEnglishQuiz : featuredQuiz;
   // Filter by platform mode and selected archive date
   const filteredArticles = useMemo(() => {
     let list = feedArticles;
@@ -159,97 +146,10 @@ export default function SocialFeedStream({
       {/* 1. Instagram / LinkedIn Style Story Capsules */}
       <CapsuleStoryPills capsuleArticles={filteredCapsules} />
 
-      {/* 2. Responsive Gamified Study Streak & Daily Challenge Card (Visible when Right Study Rail is hidden: xl:hidden) */}
+      {/* 2. Today's quiz on phones and tablets (the desktop rail shows the same card).
+          Always names and links its story; hidden when there is no real quiz. */}
       {activeQuiz && (
-        <div className="xl:hidden bg-white border border-[#ded8cb] rounded-2xl p-3 sm:p-4 shadow-2xs space-y-2.5">
-          {/* Header Row with Streak */}
-          <div className="flex items-center justify-between pb-2 border-b border-[#f4efe4]">
-            <div className="flex items-center gap-1.5 text-xs font-bold">
-              <Flame className={`w-4 h-4 ${isEnglishMode ? "text-blue-600 fill-blue-600" : "text-orange-500 fill-orange-500"}`} />
-              <span className={isEnglishMode ? "text-blue-900" : "text-amber-900"}>
-                {isEnglishMode ? "Daily Streak" : "ডেইলি স্ট্রিক"}
-              </span>
-              <span className={`text-xs font-mono px-2 py-0.5 rounded-full border font-bold ${
-                isEnglishMode ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-orange-50 text-orange-700 border-orange-200"
-              }`}>
-                {streakDays} {isEnglishMode ? "Days!" : "দিন!"}
-              </span>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setIsMobileQuizExpanded(!isMobileQuizExpanded)}
-              className="text-xs text-[#717887] hover:text-[#1c1d21] flex items-center gap-1 cursor-pointer"
-            >
-              <span className="text-xs">
-                {isMobileQuizExpanded 
-                  ? (isEnglishMode ? "Minimize" : "সংক্ষিপ্ত") 
-                  : (isEnglishMode ? "Expand Quiz" : "কুইজ দেখুন")}
-              </span>
-              {isMobileQuizExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-            </button>
-          </div>
-
-          {/* Quiz Body */}
-          {isMobileQuizExpanded && (
-            <div className="space-y-2.5 pt-1">
-              <div className="flex items-center justify-between">
-                <span className={`text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                  isEnglishMode ? "bg-blue-100 text-blue-800" : "bg-red-100 text-red-800"
-                }`}>
-                  {isEnglishMode ? "Daily English Challenge" : "বিসিএস প্রিলিমিনারি চ্যালেঞ্জ"}
-                </span>
-              </div>
-
-              <p className="text-xs font-semibold text-[#1c1d21] leading-snug">
-                {activeQuiz.question}
-              </p>
-
-              <div className="grid grid-cols-1 gap-1.5">
-                {activeQuiz.options?.map((opt: string, idx: number) => {
-                  const isSelected = mobileQuizSelected === idx;
-                  const isCorrect = idx === activeQuiz.correctOption;
-                  let btnStyle = "border-[#ded8cb] bg-[#faf8f4] hover:bg-[#f4efe4] text-[#1c1d21]";
-
-                  if (mobileQuizAnswered) {
-                    if (isCorrect) {
-                      btnStyle = "border-emerald-500 bg-emerald-50 text-emerald-900 font-bold";
-                    } else if (isSelected) {
-                      btnStyle = "border-red-500 bg-red-50 text-red-900";
-                    } else {
-                      btnStyle = "border-[#e5dec9] bg-white opacity-40 text-gray-500";
-                    }
-                  }
-
-                  return (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => handleMobileQuizSelect(idx)}
-                      disabled={mobileQuizAnswered}
-                      className={`w-full text-left p-2 rounded-xl text-xs border transition flex items-center justify-between cursor-pointer ${btnStyle}`}
-                    >
-                      <span className="leading-snug">{opt}</span>
-                      {mobileQuizAnswered && isCorrect && (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      )}
-                      {mobileQuizAnswered && isSelected && !isCorrect && (
-                        <XCircle className="w-4 h-4 text-red-600 shrink-0" />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {mobileQuizAnswered && (
-                <div className="p-2.5 bg-blue-50/60 border border-blue-200/80 rounded-xl text-xs text-[#3b414d] leading-relaxed animate-fade-in">
-                  <span className="font-bold text-[#1c1d21]">ব্যাখ্যা: </span>
-                  {activeQuiz.explanation || "সঠিক উত্তর যাচাই সম্পন্ন হয়েছে।"}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        <DailyQuizCard className="xl:hidden" quiz={activeQuiz} isEnglishMode={isEnglishMode} />
       )}
 
       {/* 3. Date Selection Dropdown Menu (With dynamic on-demand date loader) */}

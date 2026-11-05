@@ -5,7 +5,8 @@ import RightStudyRail from "@/components/RightStudyRail";
 import SocialFeedCard from "@/components/SocialFeedCard";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import { prisma } from "@/lib/prisma";
-import { getArticlesByCategory } from "@/actions/articles";
+import { getArticlesByCategory, getPublishedArticles } from "@/actions/articles";
+import { pickDailyQuiz } from "@/lib/study/daily";
 import { getCurrentSession } from "@/actions/auth";
 import { getTrendingHashtagsAction } from "@/actions/search";
 import { notFound } from "next/navigation";
@@ -35,6 +36,13 @@ export default async function CategoryPage({ params }: Props) {
   const allCategories = await prisma.category.findMany({
     orderBy: { createdAt: "asc" },
   });
+
+  // Today's quiz from this category's stories when possible, otherwise from all stories.
+  // Always a real quiz with its story; never a hard-coded fallback.
+  const recent = await getPublishedArticles(150);
+  const inCategory = recent.filter((a) => a.category?.slug === slug);
+  const dailyBnQuiz = pickDailyQuiz(inCategory, "bn") ?? pickDailyQuiz(recent, "bn");
+  const dailyEnQuiz = pickDailyQuiz(inCategory, "en") ?? pickDailyQuiz(recent, "en");
 
   return (
     <div className="min-h-screen bg-[#fbf9f5] flex flex-col font-sans pb-16 md:pb-0">
@@ -101,7 +109,12 @@ export default async function CategoryPage({ params }: Props) {
         </div>
 
         {/* Right Column: Widgets & Trends */}
-        <RightStudyRail streakDays={session.student?.streakDays || 0} initialTrending={trendingHashtags} />
+        <RightStudyRail
+          streakDays={session.student?.streakDays || 0}
+          initialTrending={trendingHashtags}
+          featuredQuiz={dailyBnQuiz}
+          featuredEnglishQuiz={dailyEnQuiz}
+        />
       </main>
 
       {/* Mobile Sticky Bottom Bar */}
