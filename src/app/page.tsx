@@ -4,13 +4,11 @@ import LeftNavSidebar from "@/components/LeftNavSidebar";
 import RightStudyRail from "@/components/RightStudyRail";
 import SocialFeedStream from "@/components/SocialFeedStream";
 import MobileBottomNav from "@/components/MobileBottomNav";
-import { getPublishedArticles, getDateArchiveStatsAction } from "@/actions/articles";
+import { getDateArchiveStatsAction } from "@/actions/articles";
 import { getCurrentSession } from "@/actions/auth";
 import { getTrendingHashtagsAction } from "@/actions/search";
 import { prisma } from "@/lib/prisma";
-import { pickDailyQuiz } from "@/lib/study/daily";
-import { toFeedCard } from "@/lib/feed-card";
-import { selectDailyFeed } from "@/lib/study/daily-selection";
+import { getTodaySelection, pickSyllabusDailyQuiz, urgentOnly } from "@/lib/study/daily-feed";
 
 export const dynamic = "force-dynamic";
 
@@ -22,9 +20,11 @@ export default async function Home() {
     console.error("[HOME] Session error:", e);
   }
 
-  let articles: any[] = [];
+  // Today's selection: at most 30 syllabus stories. The homepage shows only the
+  // জরুরি ১০; the others appear on their section pages.
+  let selection: Awaited<ReturnType<typeof getTodaySelection>> = { raw: [], cards: [] };
   try {
-    articles = await getPublishedArticles();
+    selection = await getTodaySelection();
   } catch (e) {
     console.error("[HOME] Articles error:", e);
   }
@@ -45,16 +45,12 @@ export default async function Home() {
     console.error("[HOME] Categories error:", e);
   }
 
-  // The daily challenge is one of today's real (extracted) quizzes; the client otherwise
-  // receives slim feed cards with no bodies, vocabulary or quiz answers.
-  // The feed is the daily selection: জরুরি ১০ + up to 20 more, duplicates removed
-  const feedCards = selectDailyFeed(articles.map(toFeedCard), "latest");
-  // The daily quiz comes from one of the ten when possible
-  const urgentIds = new Set(feedCards.filter((c) => c.dailyTier === "urgent").map((c) => c.id));
-  const urgentArticles = articles.filter((a) => urgentIds.has(a.id));
-  const dailyBnQuiz = pickDailyQuiz(urgentArticles, "bn") ?? pickDailyQuiz(articles, "bn");
-  const dailyEnQuiz = pickDailyQuiz(urgentArticles, "en") ?? pickDailyQuiz(articles, "en");
-  const capsuleArticles = feedCards.filter((a) => a.isCapsule);
+  // The client receives slim feed cards with no bodies, vocabulary or quiz answers.
+  const feedCards = urgentOnly(selection.cards);
+  // The daily quiz comes from one of the ten and tests a syllabus fact (or there is none)
+  const dailyBnQuiz = pickSyllabusDailyQuiz(selection.raw, selection.cards, "bn");
+  const dailyEnQuiz = pickSyllabusDailyQuiz(selection.raw, selection.cards, "en");
+  const capsuleArticles = selection.cards.filter((a) => a.isCapsule);
   const trendingHashtags = await getTrendingHashtagsAction();
 
   return (

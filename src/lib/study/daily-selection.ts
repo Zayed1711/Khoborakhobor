@@ -28,7 +28,7 @@ const GENERIC_WORDS = new Set(
 const WINDOW_MS = 24 * 3600 * 1000;
 
 export type DailyTier = "urgent" | "more";
-export type RankedCard = FeedCard & { dailyTier: DailyTier; dailyRank: number };
+export type RankedCard = FeedCard & { dailyTier: DailyTier; dailyRank: number; isTrending: boolean };
 
 
 // Topic weight by category: what BCS / admission / job exams ask about most
@@ -69,7 +69,7 @@ const EXAM_SIGNALS = [
   // ICT: AI, innovation, internet, computing
   /কৃত্রিম বুদ্ধিমত্তা|এআই|চ্যাটজিপিটি|সেমিকন্ডাক্টর|চিপ|কোয়ান্টাম|ইন্টারনেট|৫জি|ফাইভ-?জি|স্যাটেলাইট|প্রোটোকল|সফটওয়্যার|উদ্ভাবন/,
   // General science: health, space, hazards, ecology
-  /আবিষ্কার|বিজ্ঞানী|টিকা|ভ্যাকসিন|ডেঙ্গু|মহামারি|নাসা|মহাকাশ|টেলিস্কোপ|উপগ্রহ|ভূমিকম্প|ঘূর্ণিঝড়|জীববৈচিত্র্য|মৌলিক সংখ্যা/,
+  /আবিষ্কার|বিজ্ঞানী|টিকা|ভ্যাকসিন|ডেঙ্গু|মহামারি|নাসা|মহাকাশ|টেলিস্কোপ|উপগ্রহ|ভূমিকম্প|ঘূর্ণিঝড়|বন্যা|জীববৈচিত্র্য|পরিবেশ|দূষণ|নদী রক্ষা|বনভূমি|মৌলিক সংখ্যা/,
   // Awards, records, indices, reports
   /পুরস্কার|নোবেল|বুকার|ব্যালন ডি|প্রথমবার|রেকর্ড|সূচক|র‍্যাঙ্কিং|জরিপ|প্রতিবেদন প্রকাশ/,
   // Exams and jobs
@@ -77,6 +77,21 @@ const EXAM_SIGNALS = [
   // English stories, same areas
   /budget|inflation|gdp|reserves?|exports?|remittance|monetary|central bank|imf|world bank|united nations|nato|asean|brics|g20|treaty|agreement|summit|cop\d|climate|sanctions?|ceasefire|nuclear|cyber|crypto|bitcoin|artificial intelligence|\bai\b|semiconductor|quantum|nasa|vaccine|earthquake|cyclone|nobel|award|record|index|survey|election commission|parliament|supreme court|ordinance/i,
 ].map((re) => new RegExp(nfc(re.source), re.flags));
+
+/** True when the text touches at least one syllabus area. */
+export function isSyllabusText(text: string): boolean {
+  const t = nfc(text || "");
+  return EXAM_SIGNALS.some((re) => re.test(t));
+}
+
+/**
+ * A story belongs in the selection only if its headline or summary touches the
+ * syllabus (or it is filed under exam preparation). Others are left out even when
+ * there is room, so a quiet day shows fewer stories instead of padding.
+ */
+export function isSyllabusRelevant(c: Pick<FeedCard, "title" | "summary" | "category">): boolean {
+  return c.category?.slug === "exam-prep" || isSyllabusText(`${c.title} ${c.summary}`);
+}
 
 // Stories exams almost never ask about
 const NOISE_SIGNALS = [
@@ -151,6 +166,25 @@ export function scoreStory(c: FeedCard): number {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Trending (আলোচিত): important national or international news that is in the
+// selection even when it matches nothing in the syllabus
+// ---------------------------------------------------------------------------
+
+// Only these sections can be "trending"; a viral sports or film story is not
+const TREND_CATEGORIES = new Set(["national", "politics", "world", "economy"]);
+const NATIONAL = new Set(["national", "politics", "economy"]);
+const INTERNATIONAL = new Set(["world"]);
+// Heads of state and government, elections: news of the day even outside the syllabus
+const HIGH_PROFILE = new RegExp(
+  nfc("প্রধানমন্ত্রী|রাষ্ট্রপতি|প্রধান উপদেষ্টা|প্রধান বিচারপতি|সেনাপ্রধান|জাতীয় নির্বাচন|সংসদ নির্বাচন|উপনির্বাচন|সিটি নির্বাচন|মধ্যবর্তী নির্বাচন|প্রেসিডেন্ট নির্বাচন|নির্বাচন কমিশন|ভোটগ্রহণ|ভোটের ফল|সিনেট|প্রতিনিধি পরিষদ|হোয়াইট হাউস|মার্কিন প্রেসিডেন্ট|president|prime minister|general election|midterm|senate|white house"),
+  "i"
+);
+// 3+ stories about the same event in one day = wide coverage
+const TRENDING_COVERAGE = 3;
+// Letters (Unicode code units, after removing endings) for a word to count as specific
+const SPECIFIC_WORD_LENGTH = 6;
+
 /** True when two cards are the same story saved twice. */
 export function isSameStory(a: FeedCard, b: FeedCard): boolean {
   if (a.sourceUrl && a.sourceUrl === b.sourceUrl) return true;
@@ -169,24 +203,50 @@ const timeOf = (c: FeedCard) => new Date(c.createdAtIso).getTime() || 0;
 export function selectDaily(cards: FeedCard[], window: "latest" | "all" = "latest"): RankedCard[] {
   if (!cards.length) return [];
   const newest = Math.max(...cards.map(timeOf));
-  const pool = window === "latest" ? cards.filter((c) => timeOf(c) > newest - WINDOW_MS) : cards;
+  const inWindow = window === "latest" ? cards.filter((c) => timeOf(c) > newest - WINDOW_MS) : cards;
 
-  // Best first; ties go to the newer story
-  const scored = pool
-    .map((c) => ({ c, s: scoreStory(c) }))
+  // Coverage: how many of the day's stories are about the same event (same story,
+  // or sharing a word that is in 3+ of the day's headlines)
+  const tokensOf = new Map(inWindow.map((c) => [c.id, [...titleTokens(c.title)]]));
+  const has = (id: string, w: string) => tokensOf.get(id)!.some((t) => sameWord(t, w));
+  const hotWords = new Set<string>();
+  for (const c of inWindow)
+    for (const w of tokensOf.get(c.id)!)
+      if (w.length >= 3 && !/^[০-৯0-9]+$/.test(w) && !GENERIC_WORDS.has(w) && !hotWords.has(w) &&
+          inWindow.filter((x) => has(x.id, w)).length >= HOT_WORD_MIN_HEADLINES)
+        hotWords.add(w);
+  const hotOf = (id: string) => tokensOf.get(id)!.filter((w) => hotWords.has(w));
+  // Two stories cover the same event when they are the same story, share one long,
+  // specific topic word ("পোশাকশ্রমিক", "এইচএসসি"), or share two shorter ones.
+  // Short common words ("দাম", "বোর্ড") alone do not connect stories.
+  const isSpecific = (w: string) => stem(w).length >= SPECIFIC_WORD_LENGTH;
+  const coverage = (c: FeedCard) => {
+    const hot = hotOf(c.id);
+    return inWindow.filter((x) => {
+      if (isSameStory(c, x)) return true;
+      const shared = hot.filter((w) => has(x.id, w));
+      return shared.some(isSpecific) || shared.length >= 2;
+    }).length;
+  };
+  const isTrending = (c: FeedCard) =>
+    TREND_CATEGORIES.has(c.category?.slug) && (coverage(c) >= TRENDING_COVERAGE || HIGH_PROFILE.test(nfc(c.title)));
+
+  // Syllabus stories, plus trending national/international news; a quiet day shows
+  // fewer rather than padding with fluff
+  const scored = inWindow
+    .map((c) => {
+      const trending = isTrending(c);
+      // A small lift: the ten stay mostly syllabus; the top trending national and
+      // international story are guaranteed a place below
+      const s = scoreStory(c) + (trending ? 1 + Math.min(coverage(c) - 1, 3) * 0.3 : 0);
+      return { c, s, trending };
+    })
+    .filter((x) => x.trending || isSyllabusRelevant(x.c))
     .sort((x, y) => y.s - x.s || timeOf(y.c) - timeOf(x.c));
 
   // Drop duplicates, keeping the higher-scored copy
-  const unique: { c: FeedCard; s: number }[] = [];
+  const unique: typeof scored = [];
   for (const item of scored) if (!unique.some((u) => isSameStory(u.c, item.c))) unique.push(item);
-
-  const tokensOf = new Map(unique.map((u) => [u.c.id, [...titleTokens(u.c.title)]]));
-  const has = (id: string, w: string) => tokensOf.get(id)!.some((t) => sameWord(t, w));
-  const hotWords = new Set<string>();
-  for (const u of unique)
-    for (const w of tokensOf.get(u.c.id)!)
-      if (w.length >= 3 && !/^[০-৯0-9]+$/.test(w) && !GENERIC_WORDS.has(w) && unique.filter((x) => has(x.c.id, w)).length >= HOT_WORD_MIN_HEADLINES)
-        hotWords.add(w);
 
   const pickTier = (from: typeof unique, count: number, cap: number, topicCap = Infinity) => {
     const chosen: typeof unique = [];
@@ -195,8 +255,7 @@ export function selectDaily(cards: FeedCard[], window: "latest" | "all" = "lates
       if (chosen.length >= count) break;
       const cat = item.c.category?.slug || "";
       if ((perCat.get(cat) || 0) >= cap) continue;
-      const hot = tokensOf.get(item.c.id)!.filter((w) => hotWords.has(w));
-      if (hot.some((w) => chosen.filter((x) => has(x.c.id, w)).length >= topicCap)) continue;
+      if (hotOf(item.c.id).some((w) => chosen.filter((x) => has(x.c.id, w)).length >= topicCap)) continue;
       perCat.set(cat, (perCat.get(cat) || 0) + 1);
       chosen.push(item);
     }
@@ -205,16 +264,30 @@ export function selectDaily(cards: FeedCard[], window: "latest" | "all" = "lates
       if (chosen.length >= count) break;
       if (!chosen.includes(item)) chosen.push(item);
     }
-    return chosen.sort((x, y) => y.s - x.s || timeOf(y.c) - timeOf(x.c));
+    return chosen;
   };
 
   const urgent = pickTier(unique, URGENT_COUNT, MAX_PER_CATEGORY_URGENT, MAX_PER_TOPIC_URGENT);
+
+  // The ten always carry the day's top trending national and international story
+  for (const group of [NATIONAL, INTERNATIONAL]) {
+    if (urgent.some((u) => u.trending && group.has(u.c.category?.slug))) continue;
+    const best = unique.find((u) => u.trending && group.has(u.c.category?.slug) && !urgent.includes(u));
+    if (!best) continue;
+    if (urgent.length < URGENT_COUNT) { urgent.push(best); continue; }
+    // Replace the lowest-scored story that is not itself a reserved trending one
+    const sorted = [...urgent].sort((x, y) => x.s - y.s);
+    const out = sorted.find((u) => !u.trending) ?? sorted[0];
+    urgent.splice(urgent.indexOf(out), 1, best);
+  }
+  urgent.sort((x, y) => y.s - x.s || timeOf(y.c) - timeOf(x.c));
+
   const rest = unique.filter((u) => !urgent.includes(u));
-  const more = pickTier(rest, MORE_COUNT, MAX_PER_CATEGORY_MORE);
+  const more = pickTier(rest, MORE_COUNT, MAX_PER_CATEGORY_MORE).sort((x, y) => y.s - x.s || timeOf(y.c) - timeOf(x.c));
 
   return [
-    ...urgent.map((u, i) => ({ ...u.c, dailyTier: "urgent" as const, dailyRank: i + 1 })),
-    ...more.map((u, i) => ({ ...u.c, dailyTier: "more" as const, dailyRank: URGENT_COUNT + i + 1 })),
+    ...urgent.map((u, i) => ({ ...u.c, dailyTier: "urgent" as const, dailyRank: i + 1, isTrending: u.trending })),
+    ...more.map((u, i) => ({ ...u.c, dailyTier: "more" as const, dailyRank: URGENT_COUNT + i + 1, isTrending: u.trending })),
   ];
 }
 

@@ -9,6 +9,8 @@ import { toFeedCard, FeedCard } from "@/lib/feed-card";
 import { selectDailyFeed } from "@/lib/study/daily-selection";
 import { sanitizeArticleHtml, textToParagraphHtml } from "@/lib/sanitize-html";
 
+const urgentTier = <T extends { dailyTier: string }>(cards: T[]) => cards.filter((c) => c.dailyTier === "urgent");
+
 function safeParseJson<T>(value: any, fallback: T): T {
   if (!value) return fallback;
   if (typeof value !== "string") return value;
@@ -86,7 +88,7 @@ export async function getDateArchiveStatsAction(): Promise<DateArchiveStats> {
 export async function getArticlesByDateAction(dateKey: string): Promise<FeedCard[]> {
   try {
     if (!dateKey || dateKey === "all") {
-      return selectDailyFeed((await getPublishedArticles(150)).map(toFeedCard), "latest");
+      return urgentTier(selectDailyFeed((await getPublishedArticles(250)).map(toFeedCard), "latest"));
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return [];
 
@@ -132,8 +134,8 @@ export async function getArticlesByDateAction(dateKey: string): Promise<FeedCard
       return timeB - timeA;
     });
 
-    // A chosen day shows that day's selection: জরুরি ১০ + up to 20 more
-    return selectDailyFeed(parsed.map(toFeedCard), "all");
+    // A chosen day shows that day's জরুরি ১০ (the rest are on the section pages)
+    return urgentTier(selectDailyFeed(parsed.map(toFeedCard), "all"));
   } catch (err) {
     console.error(`[ARTICLES] Error loading articles for date (${dateKey}):`, err);
     return [];
@@ -227,36 +229,6 @@ export async function getArticleBySlug(rawSlug: string) {
   } catch (err) {
     console.error(`[ARTICLES] Error loading article by slug (${rawSlug}):`, err);
     return null;
-  }
-}
-
-export async function getArticlesByCategory(categorySlug: string) {
-  if (!categorySlug) return [];
-
-  try {
-    const articles = await prisma.article.findMany({
-      where: {
-        sourceUrl: { not: null },
-        category: {
-          slug: categorySlug,
-        },
-      },
-      include: {
-        category: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    return articles.map((a) => ({
-      ...a,
-      content: "",
-      keyTakeaways: safeParseJson(a.keyTakeaways, []),
-    }));
-  } catch (err) {
-    console.error(`[ARTICLES] Error loading articles for category (${categorySlug}):`, err);
-    return [];
   }
 }
 

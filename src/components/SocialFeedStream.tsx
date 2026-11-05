@@ -204,8 +204,8 @@ export default function SocialFeedStream({
             {!hasMore && filteredArticles.some((a) => a.dailyTier) && (
               <p className="text-center text-xs text-[#717887] py-2">
                 {isEnglishMode
-                  ? `That's ${selectedDate === "all" ? "today's" : "this day's"} selection. Pick a date above to see other days.`
-                  : `${selectedDate === "all" ? "আজকের" : "এই দিনের"} বাছাই এখানেই শেষ। অন্য দিনের খবর দেখতে ওপরে তারিখ বেছে নিন।`}
+                  ? `That's ${selectedDate === "all" ? "today's" : "this day's"} top ${filteredArticles.length}. More selected stories are on the section pages above; pick a date to see other days.`
+                  : `${selectedDate === "all" ? "আজকের" : "এই দিনের"} জরুরি খবর এখানেই শেষ। বাছাই করা আরও খবর ওপরের বিভাগগুলোতে পাবেন; অন্য দিনের খবর দেখতে তারিখ বেছে নিন।`}
               </p>
             )}
             {hasMore && (
@@ -293,8 +293,8 @@ function FeedSectionHeading({
   const note =
     tier === "urgent"
       ? isEnglishMode
-        ? "The stories most useful for exams, each story once."
-        : "পরীক্ষার জন্য সবচেয়ে কাজের খবর, একই খবর একবারই।"
+        ? "The stories most useful for exams, plus the day's most talked-about news; each story once."
+        : "পরীক্ষার জন্য সবচেয়ে কাজের খবর ও আজকের আলোচিত খবর, একই খবর একবারই।"
       : isEnglishMode
       ? "Read these if you have time."
       : "সময় থাকলে এগুলোও পড়ে নিন।";

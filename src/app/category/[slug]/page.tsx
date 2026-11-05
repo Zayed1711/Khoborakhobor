@@ -5,8 +5,7 @@ import RightStudyRail from "@/components/RightStudyRail";
 import SocialFeedCard from "@/components/SocialFeedCard";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import { prisma } from "@/lib/prisma";
-import { getArticlesByCategory, getPublishedArticles } from "@/actions/articles";
-import { pickDailyQuiz } from "@/lib/study/daily";
+import { getSectionSelection, getTodaySelection, pickSyllabusDailyQuiz } from "@/lib/study/daily-feed";
 import { getCurrentSession } from "@/actions/auth";
 import { getTrendingHashtagsAction } from "@/actions/search";
 import { notFound } from "next/navigation";
@@ -32,17 +31,16 @@ export default async function CategoryPage({ params }: Props) {
     return notFound();
   }
 
-  const categoryArticles = await getArticlesByCategory(slug);
+  // Only this section's stories from the daily selections (at most 30 stories a day site-wide)
+  const categoryArticles = await getSectionSelection(slug);
   const allCategories = await prisma.category.findMany({
     orderBy: { createdAt: "asc" },
   });
 
-  // Today's quiz from this category's stories when possible, otherwise from all stories.
-  // Always a real quiz with its story; never a hard-coded fallback.
-  const recent = await getPublishedArticles(150);
-  const inCategory = recent.filter((a) => a.category?.slug === slug);
-  const dailyBnQuiz = pickDailyQuiz(inCategory, "bn") ?? pickDailyQuiz(recent, "bn");
-  const dailyEnQuiz = pickDailyQuiz(inCategory, "en") ?? pickDailyQuiz(recent, "en");
+  // The same daily quiz as the homepage: from one of the ten, on a syllabus fact
+  const today = await getTodaySelection();
+  const dailyBnQuiz = pickSyllabusDailyQuiz(today.raw, today.cards, "bn");
+  const dailyEnQuiz = pickSyllabusDailyQuiz(today.raw, today.cards, "en");
 
   return (
     <div className="min-h-screen bg-[#fbf9f5] flex flex-col font-sans pb-16 md:pb-0">
@@ -72,7 +70,7 @@ export default async function CategoryPage({ params }: Props) {
               </h1>
             </div>
             <p className="text-xs text-[#505764] leading-relaxed">
-              {category.name}-সম্পর্কিত সর্বশেষ তথ্য, বিশ্লেষণ ও শিক্ষণীয় উপাদান ({categoryArticles.length}টি প্রতিবেদন)।
+              গত এক সপ্তাহের বাছাই করা খবর থেকে এই বিভাগের পরীক্ষা-উপযোগী প্রতিবেদন ({categoryArticles.length.toLocaleString("bn-BD")}টি)।
             </p>
           </div>
 

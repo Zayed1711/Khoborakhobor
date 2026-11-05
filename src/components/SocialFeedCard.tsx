@@ -143,6 +143,15 @@ export default function SocialFeedCard({
               <span className="text-xs bg-[#f5ebeb] text-[#842323] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
                 {article.category.name}
               </span>
+              {/* Big national/international news of the day, shown even outside the syllabus */}
+              {(article as { isTrending?: boolean }).isTrending && (
+                <span
+                  className="text-xs border border-[#d8c9a8] text-[#7a5b1e] px-2 py-0.5 rounded-full font-semibold"
+                  title={isEnglish ? "Widely covered news of the day" : "আজ বহু সংবাদমাধ্যমে আলোচিত খবর"}
+                >
+                  {isEnglish ? "Trending" : "আলোচিত"}
+                </span>
+              )}
               {article.sourceUrl && (
                 <a
                   href={article.sourceUrl}

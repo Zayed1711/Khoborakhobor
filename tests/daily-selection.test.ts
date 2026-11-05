@@ -36,11 +36,19 @@ const PLACES = ["রংপুর", "খুলনা", "বরিশাল", "স
 const filler = (k: number, slug = "national", from = 0) =>
   Array.from({ length: k }, (_, j) => {
     const i = from + j;
-    return card(`${PLACES[i % 10]}${"কখগঘঙচছজঝঞ"[Math.floor(i / 10)]} ${WORDS[i % 25]}${i}`, { category: { name: slug, slug } });
+    // The summary touches the syllabus, so these count as relevant stories
+    return card(`${PLACES[i % 10]}${"কখগঘঙচছজঝঞ"[Math.floor(i / 10)]} ${WORDS[i % 25]}${i}`, { category: { name: slug, slug }, summary: "বাজেট ঘোষণা" });
   });
 const mixed = () => [...filler(5, "world", 0), ...filler(5, "economy", 5), ...filler(5, "politics", 10), ...filler(5, "tech", 15)];
 
 describe("daily selection", () => {
+  it("leaves out stories that touch nothing in the syllabus, even when there is room", () => {
+    const off = card("মিরপুর টেস্টে জিতবে কে", { category: { name: "s", slug: "sports" } });
+    const on = card("বাজেটে রাজস্ব আদায়ের নতুন লক্ষ্য", { category: { name: "e", slug: "economy" } });
+    const ids = selectDaily([off, on]).map((c) => c.id);
+    expect(ids).toEqual([on.id]);
+  });
+
   it("returns at most 10 urgent + 20 more, ranked 1..30", () => {
     const sel = selectDaily(filler(45));
     expect(sel).toHaveLength(30);
@@ -85,7 +93,7 @@ describe("daily selection", () => {
 
   it("on the homepage uses only the latest 24 hours of news", () => {
     const fresh = filler(3);
-    const old = card("দুই দিন আগের খবর", { createdAtIso: new Date(Date.UTC(2026, 10, 3)).toISOString() });
+    const old = card("দুই দিন আগের খবর", { summary: "মুদ্রানীতি ঘোষণা", createdAtIso: new Date(Date.UTC(2026, 10, 3)).toISOString() });
     const ids = selectDaily([...fresh, old], "latest").map((c) => c.id);
     expect(ids).not.toContain(old.id);
     expect(selectDaily([...fresh, old], "all").map((c) => c.id)).toContain(old.id);
@@ -94,5 +102,36 @@ describe("daily selection", () => {
   it("ranks Bengali and English stories separately", () => {
     const sel = selectDailyFeed([...filler(12), card("Budget deficit narrows as revenue rises"), card("UN climate summit opens")]);
     expect(sel.filter((c) => !/[ঀ-৿]/.test(c.title)).map((c) => c.dailyRank)).toEqual([1, 2]);
+  });
+
+  describe("trending news outside the syllabus", () => {
+    const many = () => [...filler(8, "economy", 0), ...filler(8, "tech", 8), ...filler(8, "exam-prep", 16)];
+
+    it("includes the Prime Minister's visit in the ten (national)", () => {
+      const pm = card("প্রধানমন্ত্রী আজ বাগেরহাট যাচ্ছেন", { category: { name: "n", slug: "national" } });
+      const sel = selectDaily([pm, ...many()]);
+      const got = sel.find((c) => c.id === pm.id);
+      expect(got?.dailyTier).toBe("urgent");
+      expect(got?.isTrending).toBe(true);
+    });
+
+    it("includes a US Senate result in the ten (international)", () => {
+      const us = card("মার্কিন সিনেটে জয়ী হলেন ডেমোক্র্যাট প্রার্থী", { category: { name: "w", slug: "world" } });
+      expect(selectDaily([us, ...many()]).find((c) => c.id === us.id)?.dailyTier).toBe("urgent");
+    });
+
+    it("counts a story covered by many outlets as trending", () => {
+      const quake = ["চট্টগ্রামে শক্তিশালী কম্পন", "চট্টগ্রামে কম্পনে ভবনে ফাটল", "কম্পনের পর চট্টগ্রামে আতঙ্ক"].map((t) =>
+        card(t, { category: { name: "n", slug: "national" } })
+      );
+      const sel = selectDaily([...quake, ...many()]);
+      expect(sel.filter((c) => quake.some((q) => q.id === c.id) && c.isTrending).length).toBeGreaterThan(0);
+    });
+
+    it("does not treat viral sports or entertainment as trending", () => {
+      const viral = ["মেসির জোড়া গোল", "মেসির গোলে উচ্ছ্বাস", "মেসি ফিরলেন মাঠে"].map((t) => card(t, { category: { name: "s", slug: "sports" } }));
+      const ids = selectDaily([...viral, ...many()]).map((c) => c.id);
+      expect(ids.some((id) => viral.some((v) => v.id === id))).toBe(false);
+    });
   });
 });
