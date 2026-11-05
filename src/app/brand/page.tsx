@@ -58,10 +58,10 @@ export default function BrandPage() {
               </div>
 
               <div className="flex items-center justify-between pt-2 border-t border-[#f0ebd5]">
-                <span className="text-xs font-mono text-[#777e8b]">public/logo.svg</span>
+                <span className="text-xs font-mono text-[#777e8b]">public/brand-logo.png</span>
                 <a
-                  href="/logo.svg"
-                  download="khoborakhobor-logo.svg"
+                  href="/brand-logo.png"
+                  download="khoborakhobor-logo.png"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#842323] text-white text-xs font-medium hover:bg-[#6e1c1c] transition"
                 >
                   <Download className="w-3.5 h-3.5" />
@@ -87,10 +87,10 @@ export default function BrandPage() {
               </div>
 
               <div className="flex items-center justify-between pt-2 border-t border-[#f0ebd5]">
-                <span className="text-xs font-mono text-[#777e8b]">public/logo-vertical.svg</span>
+                <span className="text-xs font-mono text-[#777e8b]">public/brand-logo.png</span>
                 <a
-                  href="/logo-vertical.svg"
-                  download="khoborakhobor-masthead.svg"
+                  href="/brand-logo.png"
+                  download="khoborakhobor-masthead.png"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#842323] text-white text-xs font-medium hover:bg-[#6e1c1c] transition"
                 >
                   <Download className="w-3.5 h-3.5" />
@@ -122,12 +122,12 @@ export default function BrandPage() {
                 সোশ্যাল মিডিয়া প্রোফাইল, ওয়াটারমার্ক ও মনোগ্রাম প্রতীক (৫১২×৫১২)।
               </p>
               <a
-                href="/logo-icon.svg"
-                download="khoborakhobor-seal.svg"
+                href="/logo-mark.svg"
+                download="khoborakhobor-mark.svg"
                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[#d6cfc0] hover:bg-[#f5f1e8] text-xs font-medium transition"
               >
                 <Download className="w-3.5 h-3.5 text-[#842323]" />
-                <span>logo-icon.svg</span>
+                <span>logo-mark.svg</span>
               </a>
             </div>
 
@@ -205,8 +205,8 @@ export default function BrandPage() {
 
             <div className="flex justify-end pt-2">
               <a
-                href="/logo-white.svg"
-                download="khoborakhobor-white.svg"
+                href="/brand-logo-white.png"
+                download="khoborakhobor-white.png"
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#d4af37] text-[#1a1712] text-xs font-bold hover:bg-[#e4be42] transition"
               >
                 <Download className="w-3.5 h-3.5" />

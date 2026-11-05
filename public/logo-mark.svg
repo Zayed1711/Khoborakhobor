@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-76 -56 152 112" role="img" aria-label="খবরাখবর">
+  <g fill="none" stroke="#7f1d1d" stroke-linecap="round">
+    <path d="M-53.3 -45.5 Q-80 0 -53.3 45.5" stroke-width="15.5"/>
+    <path d="M-28.3 -28.5 Q-46.3 0 -28.3 28.5" stroke-width="11"/>
+    <path d="M28.3 -28.5 Q46.3 0 28.3 28.5" stroke-width="11"/>
+    <path d="M53.3 -45.5 Q80 0 53.3 45.5" stroke-width="15.5"/>
+  </g>
+  <circle r="14.9" fill="#d9a441"/>
+</svg>

@@ -39,7 +39,8 @@ export const metadata: Metadata = {
       { url: "/icon.svg", type: "image/svg+xml" },
       { url: "/favicon.svg", type: "image/svg+xml" },
     ],
-    apple: "/logo-icon.svg",
+    // iPhones need a PNG for the home-screen icon (src/app/apple-icon.png)
+    apple: "/apple-icon.png",
     shortcut: "/favicon.svg",
   },
   openGraph: {
@@ -48,12 +49,17 @@ export const metadata: Metadata = {
     siteName: "খবরাখবর (KhoboraKhobor)",
     images: [
       {
-        url: "/logo.svg",
-        width: 480,
-        height: 96,
-        alt: "খবরাখবর (KhoboraKhobor)",
+        // Facebook, WhatsApp and X show PNG/JPG share images, not SVG
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "খবরাখবর — KHOBORAKHOBOR DIGITAL",
       },
     ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/og-image.png"],
   },
 };
 

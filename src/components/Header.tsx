@@ -405,10 +405,10 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session, activ
           <div className="shrink-0 flex items-center justify-start">
             <Link href="/" className="inline-block group" aria-label="খবরাখবর ডিজিটাল — প্রচ্ছদ">
               <Image
-                src="/brand-logo-motto.png"
+                src="/brand-logo.png"
                 alt="খবরাখবর ডিজিটাল — KHOBORAKHOBOR DIGITAL"
-                width={912}
-                height={312}
+                width={650}
+                height={148}
                 priority
                 className="h-12 lg:h-14 w-auto object-contain transition-transform duration-300 group-hover:scale-[1.02]"
               />
