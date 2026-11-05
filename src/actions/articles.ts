@@ -105,7 +105,7 @@ export async function getArticlesByDateAction(dateKey: string): Promise<FeedCard
       },
       include: {
         category: true,
-        vocabulary: true,
+        // No vocabulary: feed cards never show it (the story page loads its own)
         quizQuestions: { where: { origin: { not: "legacy" } } }, // legacy = old template quiz kept only for attempt history
       },
       orderBy: {
@@ -149,7 +149,7 @@ export async function getPublishedArticles(limit: number = 150) {
       take: limit,
       include: {
         category: true,
-        vocabulary: true,
+        // No vocabulary: feed cards never show it (the story page loads its own)
         quizQuestions: { where: { origin: { not: "legacy" } } }, // legacy = old template quiz kept only for attempt history
       },
       orderBy: {

@@ -196,6 +196,68 @@ export function isSameStory(a: FeedCard, b: FeedCard): boolean {
 const timeOf = (c: FeedCard) => new Date(c.createdAtIso).getTime() || 0;
 
 /**
+ * Precomputed word matching for one set of stories. Gives the same answers as
+ * titleTokens / sameWord / isSameStory, without redoing the work for every pair.
+ */
+function buildWordContext(cards: FeedCard[]) {
+  const tokens = new Map(cards.map((c) => [c.id, [...titleTokens(c.title)]]));
+  const tokenSets = new Map([...tokens].map(([id, t]) => [id, new Set(t)]));
+  const words = [...new Set([...tokens.values()].flat())];
+
+  // For each distinct word, every word it matches (including itself)
+  const matches = new Map<string, string[]>(words.map((w) => [w, [w]]));
+  for (let i = 0; i < words.length; i++)
+    for (let j = i + 1; j < words.length; j++)
+      if (sameWord(words[i], words[j])) {
+        matches.get(words[i])!.push(words[j]);
+        matches.get(words[j])!.push(words[i]);
+      }
+
+  const cardsByToken = new Map<string, Set<string>>();
+  for (const [id, t] of tokens) for (const w of t) (cardsByToken.get(w) ?? cardsByToken.set(w, new Set()).get(w)!).add(id);
+
+  const cardsWithCache = new Map<string, Set<string>>();
+  /** Ids of the cards whose headline contains a word matching `w`. */
+  const cardsWith = (w: string): Set<string> => {
+    let hit = cardsWithCache.get(w);
+    if (!hit) {
+      hit = new Set();
+      for (const u of matches.get(w) ?? words.filter((x) => sameWord(x, w)))
+        for (const id of cardsByToken.get(u) ?? []) hit.add(id);
+      cardsWithCache.set(w, hit);
+    }
+    return hit;
+  };
+  const has = (id: string, w: string) => cardsWith(w).has(id);
+
+  const points = new Map(cards.map((c) => [c.id, new Set((c.keyTakeaways || []).filter((t) => t.length > 40).map(squash))]));
+  const pairCache = new Map<string, boolean>();
+  const sameStory = (a: FeedCard, b: FeedCard): boolean => {
+    const key = a.id < b.id ? `${a.id}|${b.id}` : `${b.id}|${a.id}`;
+    const known = pairCache.get(key);
+    if (known !== undefined) return known;
+    let result = Boolean(a.sourceUrl && a.sourceUrl === b.sourceUrl);
+    if (!result) {
+      const ta = tokens.get(a.id)!;
+      const tb = tokenSets.get(b.id)!;
+      if (ta.length && tb.size) {
+        let shared = 0;
+        for (const t of ta) if (matches.get(t)!.some((u) => tb.has(u))) shared++;
+        result = shared / (ta.length + tb.size - shared) >= 0.5;
+      }
+    }
+    if (!result) {
+      const pa = points.get(a.id)!;
+      for (const t of points.get(b.id)!) if (pa.has(t)) { result = true; break; }
+    }
+    pairCache.set(key, result);
+    return result;
+  };
+
+  return { tokens, words, cardsWith, has, sameStory };
+}
+
+/**
  * Pick জরুরি ১০ + up to 20 more from one language's stories.
  * `window: "latest"` keeps only the 24 hours before the newest story (the homepage);
  * `window: "all"` uses every card given (a chosen archive date).
@@ -205,28 +267,36 @@ export function selectDaily(cards: FeedCard[], window: "latest" | "all" = "lates
   const newest = Math.max(...cards.map(timeOf));
   const inWindow = window === "latest" ? cards.filter((c) => timeOf(c) > newest - WINDOW_MS) : cards;
 
+  // Everything below compares headlines word by word. Each headline is split once, and
+  // which words match each other (Bengali endings included) is worked out once per pair
+  // of distinct words, so a busy day costs milliseconds instead of seconds.
+  const ctx = buildWordContext(inWindow);
+  const { has } = ctx;
+  const same = ctx.sameStory;
+
   // Coverage: how many of the day's stories are about the same event (same story,
   // or sharing a word that is in 3+ of the day's headlines)
-  const tokensOf = new Map(inWindow.map((c) => [c.id, [...titleTokens(c.title)]]));
-  const has = (id: string, w: string) => tokensOf.get(id)!.some((t) => sameWord(t, w));
   const hotWords = new Set<string>();
-  for (const c of inWindow)
-    for (const w of tokensOf.get(c.id)!)
-      if (w.length >= 3 && !/^[০-৯0-9]+$/.test(w) && !GENERIC_WORDS.has(w) && !hotWords.has(w) &&
-          inWindow.filter((x) => has(x.id, w)).length >= HOT_WORD_MIN_HEADLINES)
-        hotWords.add(w);
-  const hotOf = (id: string) => tokensOf.get(id)!.filter((w) => hotWords.has(w));
+  for (const w of ctx.words)
+    if (w.length >= 3 && !/^[০-৯0-9]+$/.test(w) && !GENERIC_WORDS.has(w) && ctx.cardsWith(w).size >= HOT_WORD_MIN_HEADLINES)
+      hotWords.add(w);
+  const hotOf = (id: string) => ctx.tokens.get(id)!.filter((w) => hotWords.has(w));
   // Two stories cover the same event when they are the same story, share one long,
   // specific topic word ("পোশাকশ্রমিক", "এইচএসসি"), or share two shorter ones.
   // Short common words ("দাম", "বোর্ড") alone do not connect stories.
   const isSpecific = (w: string) => stem(w).length >= SPECIFIC_WORD_LENGTH;
+  const coverageOf = new Map<string, number>();
   const coverage = (c: FeedCard) => {
+    const known = coverageOf.get(c.id);
+    if (known !== undefined) return known;
     const hot = hotOf(c.id);
-    return inWindow.filter((x) => {
-      if (isSameStory(c, x)) return true;
+    const n = inWindow.filter((x) => {
+      if (same(c, x)) return true;
       const shared = hot.filter((w) => has(x.id, w));
       return shared.some(isSpecific) || shared.length >= 2;
     }).length;
+    coverageOf.set(c.id, n);
+    return n;
   };
   const isTrending = (c: FeedCard) =>
     TREND_CATEGORIES.has(c.category?.slug) && (coverage(c) >= TRENDING_COVERAGE || HIGH_PROFILE.test(nfc(c.title)));
@@ -246,7 +316,7 @@ export function selectDaily(cards: FeedCard[], window: "latest" | "all" = "lates
 
   // Drop duplicates, keeping the higher-scored copy
   const unique: typeof scored = [];
-  for (const item of scored) if (!unique.some((u) => isSameStory(u.c, item.c))) unique.push(item);
+  for (const item of scored) if (!unique.some((u) => same(u.c, item.c))) unique.push(item);
 
   const pickTier = (from: typeof unique, count: number, cap: number, topicCap = Infinity) => {
     const chosen: typeof unique = [];
