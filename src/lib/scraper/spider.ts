@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { evaluateExamRelevance } from "@/lib/scraper/examFilter";
 import { extractVocabularyTableRows } from "@/lib/vocabulary-table-engine";
-import { cleanArticleBody, extractFacts, extractTakeaways, buildExtractiveQuiz } from "@/lib/study/extractive";
+import { cleanArticleBody, extractFacts, extractTakeaways, buildExtractiveQuiz, pickSummary } from "@/lib/study/extractive";
 
 const parser = new Parser({
   headers: {
@@ -1038,9 +1038,8 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
           continue;
         }
 
-        const summary =
-          item.contentSnippet?.slice(0, 180) ||
-          cleanContent.replace(/<[^>]*>/g, " ").slice(0, 180) + "...";
+        // Never publisher chrome such as "আরও পড়ুন..."; falls back to the story's first paragraph
+        const summary = pickSummary(item.contentSnippet || "", cleaned.paragraphs);
 
         // Study material is quoted from the article itself (src/lib/study/extractive.ts)
         const takeaways = extractTakeaways(title, summary, bodyText);

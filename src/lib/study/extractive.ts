@@ -157,6 +157,29 @@ export function splitSentences(text: string): string[] {
     .filter((s) => s.length >= 25 && s.length <= 320);
 }
 
+/**
+ * The card summary: the feed's teaser when it is real text, otherwise the story's
+ * own first paragraph. Publisher chrome ("আরও পড়ুন...", sign-up prompts) is never
+ * used, and the text is cut at a sentence end, not in the middle of a word.
+ */
+export function pickSummary(teaser: string, paragraphs: string[], max = 220): string {
+  const candidates = [teaser, ...paragraphs]
+    .map((t) => (t || "").replace(/\s+/g, " ").trim())
+    .filter((t) => t.length >= 40 && !isBoilerplate(t));
+  const text = candidates[0];
+  if (!text) return "";
+  if (text.length <= max) return text;
+  const sentences = splitSentences(text);
+  let out = "";
+  for (const s of sentences) {
+    if ((out + " " + s).trim().length > max) break;
+    out = (out + " " + s).trim();
+  }
+  if (out) return out;
+  const cut = text.slice(0, max);
+  return cut.slice(0, Math.max(cut.lastIndexOf(" "), 40)).trim() + "…";
+}
+
 function toAsciiDigits(s: string): string {
   return s.replace(/[০-৯]/g, (d) => String(BN_DIGITS.indexOf(d)));
 }

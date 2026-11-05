@@ -5,6 +5,7 @@ import {
   extractFacts,
   extractTakeaways,
   hasInventedFiller,
+  pickSummary,
   splitSentences,
 } from "@/lib/study/extractive";
 
@@ -111,5 +112,33 @@ describe("buildExtractiveQuiz", () => {
 
   it("returns null when no sentence supports a question", () => {
     expect(buildExtractiveQuiz("শিরোনাম", "এখানে কোনো সংখ্যা বা তারিখ নেই, শুধু সাধারণ একটি বাক্য লেখা আছে।")).toBeNull();
+  });
+});
+
+describe("pickSummary", () => {
+  const paras = [
+    "রাজধানীর মিরপুর এলাকায় পুলিশের সঙ্গে তৈরি পোশাক কারখানার শ্রমিকদের সংঘর্ষের ঘটনা ঘটেছে।",
+    "দ্বিতীয় অনুচ্ছেদ, যা সারাংশে আসার কথা নয়।",
+  ];
+
+  it("never uses a 'read more' link block as the summary", () => {
+    const s = pickSummary(" আরও পড়ুনখোঁজ দ্য দরিদ্র২৮ অক্টোবর ২০২৬ ...", paras);
+    expect(s).toBe(paras[0]);
+  });
+
+  it("keeps a real teaser", () => {
+    const teaser = "শ্রমিকেরা ন্যূনতম মাসিক বেতন ৩০ হাজার টাকা করার দাবিতে সড়ক অবরোধ করেন।";
+    expect(pickSummary(teaser, paras)).toBe(teaser);
+  });
+
+  it("cuts long text at a sentence end, not mid-word", () => {
+    const long = Array.from({ length: 6 }, (_, i) => `এটি একটি দীর্ঘ বাক্য, যার ক্রমিক নম্বর ${i + 1} এবং এটি সারাংশ পরীক্ষার জন্য লেখা।`).join(" ");
+    const s = pickSummary(long, []);
+    expect(s.length).toBeLessThanOrEqual(220);
+    expect(s.endsWith("।")).toBe(true);
+  });
+
+  it("returns empty rather than inventing text", () => {
+    expect(pickSummary("আরও পড়ুন", [])).toBe("");
   });
 });

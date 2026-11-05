@@ -164,6 +164,17 @@ async function main() {
       }
       const bodyText = paragraphs.join(" ");
 
+      // 2b. Summary that is publisher chrome (e.g. a "আরও পড়ুন" link block)
+      // Only linked stories are ever shown. A paragraph that starts with the headline is a
+      // scraped heading glued to other text (often old invented filler), so it is not used.
+      if (a.sourceUrl && ex.isBoilerplate(a.summary || "")) {
+        const head = a.title.replace(/\s+/g, " ").trim().normalize("NFC");
+        const real = paragraphs.filter((p) => !p.replace(/\s+/g, " ").trim().normalize("NFC").startsWith(head));
+        const fixed = ex.pickSummary("", real);
+        if (fixed) { data.summary = fixed; note.push("summary was publisher chrome"); }
+        else note.push("summary is publisher chrome; no clean paragraph to replace it");
+      }
+
       // 3. Sources
       if (a.sourceUrl && !storyLink) {
         data.sourceUrl = null;
