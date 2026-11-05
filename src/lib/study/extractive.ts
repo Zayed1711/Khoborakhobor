@@ -50,6 +50,9 @@ const BOILERPLATE_PATTERNS: RegExp[] = [
   /^Read more/i,
   /^©/,
   /নিয়মিত চোখ রাখুন/,
+  /লাইভ পাতায় আপনাদের স্বাগত/,
+  /^Sign up for our .* newsletter/i,
+  /^Go to BBC[A-Za-z]*\.com/i,
 ].map((re) => new RegExp(nfc(re.source), re.flags));
 
 /**
@@ -61,6 +64,7 @@ export const INVENTED_FILLER_MARKERS = [
   "ঘটনার প্রেক্ষাপট ও সংশ্লিষ্ট তথ্য পর্যালোচনায়",
   "বিশেষজ্ঞরা অভিমত প্রকাশ করেছেন যে, প্রাতিষ্ঠানিক",
   "শিক্ষার্থী ও বিসিএস পরীক্ষার্থীদের জন্য এই ধরনের সমকালীন",
+  "প্রাতিষ্ঠানিক নীতিমালার প্রভাব নিয়ে বিস্তারিত তথ্যাবলির জন্য",
 ].map(nfc);
 
 /** True when the text contains any of the invented filler paragraphs. */

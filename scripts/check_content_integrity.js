@@ -45,20 +45,18 @@ async function main() {
   const articles = await prisma.article.findMany({ include: { quizQuestions: true } });
   const problems = [];
   const add = (kind, a, detail) => problems.push({ kind, title: a.title.slice(0, 70), detail: (detail || "").slice(0, 100) });
-  const paraUse = new Map();
+  // Key points that appear in several stories usually mean the same story was saved
+  // more than once (e.g. live-update pages). Reported as a note, not a failure.
+  const pointUse = new Map();
 
   for (const a of articles) {
+    // Stories without a link to the original are never shown (not even by address),
+    // so only linked stories are judged. The stored publisher text is never shown
+    // either: it is used only to prove that what IS shown came from the story.
+    if (!a.sourceUrl) continue;
     const paras = ex.htmlToParagraphs(a.content);
     const hasBody = paras.length > 0;
     const body = squash(paras.join(" ") + " " + a.summary + " " + a.title);
-
-    for (const p of paras) {
-      if (ex.isBoilerplate(p)) add("filler or publisher chrome in body", a, p);
-      if (p.length > 60) {
-        const k = squash(p);
-        paraUse.set(k, (paraUse.get(k) || 0) + 1);
-      }
-    }
     if (a.sourceUrl && HOMEPAGES.has(a.sourceUrl.trim().replace(/\/+$/, ""))) add("source link is only a homepage", a, a.sourceUrl);
     if (/images\.unsplash\.com|images\.pexels\.com/i.test(a.featuredImage || "")) add("stock photo used as story image", a, a.featuredImage);
 
@@ -72,6 +70,11 @@ async function main() {
     let takeaways = [];
     try { takeaways = JSON.parse(a.keyTakeaways || "[]"); } catch { add("takeaways are not valid JSON", a); }
     if (hasBody) for (const t of takeaways) if (!body.includes(squash(t))) add("takeaway not found in story", a, t);
+    for (const t of takeaways) if (t.length > 60) pointUse.set(squash(t), (pointUse.get(squash(t)) || 0) + 1);
+
+    // Everything a reader sees must be free of invented filler and publisher chrome
+    const shown = [a.summary, ...takeaways, ...facts.map((f) => f.relevance || ""), ...a.quizQuestions.filter((q) => q.origin !== "legacy").flatMap((q) => [q.question, q.sourceSentence || ""])];
+    for (const t of shown) if (t && ex.isBoilerplate(t)) add("filler or publisher chrome shown to readers", a, t);
     const CREDIT = new RegExp("ছবির উৎস|ছবির ক্যাপশন|via Getty Images".normalize("NFC"));
     for (const t of [...takeaways, ...facts.map((f) => f.relevance || "")]) {
       if (CREDIT.test(nfc(t))) add("photo credit inside a quoted sentence", a, t);
@@ -83,15 +86,19 @@ async function main() {
       if (q.origin === "generated") add("generated quiz published without review", a, q.question);
     }
   }
-  for (const [p, n] of paraUse) if (n >= 3) problems.push({ kind: `paragraph reused in ${n} stories`, title: "(several)", detail: p.slice(0, 100) });
+  const repeatedPoints = [...pointUse].filter(([, n]) => n >= 3);
 
   const storedBodies = articles.filter((a) => a.content && a.content.trim()).length;
   const unlinked = articles.filter((a) => !a.sourceUrl).length;
   await prisma.$disconnect();
   if (storedBodies) console.log(`Note: ${storedBodies} stories still store publisher text (not shown on the site). Remove with: npm run fix:content -- --apply --purge-bodies`);
-  if (unlinked) console.log(`Note: ${unlinked} stories have no link to the original and are hidden from lists.`);
+  if (unlinked) console.log(`Note: ${unlinked} stories have no link to the original and are not shown anywhere.`);
+  if (repeatedPoints.length) {
+    console.log(`Note: ${repeatedPoints.length} key points appear in 3 or more stories (probably the same story saved more than once):`);
+    for (const [p, n] of repeatedPoints.slice(0, 5)) console.log(`   ${n}x  ${p.slice(0, 90)}`);
+  }
   const byKind = problems.reduce((m, p) => ((m[p.kind] = (m[p.kind] || 0) + 1), m), {});
-  console.log(`Checked ${articles.length} stories in ${DB_PATH}`);
+  console.log(`Checked ${articles.length - unlinked} linked stories in ${DB_PATH}`);
   if (!problems.length) {
     console.log("OK: no integrity problems found.");
     return;

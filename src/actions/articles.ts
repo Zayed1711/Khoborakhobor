@@ -206,7 +206,9 @@ export async function getArticleBySlug(rawSlug: string) {
       });
     }
 
-    if (!article) return null;
+    // Link-out model: a story without a link to the original is not shown at all,
+    // not even by direct address (old stories of this kind may carry invented text)
+    if (!article || !article.sourceUrl) return null;
 
     return {
       ...article,
