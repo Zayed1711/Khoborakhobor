@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import SocialFeedCard from "./SocialFeedCard";
-import DailyQuizCard from "./DailyQuizCard";
 import CapsuleStoryPills from "./CapsuleStoryPills";
 import DateArchiveDropdown from "./DateArchiveDropdown";
 import { 
@@ -19,8 +18,6 @@ interface SocialFeedStreamProps {
   categories: { id: string; name: string; slug: string }[];
   studentId?: string;
   streakDays?: number;
-  featuredQuiz?: any;
-  featuredEnglishQuiz?: any;
   archiveStats?: DateArchiveStats | null;
 }
 
@@ -30,8 +27,6 @@ export default function SocialFeedStream({
   categories,
   studentId,
   streakDays = 0,
-  featuredQuiz,
-  featuredEnglishQuiz,
   archiveStats,
 }: SocialFeedStreamProps) {
   const { setMode, isEnglishMode } = useAppMode();
@@ -64,9 +59,6 @@ export default function SocialFeedStream({
     }
   };
 
-  // Mobile Streak & Quiz Interactive State
-  // Same language as the feed; never show a Bengali quiz in English mode or the reverse
-  const activeQuiz = isEnglishMode ? featuredEnglishQuiz : featuredQuiz;
   // Filter by platform mode and selected archive date
   const filteredArticles = useMemo(() => {
     let list = feedArticles;
@@ -148,12 +140,6 @@ export default function SocialFeedStream({
     <div className="space-y-3 sm:space-y-4">
       {/* 1. Instagram / LinkedIn Style Story Capsules */}
       <CapsuleStoryPills capsuleArticles={filteredCapsules} />
-
-      {/* 2. Today's quiz on phones and tablets (the desktop rail shows the same card).
-          Always names and links its story; hidden when there is no real quiz. */}
-      {activeQuiz && (
-        <DailyQuizCard className="xl:hidden" quiz={activeQuiz} isEnglishMode={isEnglishMode} />
-      )}
 
       {/* 3. Date Selection Dropdown Menu (With dynamic on-demand date loader) */}
       <DateArchiveDropdown

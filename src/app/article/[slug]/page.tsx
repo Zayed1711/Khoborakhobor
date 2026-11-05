@@ -3,6 +3,7 @@ import { getArticleBySlug, getPublishedArticles } from "@/actions/articles";
 import { getArticleStudyNotes, getActiveStudent } from "@/actions/student";
 import ArticleStudyView, { type StudyArticle } from "@/components/ArticleStudyView";
 import { toFeedCard } from "@/lib/feed-card";
+import { forClient } from "@/lib/study/daily-feed";
 import { extractVocabularyTableRows } from "@/lib/vocabulary-table-engine";
 import { isBengaliText } from "@/lib/bilingual";
 
@@ -21,7 +22,8 @@ export default async function ArticleDetailPage({ params }: Props) {
   }
 
   const [recent, student] = await Promise.all([getPublishedArticles(4), getActiveStudent()]);
-  const relatedArticles = recent.filter((a) => a.id !== article.id).slice(0, 3).map(toFeedCard);
+  // Related-story cards carry no quizzes (the quiz is only at the end of this story)
+  const relatedArticles = forClient(recent.filter((a) => a.id !== article.id).slice(0, 3).map(toFeedCard));
   const notes = student ? await getArticleStudyNotes(student.id, article.slug) : [];
 
   // Only what the page shows goes to the browser: no publisher body, no quiz answers
@@ -40,7 +42,9 @@ export default async function ArticleDetailPage({ params }: Props) {
     keyTakeaways: Array.isArray(article.keyTakeaways) ? article.keyTakeaways : [],
     factTable: Array.isArray(article.factTable) ? article.factTable : [],
     examTags: article.examTags,
-    quizQuestions: article.quizQuestions.map((q) => ({
+    // The quiz belongs to job/BCS preparation (Bengali stories); English-learning
+    // stories have no quiz
+    quizQuestions: (isBengaliText(article.title) ? article.quizQuestions : []).map((q) => ({
       id: q.id,
       question: q.question,
       options: Array.isArray(q.options) ? q.options : [],

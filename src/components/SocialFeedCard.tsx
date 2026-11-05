@@ -3,13 +3,12 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { 
-  Sparkles, HelpCircle, Bookmark, 
+  Sparkles, Bookmark, 
   Share2, Check, ArrowRight, ShieldCheck, Clock, 
-  ExternalLink, ChevronDown, CheckCircle2, XCircle, 
+  ExternalLink, ChevronDown, 
   Lightbulb, BookOpen, Layers, Globe
 } from "lucide-react";
 import ShareStudyModal from "./ShareStudyModal";
-import { submitQuizAnswerAction } from "@/actions/student";
 import { useLanguage } from "@/context/LanguageContext";
 import { isBengaliText, knownBengaliTitle, translateSummaryToBengali } from "@/lib/bilingual";
 import { getNewspaperSourceInfo } from "@/lib/sources";
@@ -55,7 +54,6 @@ export default function SocialFeedCard({
   eagerImage = false,
 }: SocialFeedCardProps) {
   const [showTakeaways, setShowTakeaways] = useState(false);
-  const [showQuiz, setShowQuiz] = useState(false);
   const [isSaved, setIsSaved] = useState(isInitiallySaved);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
@@ -78,42 +76,6 @@ export default function SocialFeedCard({
     : article.summary;
 
   const sourceInfo = getNewspaperSourceInfo(article.imageCaption, article.title);
-
-  // Quiz interactive state
-  const firstQuiz = article.quizQuestions?.[0];
-  const parsedOptions: string[] = (() => {
-    if (!firstQuiz) return [];
-    if (Array.isArray(firstQuiz.options)) return firstQuiz.options;
-    if (typeof firstQuiz.options === "string") {
-      try {
-        return JSON.parse(firstQuiz.options);
-      } catch {
-        return [];
-      }
-    }
-    return [];
-  })();
-
-  const [selectedOption, setSelectedOption] = useState<number | null>(null);
-  const [quizAnswered, setQuizAnswered] = useState(false);
-  const [quizChecking, setQuizChecking] = useState(false);
-  const [quizResult, setQuizResult] = useState<{ correctOption: number; explanation: string | null } | null>(null);
-
-  // The correct answer is not shipped with the feed; the server checks it.
-  const handleQuizSelect = async (idx: number) => {
-    if (quizAnswered || quizChecking || !firstQuiz) return;
-    setSelectedOption(idx);
-    setQuizChecking(true);
-    try {
-      const res = await submitQuizAnswerAction(studentId || "", firstQuiz.id, idx);
-      setQuizResult({ correctOption: res.correctOption, explanation: res.explanation ?? null });
-      setQuizAnswered(true);
-    } catch {
-      setSelectedOption(null);
-    } finally {
-      setQuizChecking(false);
-    }
-  };
 
   const handleToggleSave = () => {
     setIsSaved(!isSaved);
@@ -286,62 +248,6 @@ export default function SocialFeedCard({
           </div>
         )}
 
-        {/* 5. Inline Expandable: 10-Second Recall Micro-Quiz */}
-        {showQuiz && firstQuiz && (
-          <div className="p-4 bg-[#fdfbf7] border border-[#ded8cb] rounded-xl animate-fade-in space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-[#842323] uppercase tracking-wider flex items-center gap-1">
-                <HelpCircle className="w-3.5 h-3.5" />
-                <span>১০-সেকেন্ড একটিভ রিকল কুইজ:</span>
-              </span>
-              <span className="text-xs text-[#717887]">তাত্ক্ষণিক ফিডব্যাক</span>
-            </div>
-
-            <p className="text-sm font-bold text-[#1c1d21] leading-snug">
-              {firstQuiz.question}
-            </p>
-
-            <div className="space-y-1.5">
-              {parsedOptions.map((opt, oIdx) => {
-                let btnStyle = "bg-white border-[#ded8cb] hover:bg-[#faf8f4] text-[#343a46]";
-                if (quizAnswered) {
-                  if (oIdx === quizResult?.correctOption) {
-                    btnStyle = "bg-emerald-50 border-emerald-500 text-emerald-950 font-bold";
-                  } else if (selectedOption === oIdx) {
-                    btnStyle = "bg-rose-50 border-rose-400 text-rose-950";
-                  }
-                } else if (selectedOption === oIdx) {
-                  btnStyle = "bg-[#f5ebeb] border-[#842323] text-[#842323] font-semibold";
-                }
-
-                return (
-                  <button
-                    key={oIdx}
-                    type="button"
-                    disabled={quizAnswered || quizChecking}
-                    onClick={() => handleQuizSelect(oIdx)}
-                    className={`w-full text-left p-3 rounded-lg border text-sm leading-snug transition flex items-center justify-between ${btnStyle}`}
-                  >
-                    <span>{opt}</span>
-                    {quizAnswered && oIdx === quizResult?.correctOption && (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    )}
-                    {quizAnswered && selectedOption === oIdx && oIdx !== quizResult?.correctOption && (
-                      <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {quizAnswered && (
-              <div className="p-2.5 bg-white border border-[#ded8cb] rounded text-xs text-[#404652] leading-relaxed">
-                <span className="font-bold text-[#1c1d21]">ব্যাখ্যা: </span>
-                {quizResult?.explanation || "সঠিক উত্তর নির্বাচন সম্পন্ন হয়েছে।"}
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* 5. Social Action Bar (1-row responsive layout on mobile, spacious on desktop) */}
@@ -360,22 +266,6 @@ export default function SocialFeedCard({
             <Lightbulb className="w-3.5 h-3.5 text-[#c29547] shrink-0" />
             <span className="text-xs sm:text-sm">মূলবিন্দু</span>
           </button>
-
-          {/* Micro Quiz Toggle */}
-          {firstQuiz && (
-            <button
-              type="button"
-              onClick={() => setShowQuiz(!showQuiz)}
-              className={`px-2 sm:px-2.5 py-1.5 rounded-lg font-medium transition flex items-center gap-1 sm:gap-1.5 shrink-0 whitespace-nowrap ${
-                showQuiz
-                  ? "bg-[#842323] text-white"
-                  : "hover:bg-[#ece7dc] text-[#404652]"
-              }`}
-            >
-              <HelpCircle className="w-3.5 h-3.5 text-[#2e744a] shrink-0" />
-              <span className="text-xs sm:text-sm">কুইজ</span>
-            </button>
-          )}
 
           {/* Bookmark Toggle */}
           <button

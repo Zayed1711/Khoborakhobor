@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { toFeedCard } from "@/lib/feed-card";
-import { pickDailyQuiz } from "@/lib/study/daily";
 import { knownBengaliTitle, translateContentToBengaliHtml, translateSummaryToBengali, translateTitleToBengali } from "@/lib/bilingual";
 
 const article = {
@@ -47,24 +46,6 @@ describe("toFeedCard (what the browser receives)", () => {
   it("keeps only fact rows that quote their source sentence", () => {
     const facts = card.factTable as { value: string }[];
     expect(facts.map((f) => f.value)).toEqual(["৩০ হাজার টাকা"]);
-  });
-});
-
-describe("pickDailyQuiz", () => {
-  it("only uses stories that have a page and a link to the original", () => {
-    const noLink = { ...article, slug: "no-link", sourceUrl: null };
-    const q = pickDailyQuiz([noLink, article], "bn");
-    expect(q?.articleSlug).toBe("story-1");
-  });
-
-  it("never sends the source sentence (which contains the answer) before answering", () => {
-    const q = pickDailyQuiz([article], "bn")!;
-    expect(q.contextQuote).toBeUndefined();
-  });
-
-  it("returns nothing rather than a made-up quiz when no story qualifies", () => {
-    expect(pickDailyQuiz([{ ...article, quizQuestions: [] }], "bn")).toBeUndefined();
-    expect(pickDailyQuiz([article], "en")).toBeUndefined();
   });
 });
 

@@ -8,7 +8,7 @@ import { getDateArchiveStatsAction } from "@/actions/articles";
 import { getCurrentSession } from "@/actions/auth";
 import { getTrendingHashtagsAction } from "@/actions/search";
 import { prisma } from "@/lib/prisma";
-import { getTodaySelection, pickSyllabusDailyQuiz, urgentOnly } from "@/lib/study/daily-feed";
+import { forClient, getTodaySelection, urgentOnly } from "@/lib/study/daily-feed";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +22,7 @@ export default async function Home() {
 
   // Today's selection: at most 30 syllabus stories. The homepage shows only the
   // জরুরি ১০; the others appear on their section pages.
-  let selection: Awaited<ReturnType<typeof getTodaySelection>> = { raw: [], cards: [] };
+  let selection: Awaited<ReturnType<typeof getTodaySelection>> = { cards: [] };
   try {
     selection = await getTodaySelection();
   } catch (e) {
@@ -45,12 +45,10 @@ export default async function Home() {
     console.error("[HOME] Categories error:", e);
   }
 
-  // The client receives slim feed cards with no bodies, vocabulary or quiz answers.
-  const feedCards = urgentOnly(selection.cards);
-  // The daily quiz comes from one of the ten and tests a syllabus fact (or there is none)
-  const dailyBnQuiz = pickSyllabusDailyQuiz(selection.raw, selection.cards, "bn");
-  const dailyEnQuiz = pickSyllabusDailyQuiz(selection.raw, selection.cards, "en");
-  const capsuleArticles = selection.cards.filter((a) => a.isCapsule);
+  // The client receives slim feed cards: no bodies, vocabulary or quizzes. Quizzes live
+  // only at the end of a story (job mode); there is no daily quiz.
+  const feedCards = forClient(urgentOnly(selection.cards));
+  const capsuleArticles = forClient(selection.cards.filter((a) => a.isCapsule));
   const trendingHashtags = await getTrendingHashtagsAction();
 
   return (
@@ -71,8 +69,6 @@ export default async function Home() {
             categories={categories}
             studentId={session.student?.id}
             streakDays={session.student?.streakDays || 0}
-            featuredQuiz={dailyBnQuiz}
-            featuredEnglishQuiz={dailyEnQuiz}
             archiveStats={archiveStats}
           />
         </div>
@@ -80,8 +76,6 @@ export default async function Home() {
         {/* Right Column: Study Widgets, Streaks & Trends */}
         <RightStudyRail
           streakDays={session.student?.streakDays || 0}
-          featuredQuiz={dailyBnQuiz}
-          featuredEnglishQuiz={dailyEnQuiz}
           initialTrending={trendingHashtags}
         />
       </main>

@@ -1,18 +1,14 @@
 import { getPublishedArticles } from "@/actions/articles";
 import { prisma } from "@/lib/prisma";
 import { toFeedCard } from "@/lib/feed-card";
-import { pickDailyQuiz } from "@/lib/study/daily";
-import { isSyllabusText, selectDailyFeed, type RankedCard } from "@/lib/study/daily-selection";
+import { selectDailyFeed, type RankedCard } from "@/lib/study/daily-selection";
 
 /**
  * One place that decides what readers see each day, so the homepage, the date
  * archive, the section pages and the daily quiz always agree:
  *   - homepage / a chosen date: only জরুরি ১০
  *   - section pages: that section's stories from the daily selections (at most 30 a day)
- *   - daily quiz: from one of the ten, on a syllabus fact
  */
-
-type RawArticle = Awaited<ReturnType<typeof getPublishedArticles>>[number];
 
 const dayKey = (iso: string) => iso.slice(0, 10);
 
@@ -46,11 +42,11 @@ async function reuse<T>(key: string, compute: () => Promise<T>): Promise<T> {
   return value;
 }
 
-/** Today's selection (the 24 hours before the newest story), with the raw rows for quizzes. */
-export async function getTodaySelection(): Promise<{ raw: RawArticle[]; cards: RankedCard[] }> {
+/** Today's selection (the 24 hours before the newest story). */
+export async function getTodaySelection(): Promise<{ cards: RankedCard[] }> {
   return reuse("today", async () => {
     const raw = await getPublishedArticles(250);
-    return { raw, cards: selectDailyFeed(raw.map(toFeedCard), "latest") };
+    return { cards: selectDailyFeed(raw.map(toFeedCard), "latest") };
   });
 }
 
@@ -90,21 +86,7 @@ async function computeWeekSelection(): Promise<RankedCard[]> {
   return [...today, ...earlier];
 }
 
-/**
- * The daily quiz challenge: from one of the ten, never from a story that is not shown.
- * The question's own sentence must touch the syllabus (a budget figure, a treaty, an exam
- * date...); if none does, a quiz from a ten-story whose headline does. Otherwise no quiz.
- */
-export function pickSyllabusDailyQuiz(raw: RawArticle[], cards: RankedCard[], mode: "bn" | "en") {
-  const byId = new Map(raw.map((a) => [a.id, a]));
-  const ten = urgentOnly(cards)
-    .map((c) => byId.get(c.id))
-    .filter((a): a is RawArticle => Boolean(a));
-
-  const quizSentence = (a: RawArticle) =>
-    a.quizQuestions.find((q) => q.origin !== "legacy" && q.sourceSentence)?.sourceSentence || "";
-
-  const strong = ten.filter((a) => isSyllabusText(quizSentence(a)));
-  const fallback = ten.filter((a) => quizSentence(a) && isSyllabusText(a.title));
-  return pickDailyQuiz(strong, mode) ?? pickDailyQuiz(fallback, mode);
+/** What the browser receives: feed cards without quiz questions (quizzes are only at the end of a story). */
+export function forClient<T extends { quizQuestions?: unknown[] }>(cards: T[]): T[] {
+  return cards.map((c) => ({ ...c, quizQuestions: [] }));
 }

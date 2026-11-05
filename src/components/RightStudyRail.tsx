@@ -8,7 +8,6 @@ import {
 } from "lucide-react";
 import ThemeSwitcher from "./ThemeSwitcher";
 import ProAuthGateModal from "./ProAuthGateModal";
-import DailyQuizCard from "./DailyQuizCard";
 import { getCurrentSession } from "@/actions/auth";
 import { useAppMode } from "@/context/LanguageContext";
 import { 
@@ -17,24 +16,8 @@ import {
   getTrendingHashtagsAction 
 } from "@/actions/search";
 
-export interface DailyFeaturedQuizItem {
-  id?: string;
-  question: string;
-  options: string[];
-  correctOption: number;
-  explanation?: string | null;
-  topicTag?: string;
-  sourceName?: string | null;
-  articleTitle?: string | null;
-  articleSlug?: string | null;
-  contextQuote?: string | null;
-  paragraphRef?: string | null;
-}
-
 interface RightStudyRailProps {
   streakDays?: number;
-  featuredQuiz?: DailyFeaturedQuizItem;
-  featuredEnglishQuiz?: DailyFeaturedQuizItem;
   initialTrending?: TrendingHashtagsData;
 }
 
@@ -57,8 +40,6 @@ const DEFAULT_EN_HASHTAGS: TrendingHashtagItem[] = [
 
 export default function RightStudyRail({
   streakDays = 14,
-  featuredQuiz,
-  featuredEnglishQuiz,
   initialTrending,
 }: RightStudyRailProps) {
   const { isEnglishMode } = useAppMode();
@@ -67,8 +48,6 @@ export default function RightStudyRail({
     initialTrending || { bn: DEFAULT_GK_HASHTAGS, en: DEFAULT_EN_HASHTAGS }
   );
 
-  // Only a real quiz from today's stories; no invented fallback
-  const activeQuiz = isEnglishMode ? featuredEnglishQuiz : featuredQuiz;
   const activeHashtags = isEnglishMode ? trending.en : trending.bn;
 
   useEffect(() => {
@@ -114,11 +93,6 @@ export default function RightStudyRail({
             : "ধারাবাহিকতা সাফল্যের মূল চাবিকাঠি। প্রতিদিন অন্তত ৩টি বিশ্লেষণ পাঠ সম্পন্ন করুন।"}
         </p>
       </div>
-
-      {/* 2. Today's quiz: always names and links its story; hidden when there is no real quiz */}
-      {activeQuiz && (
-        <DailyQuizCard id="tutorial-daily-quiz" className="shrink-0" quiz={activeQuiz} isEnglishMode={isEnglishMode} />
-      )}
 
       {/* 3. Trending Topics & Hashtags (Interactive Search Filter) */}
       <div className="shrink-0 p-4 bg-white border border-[#ded8cb] rounded-2xl shadow-2xs space-y-2.5">

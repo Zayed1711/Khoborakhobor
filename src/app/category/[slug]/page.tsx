@@ -5,7 +5,7 @@ import RightStudyRail from "@/components/RightStudyRail";
 import SocialFeedCard from "@/components/SocialFeedCard";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import { prisma } from "@/lib/prisma";
-import { getSectionSelection, getTodaySelection, pickSyllabusDailyQuiz } from "@/lib/study/daily-feed";
+import { forClient, getSectionSelection } from "@/lib/study/daily-feed";
 import { getCurrentSession } from "@/actions/auth";
 import { getTrendingHashtagsAction } from "@/actions/search";
 import { notFound } from "next/navigation";
@@ -32,15 +32,11 @@ export default async function CategoryPage({ params }: Props) {
   }
 
   // Only this section's stories from the daily selections (at most 30 stories a day site-wide)
-  const categoryArticles = await getSectionSelection(slug);
+  const categoryArticles = forClient(await getSectionSelection(slug));
   const allCategories = await prisma.category.findMany({
     orderBy: { createdAt: "asc" },
   });
 
-  // The same daily quiz as the homepage: from one of the ten, on a syllabus fact
-  const today = await getTodaySelection();
-  const dailyBnQuiz = pickSyllabusDailyQuiz(today.raw, today.cards, "bn");
-  const dailyEnQuiz = pickSyllabusDailyQuiz(today.raw, today.cards, "en");
 
   return (
     <div className="min-h-screen bg-[#fbf9f5] flex flex-col font-sans pb-16 md:pb-0">
@@ -110,8 +106,6 @@ export default async function CategoryPage({ params }: Props) {
         <RightStudyRail
           streakDays={session.student?.streakDays || 0}
           initialTrending={trendingHashtags}
-          featuredQuiz={dailyBnQuiz}
-          featuredEnglishQuiz={dailyEnQuiz}
         />
       </main>
 
