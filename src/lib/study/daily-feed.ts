@@ -1,7 +1,8 @@
 import { getPublishedArticles } from "@/actions/articles";
 import { prisma } from "@/lib/prisma";
 import { toFeedCard } from "@/lib/feed-card";
-import { selectDailyFeed, type RankedCard } from "@/lib/study/daily-selection";
+import { selectDaily, selectDailyFeed, type RankedCard } from "@/lib/study/daily-selection";
+import { buildDayNotes, dhakaDay, type KeyNote, type KeyNoteDay } from "@/lib/study/key-notes";
 
 /**
  * One place that decides what readers see each day, so the homepage, the date
@@ -89,4 +90,56 @@ async function computeWeekSelection(): Promise<RankedCard[]> {
 /** What the browser receives: feed cards without quiz questions (quizzes are only at the end of a story). */
 export function forClient<T extends { quizQuestions?: unknown[] }>(cards: T[]): T[] {
   return cards.map((c) => ({ ...c, quizQuestions: [] }));
+}
+
+// ---------------------------------------------------------------------------
+// Daily key notes (job/BCS mode): one quoted point from each of the day's ten
+// ---------------------------------------------------------------------------
+
+export const KEY_NOTE_DAYS = 7;
+const isBengali = (t: string) => /[ঀ-৿]/.test(t || "");
+
+/** The last 7 days of key notes, today first. Today's list follows the news; past days never change. */
+export async function getKeyNotes(lang: "bn" | "en" = "bn"): Promise<KeyNoteDay[]> {
+  const today = dhakaDay(Date.now());
+  return reuse(`notes:${lang}:${today}`, () => computeKeyNotes(lang, today));
+}
+
+async function computeKeyNotes(lang: "bn" | "en", today: string): Promise<KeyNoteDay[]> {
+  const days = Array.from({ length: KEY_NOTE_DAYS }, (_, i) => dhakaDay(new Date(today + "T12:00:00Z").getTime() - i * 86400000));
+  const stored = new Map(
+    (await prisma.dailyNote.findMany({ where: { lang, day: { in: days } } })).map((r) => [r.day, JSON.parse(r.items) as KeyNote[]])
+  );
+
+  // Stories are needed for today, and for any past day not saved yet (e.g. right after this feature ships)
+  const needed = days.filter((d) => d === today || !stored.has(d));
+  const byDay = new Map<string, ReturnType<typeof toFeedCard>[]>();
+  if (needed.length) {
+    const cards = (await getPublishedArticles(600)).map(toFeedCard).filter((c) => (lang === "bn" ? isBengali(c.title) : !isBengali(c.title)));
+    for (const c of cards) {
+      const d = dhakaDay(c.createdAtIso);
+      if (needed.includes(d)) byDay.set(d, [...(byDay.get(d) || []), c]);
+    }
+  }
+
+  const result: KeyNoteDay[] = [];
+  for (const day of days) {
+    let items = stored.get(day);
+    if (day === today || !items) {
+      const ten = urgentOnly(selectDaily(byDay.get(day) || [], "all"));
+      items = buildDayNotes(ten);
+      if (day === today) {
+        await prisma.dailyNote.upsert({
+          where: { day_lang: { day, lang } },
+          create: { day, lang, items: JSON.stringify(items) },
+          update: { items: JSON.stringify(items) },
+        });
+      } else if (items.length) {
+        // A past day is saved once and then frozen
+        await prisma.dailyNote.create({ data: { day, lang, items: JSON.stringify(items) } }).catch(() => undefined);
+      }
+    }
+    result.push({ day, items });
+  }
+  return result;
 }

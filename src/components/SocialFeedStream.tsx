@@ -4,6 +4,8 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import SocialFeedCard from "./SocialFeedCard";
 import CapsuleStoryPills from "./CapsuleStoryPills";
 import DateArchiveDropdown from "./DateArchiveDropdown";
+import KeyNotesPanel from "./KeyNotesPanel";
+import type { KeyNoteDay } from "@/lib/study/key-notes";
 import { 
   BookOpen, Flame, CheckCircle2, XCircle, ArrowRight, ChevronDown, ChevronUp, Loader2 
 } from "lucide-react";
@@ -19,6 +21,8 @@ interface SocialFeedStreamProps {
   studentId?: string;
   streakDays?: number;
   archiveStats?: DateArchiveStats | null;
+  /** Daily key notes for phones and tablets (the desktop side panel shows the same) */
+  keyNotes?: KeyNoteDay[];
 }
 
 export default function SocialFeedStream({
@@ -28,6 +32,7 @@ export default function SocialFeedStream({
   studentId,
   streakDays = 0,
   archiveStats,
+  keyNotes = [],
 }: SocialFeedStreamProps) {
   const { setMode, isEnglishMode } = useAppMode();
   const [selectedDate, setSelectedDate] = useState("all");
@@ -140,6 +145,9 @@ export default function SocialFeedStream({
     <div className="space-y-3 sm:space-y-4">
       {/* 1. Instagram / LinkedIn Style Story Capsules */}
       <CapsuleStoryPills capsuleArticles={filteredCapsules} />
+
+      {/* 2. Daily key notes on phones and tablets, collapsed so the ten stay on top (job/BCS mode) */}
+      {!isEnglishMode && <KeyNotesPanel days={keyNotes} collapsible className="xl:hidden" />}
 
       {/* 3. Date Selection Dropdown Menu (With dynamic on-demand date loader) */}
       <DateArchiveDropdown

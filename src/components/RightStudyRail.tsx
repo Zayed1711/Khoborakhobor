@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import ThemeSwitcher from "./ThemeSwitcher";
 import ProAuthGateModal from "./ProAuthGateModal";
+import KeyNotesPanel from "./KeyNotesPanel";
+import type { KeyNoteDay } from "@/lib/study/key-notes";
 import { getCurrentSession } from "@/actions/auth";
 import { useAppMode } from "@/context/LanguageContext";
 import { 
@@ -18,6 +20,8 @@ import {
 
 interface RightStudyRailProps {
   streakDays?: number;
+  /** Daily key notes (job/BCS mode); English mode will show vocabulary here */
+  keyNotes?: KeyNoteDay[];
   initialTrending?: TrendingHashtagsData;
 }
 
@@ -41,6 +45,7 @@ const DEFAULT_EN_HASHTAGS: TrendingHashtagItem[] = [
 export default function RightStudyRail({
   streakDays = 14,
   initialTrending,
+  keyNotes = [],
 }: RightStudyRailProps) {
   const { isEnglishMode } = useAppMode();
   const [isProGateOpen, setIsProGateOpen] = useState(false);
@@ -93,6 +98,9 @@ export default function RightStudyRail({
             : "ধারাবাহিকতা সাফল্যের মূল চাবিকাঠি। প্রতিদিন অন্তত ৩টি বিশ্লেষণ পাঠ সম্পন্ন করুন।"}
         </p>
       </div>
+
+      {/* 2. Daily key notes: one quoted point from each of the day's ten (job/BCS mode) */}
+      {!isEnglishMode && <KeyNotesPanel days={keyNotes} className="shrink-0" />}
 
       {/* 3. Trending Topics & Hashtags (Interactive Search Filter) */}
       <div className="shrink-0 p-4 bg-white border border-[#ded8cb] rounded-2xl shadow-2xs space-y-2.5">

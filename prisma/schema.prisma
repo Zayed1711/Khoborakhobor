@@ -266,3 +266,17 @@ model StudyDraft {
   @@index([status])
   @@index([articleId])
 }
+
+// One saved list of daily key notes per day and language: one quoted point from each
+// of that day's জরুরি ১০ stories. Today's list is refreshed as stories arrive; a past
+// day's list is never changed, so students' revision notes stay the same.
+model DailyNote {
+  id        String   @id @default(cuid())
+  day       String   // YYYY-MM-DD, Bangladesh time
+  lang      String   // "bn" (job/BCS mode) or "en"
+  items     String   // JSON: [{ rank, slug, title, point, sourceName, category }]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([day, lang])
+}

@@ -5,7 +5,7 @@ import RightStudyRail from "@/components/RightStudyRail";
 import SocialFeedCard from "@/components/SocialFeedCard";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import { prisma } from "@/lib/prisma";
-import { forClient, getSectionSelection } from "@/lib/study/daily-feed";
+import { forClient, getKeyNotes, getSectionSelection } from "@/lib/study/daily-feed";
 import { getCurrentSession } from "@/actions/auth";
 import { getTrendingHashtagsAction } from "@/actions/search";
 import { notFound } from "next/navigation";
@@ -33,6 +33,7 @@ export default async function CategoryPage({ params }: Props) {
 
   // Only this section's stories from the daily selections (at most 30 stories a day site-wide)
   const categoryArticles = forClient(await getSectionSelection(slug));
+  const keyNotes = await getKeyNotes("bn").catch(() => []);
   const allCategories = await prisma.category.findMany({
     orderBy: { createdAt: "asc" },
   });
@@ -106,6 +107,7 @@ export default async function CategoryPage({ params }: Props) {
         <RightStudyRail
           streakDays={session.student?.streakDays || 0}
           initialTrending={trendingHashtags}
+          keyNotes={keyNotes}
         />
       </main>
 

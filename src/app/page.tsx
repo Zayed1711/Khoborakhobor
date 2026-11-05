@@ -8,7 +8,8 @@ import { getDateArchiveStatsAction } from "@/actions/articles";
 import { getCurrentSession } from "@/actions/auth";
 import { getTrendingHashtagsAction } from "@/actions/search";
 import { prisma } from "@/lib/prisma";
-import { forClient, getTodaySelection, urgentOnly } from "@/lib/study/daily-feed";
+import { forClient, getKeyNotes, getTodaySelection, urgentOnly } from "@/lib/study/daily-feed";
+import type { KeyNoteDay } from "@/lib/study/key-notes";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,14 @@ export default async function Home() {
     selection = await getTodaySelection();
   } catch (e) {
     console.error("[HOME] Articles error:", e);
+  }
+
+  // Daily key notes: today's ten points and the previous days' (saved, never changed)
+  let keyNotes: KeyNoteDay[] = [];
+  try {
+    keyNotes = await getKeyNotes("bn");
+  } catch (e) {
+    console.error("[HOME] Key notes error:", e);
   }
 
   let archiveStats: any = null;
@@ -70,6 +79,7 @@ export default async function Home() {
             studentId={session.student?.id}
             streakDays={session.student?.streakDays || 0}
             archiveStats={archiveStats}
+            keyNotes={keyNotes}
           />
         </div>
 
@@ -77,6 +87,7 @@ export default async function Home() {
         <RightStudyRail
           streakDays={session.student?.streakDays || 0}
           initialTrending={trendingHashtags}
+          keyNotes={keyNotes}
         />
       </main>
 
