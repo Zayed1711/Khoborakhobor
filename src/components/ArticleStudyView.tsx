@@ -14,6 +14,7 @@ import ShareStudyModal from "@/components/ShareStudyModal";
 import FocusDictionaryModal from "@/components/FocusDictionaryModal";
 import { trackArticleReadAction } from "@/actions/student";
 import { isBengaliText } from "@/lib/bilingual";
+import { useAppMode } from "@/context/LanguageContext";
 import type { FeedCard } from "@/lib/feed-card";
 import type { VocabularyTableRow } from "@/lib/vocabulary-table-engine";
 import type { FactTableRow, Student, StudyNote } from "@/types";
@@ -76,6 +77,14 @@ export default function ArticleStudyView({ article, relatedArticles, initialNote
     setIsDictOpen(true);
   };
   const isEnglish = !isBengaliText(article.title);
+
+  // While a story is open the site stays in that story's mode (Bengali story: job/BCS,
+  // English story: English learning); the mode switch is locked until the reader leaves
+  const { lockMode, unlockMode } = useAppMode();
+  useEffect(() => {
+    lockMode(isEnglish ? "english_learning" : "job_prep");
+    return () => unlockMode();
+  }, [isEnglish, lockMode, unlockMode]);
   const sourceLabel = article.sourceName || "মূল পত্রিকা";
 
   useEffect(() => {

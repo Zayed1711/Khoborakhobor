@@ -76,7 +76,24 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session, activ
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [isMobileCategoryOpen, setIsMobileCategoryOpen] = useState(false);
   
-  const { mode, setMode, isEnglishMode } = useAppMode();
+  const { mode, setMode, isEnglishMode, lockedMode } = useAppMode();
+  // While a story is open the mode is locked to the story's mode (see ArticleStudyView);
+  // the other button explains why instead of doing nothing silently
+  const [showLockNote, setShowLockNote] = useState(false);
+  const lockNoteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isLockedAway = (m: "job_prep" | "english_learning") => lockedMode !== null && lockedMode !== m;
+  const chooseMode = (m: "job_prep" | "english_learning") => {
+    if (isLockedAway(m)) {
+      setShowLockNote(true);
+      if (lockNoteTimer.current) clearTimeout(lockNoteTimer.current);
+      lockNoteTimer.current = setTimeout(() => setShowLockNote(false), 3500);
+      return;
+    }
+    setMode(m);
+  };
+  const lockNote = isEnglishMode
+    ? "You can't switch modes while reading a story. Go back to the homepage to switch."
+    : "খবর পড়ার সময় মোড বদলানো যায় না। মোড বদলাতে প্রচ্ছদে ফিরুন।";
 
   useEffect(() => {
     if (session !== undefined) {
@@ -164,21 +181,23 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session, activ
             <div className="inline-flex rounded-lg border border-[#ded8cc] bg-[#faf8f4] p-0.5 text-xs font-semibold">
               <button
                 type="button"
-                onClick={() => setMode("job_prep")}
+                onClick={() => chooseMode("job_prep")}
+                aria-disabled={isLockedAway("job_prep") || undefined}
                 className={`px-2 py-1 rounded transition flex items-center gap-1 ${
                   !isEnglishMode ? "bg-[#842323] text-white shadow-2xs font-bold" : "text-[#555d6b]"
-                }`}
-                title="চাকরি ও বিসিএস"
+                } ${isLockedAway("job_prep") ? "opacity-40 cursor-not-allowed" : ""}`}
+                title={isLockedAway("job_prep") ? lockNote : "চাকরি ও বিসিএস"}
               >
                 <span>চাকরি</span>
               </button>
               <button
                 type="button"
-                onClick={() => setMode("english_learning")}
+                onClick={() => chooseMode("english_learning")}
+                aria-disabled={isLockedAway("english_learning") || undefined}
                 className={`px-2 py-1 rounded transition flex items-center gap-1 ${
                   isEnglishMode ? "bg-[#1e40af] text-white shadow-2xs font-bold" : "text-[#555d6b]"
-                }`}
-                title="English Learning"
+                } ${isLockedAway("english_learning") ? "opacity-40 cursor-not-allowed" : ""}`}
+                title={isLockedAway("english_learning") ? lockNote : "English Learning"}
                 aria-label="English Learning"
               >
                 <span>EN</span>
@@ -320,26 +339,32 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session, activ
               >
                 <button
                   type="button"
-                  onClick={() => setMode("job_prep")}
+                  onClick={() => chooseMode("job_prep")}
+                  aria-disabled={isLockedAway("job_prep") || undefined}
                   className={`px-2.5 py-0.5 rounded-md transition flex items-center gap-1 ${
                     !isEnglishMode
                       ? "bg-[#842323] text-white shadow-xs font-bold"
+                      : isLockedAway("job_prep")
+                      ? "text-[#525a68] opacity-40 cursor-not-allowed"
                       : "text-[#525a68] hover:text-[#1c1d21] hover:bg-[#ede7da]"
                   }`}
-                  title="বিসিএস, ব্যাংক ও সরকারি চাকরি প্রস্তুতি মোড"
+                  title={isLockedAway("job_prep") ? lockNote : "বিসিএস, ব্যাংক ও সরকারি চাকরি প্রস্তুতি মোড"}
                 >
                   <GraduationCap className="w-3 h-3" />
                   <span>চাকরি ও বিসিএস</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => setMode("english_learning")}
+                  onClick={() => chooseMode("english_learning")}
+                  aria-disabled={isLockedAway("english_learning") || undefined}
                   className={`px-2.5 py-0.5 rounded-md transition flex items-center gap-1 ${
                     isEnglishMode
                       ? "bg-[#1e40af] text-white shadow-xs font-bold"
+                      : isLockedAway("english_learning")
+                      ? "text-[#525a68] opacity-40 cursor-not-allowed"
                       : "text-[#525a68] hover:text-[#1c1d21] hover:bg-[#ede7da]"
                   }`}
-                  title="ইংরেজি সম্পাদকীয় পাঠ ও ভোকাবুলারি শিক্ষা মোড"
+                  title={isLockedAway("english_learning") ? lockNote : "ইংরেজি সম্পাদকীয় পাঠ ও ভোকাবুলারি শিক্ষা মোড"}
                 >
                   <BookOpen className="w-3 h-3" />
                   <span>English Learning</span>
@@ -454,6 +479,15 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session, activ
         </div>
 
         {/* Single Unified Category Bar (Desktop) */}
+        {showLockNote && (
+          <div
+            role="status"
+            className="fixed left-1/2 -translate-x-1/2 top-16 md:top-24 z-50 max-w-[90vw] px-4 py-2.5 rounded-xl bg-[#1c1d21] text-white text-xs sm:text-sm shadow-lg animate-fade-in"
+          >
+            {lockNote}
+          </div>
+        )}
+
         <nav className="border-t border-[#ece7dc] bg-[#faf8f4] hidden md:block">
           <div className="max-w-7xl mx-auto px-4 sm:px-8 py-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
