@@ -21,11 +21,8 @@ const CATEGORIES = [
 ];
 
 export default function DeskClient() {
-  const todayStr = new Date().toISOString().split("T")[0];
 
   // Spider Crawl Controls
-  const [crawlDate, setCrawlDate] = useState(todayStr);
-  const [crawlLang, setCrawlLang] = useState<"all" | "bn" | "en">("all");
   const [spiderLoading, setSpiderLoading] = useState(false);
 
   // Manual Inputs
@@ -60,10 +57,7 @@ export default function DeskClient() {
   const handleTriggerSpider = async () => {
     setSpiderLoading(true);
     try {
-      const res = await triggerSpiderCrawlAction({
-        targetDate: crawlDate,
-        language: crawlLang,
-      });
+      const res = await triggerSpiderCrawlAction();
       if (res.success) {
         setSuccessMsg(res.message);
       } else {
@@ -169,38 +163,11 @@ export default function DeskClient() {
           </div>
 
           <p className="text-xs text-[#525964] leading-relaxed">
-            সংযুক্ত শীর্ষস্থানীয় জাতীয় ও আন্তর্জাতিক সংবাদমাধ্যম থেকে নির্বাচিত তারিখ অনুযায়ী গুরুত্বপূর্ণ সংবাদ সংকলন করে শিক্ষার্থীদের জন্য মূল শিক্ষণীয় বিষয়, পারিভাষিক শব্দ ও মূল্যায়ন কুইজ প্রস্তুত করুন।
+            সব সংবাদপত্র থেকে আজকের সংবাদ সংগ্রহ করে। বাংলা সংবাদ দিনে সেরা ৩০টি রাখা হয়; ইংরেজি সংবাদের সীমা নেই। ক্রলার প্রতি ৬ ঘণ্টায় নিজেও চলে।
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
-            <div>
-              <label className="block text-xs font-bold text-[#454c59] mb-1">
-                সংবাদের তারিখ (Target Date)
-              </label>
-              <input
-                type="date"
-                value={crawlDate}
-                onChange={(e) => setCrawlDate(e.target.value)}
-                className="w-full text-xs p-2 bg-[#faf8f4] border border-[#dcd7cb] rounded font-mono font-bold outline-none focus:border-[#842323]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-[#454c59] mb-1">
-                সংবাদ মাধ্যমের ভাষা
-              </label>
-              <select
-                value={crawlLang}
-                onChange={(e) => setCrawlLang(e.target.value as any)}
-                className="w-full text-xs p-2 bg-[#faf8f4] border border-[#dcd7cb] rounded outline-none focus:border-[#842323]"
-              >
-                <option value="all">উভয় মাধ্যম (বাংলা ও ইংরেজি)</option>
-                <option value="bn">শুধুমাত্র বাংলা সংবাদমাধ্যম</option>
-                <option value="en">শুধুমাত্র ইংরেজি সংবাদমাধ্যম</option>
-              </select>
-            </div>
-
-            <div className="flex items-end">
+          <div className="pt-1">
+            <div className="flex">
               <button
                 onClick={handleTriggerSpider}
                 disabled={spiderLoading}

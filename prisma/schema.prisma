@@ -73,6 +73,7 @@ model Article {
   isBreaking    Boolean   @default(false)
   isLead        Boolean   @default(false)
   isCapsule     Boolean   @default(false) // Daily 5-min briefing feature
+  dailyPick     Boolean   @default(false) // Kept in its day's best 30 by the crawler; leaves only when displaced
 
   // Content integrity: where the body text came from. Never show generated text as reporting.
   //   scraped      = text taken from the publisher
@@ -279,4 +280,14 @@ model DailyNote {
   updatedAt DateTime @updatedAt
 
   @@unique([day, lang])
+}
+
+// Links of stories left out of a day's best 30 (job/BCS mode), so the crawler does not
+// fetch and save them again on its next run.
+model SkippedStory {
+  url       String   @id
+  day       String   // YYYY-MM-DD, Bangladesh time
+  createdAt DateTime @default(now())
+
+  @@index([day])
 }

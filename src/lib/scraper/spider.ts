@@ -7,6 +7,8 @@ import { isPublicHttpUrl, assertPublicHttpUrl } from "@/lib/url-safety";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { evaluateExamRelevance } from "@/lib/scraper/examFilter";
+import { keepDailyBest, recentlySkippedUrls } from "@/lib/scraper/daily-cap";
+import { dhakaDay } from "@/lib/study/key-notes";
 import { extractVocabularyTableRows } from "@/lib/vocabulary-table-engine";
 import { cleanArticleBody, extractFacts, extractTakeaways, buildExtractiveQuiz, pickSummary } from "@/lib/study/extractive";
 
@@ -906,7 +908,13 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
     dryRun,
     items: [] as string[],
     durationMs: 0,
+    /** Bengali stories removed because they fell outside the day's best 30 */
+    trimmed: 0,
   };
+  // Links dropped from an earlier day's best 30: not fetched again
+  const skippedUrls = dryRun ? new Set<string>() : await recentlySkippedUrls();
+  // Days (Bangladesh time) this run saved stories for; each is trimmed to its best 30 at the end
+  const touchedDays = new Set<string>();
 
   const categories = await prisma.category.findMany();
   const catMap = new Map(categories.map((c) => [c.slug, c.id]));
@@ -944,6 +952,10 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
         // Link-out model: readers open the full story at the publisher, so a story
         // without its own link cannot be offered.
         if (!item.link || !isPublicHttpUrl(item.link)) {
+          results.skipped++;
+          continue;
+        }
+        if (skippedUrls.has(item.link)) {
           results.skipped++;
           continue;
         }
@@ -1146,6 +1158,7 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
 
           results.saved++;
           countFromThisSource++;
+          touchedDays.add(dhakaDay(articlePublishedDate));
           results.items.push(`[${categoryName}] ${title} (${source.name})`);
         } else {
           results.saved++;
@@ -1153,6 +1166,17 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
           results.items.push(`[টেস্ট প্রিভিউ: ${categoryName}] ${title} (${source.name})`);
         }
       }
+    }
+  }
+
+  // Keep only each touched day's best 30 Bengali stories (English is not limited)
+  if (!dryRun && touchedDays.size) {
+    try {
+      const cap = await keepDailyBest([...touchedDays], dhakaDay(Date.now()));
+      results.trimmed = cap.removed;
+      if (cap.removed) console.log(`[SPIDER] Daily best 30: removed ${cap.removed} weaker stories (${cap.protectedKept} kept: used by students)`);
+    } catch (err) {
+      console.error("[SPIDER] Daily best-30 trim failed:", err);
     }
   }
 

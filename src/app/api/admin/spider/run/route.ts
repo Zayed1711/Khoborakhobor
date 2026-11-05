@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { runNewsSpiderWithDateFilter, SpiderOptions } from "@/lib/scraper/spider";
+import { runNewsSpiderWithDateFilter } from "@/lib/scraper/spider";
 import { getCurrentSession } from "@/actions/auth";
 
 export const dynamic = "force-dynamic";
@@ -15,10 +15,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const body = (await req.json().catch(() => ({}))) as SpiderOptions;
-
-    console.log("[API /api/admin/spider/run] Invoking spider with options:", body);
-    const results = await runNewsSpiderWithDateFilter(body);
+    // No options: every run reads all newspapers for today's news (anything sent is ignored)
+    const results = await runNewsSpiderWithDateFilter({});
     const modeText = results.dryRun ? "টেস্ট রান (ড্রাই-রান)" : "সংবাদ সংকলন";
 
     let message = "";

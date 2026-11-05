@@ -14,10 +14,12 @@ import { requireAdmin } from "@/lib/guards";
 import { assertPublicHttpUrl } from "@/lib/url-safety";
 import { revalidatePath } from "next/cache";
 
-export async function triggerSpiderCrawlAction(options?: SpiderOptions) {
+// The crawler has no options: every run reads all newspapers for today's news and keeps
+// the day's best 30 Bengali stories. Any options a caller sends are ignored.
+export async function triggerSpiderCrawlAction(_options?: SpiderOptions) {
   try {
     await requireAdmin();
-    const results = await runNewsSpiderWithDateFilter(options);
+    const results = await runNewsSpiderWithDateFilter({});
     const modeText = results.dryRun ? "টেস্ট রান (ড্রাই-রান)" : "সংবাদ সংকলন";
 
     let message = "";

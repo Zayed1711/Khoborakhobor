@@ -68,15 +68,10 @@ const CATEGORIES = [
 ];
 
 export default function AdminDashboardClient() {
-  const todayStr = new Date().toISOString().split("T")[0];
-  const yesterdayStr = new Date(Date.now() - 86400000).toISOString().split("T")[0];
 
   const [activeTab, setActiveTab] = useState<"spider" | "users" | "sources" | "history" | "articles" | "scheduler">("spider");
 
   // Cron / Scheduler state
-  const [cronTestRunning, setCronTestRunning] = useState(false);
-  const [cronTestResponse, setCronTestResponse] = useState<any>(null);
-  const [cronTestDryRun, setCronTestDryRun] = useState(true);
   const [copiedVercel, setCopiedVercel] = useState(false);
   const [copiedCurl, setCopiedCurl] = useState(false);
 
@@ -108,13 +103,7 @@ export default function AdminDashboardClient() {
   const [previewTab, setPreviewTab] = useState<"vocab" | "quiz">("vocab");
   const [speakingTerm, setSpeakingTerm] = useState<string | null>(null);
 
-  // Spider Run Form State
-  const [targetDate, setTargetDate] = useState(todayStr);
-  const [language, setLanguage] = useState<"all" | "bn" | "en">("all");
-  const [categorySlug, setCategorySlug] = useState("all");
-  const [sourceName, setSourceName] = useState("all");
-  const [limitPerSource, setLimitPerSource] = useState(15);
-  const [dryRun, setDryRun] = useState(false);
+  // Spider run state
   const [spiderRunning, setSpiderRunning] = useState(false);
   const [runResult, setRunResult] = useState<any>(null);
   const [notification, setNotification] = useState<{ type: "success" | "error" | "info"; msg: string } | null>(null);
@@ -206,14 +195,8 @@ export default function AdminDashboardClient() {
       const response = await fetch("/api/admin/spider/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          targetDate,
-          language,
-          categorySlug: categorySlug === "all" ? undefined : categorySlug,
-          sourceName: sourceName === "all" ? undefined : sourceName,
-          dryRun,
-          limitPerSource,
-        }),
+        // No options: the crawler always reads every newspaper for today's news
+        body: JSON.stringify({}),
       });
 
       let res: any;
@@ -251,27 +234,6 @@ export default function AdminDashboardClient() {
     }
   };
 
-  // Test Cron Webhook API
-  const handleTestCronApi = async () => {
-    setCronTestRunning(true);
-    setCronTestResponse(null);
-    try {
-      const res = await fetch(`/api/cron/spider?dryRun=${cronTestDryRun}&language=all`);
-      const data = await res.json();
-      setCronTestResponse(data);
-      if (data.success) {
-        showNotify("success", data.message || "ক্রন টেস্ট সফলভাবে সম্পন্ন হয়েছে।");
-        refreshAllData();
-      } else {
-        showNotify("error", data.error || "ক্রন টেস্ট ব্যর্থ হয়েছে।");
-      }
-    } catch (err: any) {
-      showNotify("error", err.message || "ক্রন এন্ডপয়েন্টে সংযোগ ব্যর্থ হয়েছে।");
-      setCronTestResponse({ success: false, error: err.message });
-    } finally {
-      setCronTestRunning(false);
-    }
-  };
 
   // Test single feed
   const handleTestFeed = async (url: string) => {
@@ -624,431 +586,82 @@ export default function AdminDashboardClient() {
         {/* TAB 1: SPIDER CONTROL CENTER */}
         {activeTab === "spider" && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left 2 Cols: Control Panel */}
+            {/* One button: the crawler always runs the same way (all newspapers, today's news) */}
             <div className="lg:col-span-2 space-y-6">
               <div className="bg-[#141b24] border border-[#212936] rounded-xl p-5 space-y-5 shadow-sm">
-                <div className="flex flex-wrap items-center justify-between border-b border-[#212936] pb-3 gap-2">
-                  <div className="flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-[#f5c66b]" />
-                    <div>
-                      <h2 className="text-sm font-bold text-white font-serif uppercase tracking-wider">
-                        স্পাইডার এক্সিকিউশন প্যারামিটার (Execution Parameters)
-                      </h2>
-                      <p className="text-[11px] text-[#4ade80] flex items-center gap-1 mt-0.5 font-medium">
-                        <Shield className="w-3 h-3 text-[#4ade80]" />
-                        <span>বিসিএস ও ভর্তি পরীক্ষা ফিল্টার সক্রিয় • তথ্য ছক ও সোর্স লিংক অটো-ইনজেস্ট</span>
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-[11px] bg-[#1e293b] text-[#4ade80] px-2.5 py-0.5 rounded border border-[#059669]/40 font-mono">
-                    System Ready
-                  </span>
-                </div>
-
-                {/* Form Controls */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Target Date */}
+                <div className="flex items-center gap-2 border-b border-[#212936] pb-3">
+                  <Zap className="w-5 h-5 text-[#f5c66b]" />
                   <div>
-                    <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
-                      <label className="text-xs font-semibold text-[#cbd5e1] flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-[#38bdf8]" />
-                        <span>সংবাদের তারিখ (Target Date)</span>
-                      </label>
-                      <div className="flex gap-1 text-[10px] flex-wrap">
-                        <button
-                          type="button"
-                          onClick={() => setTargetDate("all")}
-                          className={`px-2 py-0.5 rounded border transition font-semibold ${
-                            targetDate === "all"
-                              ? "bg-[#059669] text-white border-[#059669] shadow-2xs"
-                              : "bg-[#1e293b] text-[#94a3b8] border-[#334155] hover:text-white"
-                          }`}
-                          title="তারিখের সীমাবদ্ধতা ছাড়া সকল সংবাদ ক্রল করুন"
-                        >
-                          যে কোনো তারিখ
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setTargetDate(todayStr)}
-                          className={`px-1.5 py-0.5 rounded border transition ${
-                            targetDate === todayStr
-                              ? "bg-[#842323] text-white border-[#842323]"
-                              : "bg-[#1e293b] text-[#94a3b8] border-[#334155] hover:text-white"
-                          }`}
-                        >
-                          আজ
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setTargetDate(yesterdayStr)}
-                          className={`px-1.5 py-0.5 rounded border transition ${
-                            targetDate === yesterdayStr
-                              ? "bg-[#842323] text-white border-[#842323]"
-                              : "bg-[#1e293b] text-[#94a3b8] border-[#334155] hover:text-white"
-                          }`}
-                        >
-                          গতকাল
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setTargetDate("7days")}
-                          className={`px-1.5 py-0.5 rounded border transition ${
-                            targetDate === "7days"
-                              ? "bg-[#38bdf8] text-[#0f172a] font-bold border-[#38bdf8]"
-                              : "bg-[#1e293b] text-[#94a3b8] border-[#334155] hover:text-white"
-                          }`}
-                          title="বিগত ৭ দিনের সকল সংবাদ সংকলন করুন"
-                        >
-                          গত ৭ দিন
-                        </button>
-                      </div>
-                    </div>
-
-                    {targetDate === "all" ? (
-                      <div className="flex items-center justify-between p-2.5 bg-[#0f141c] border border-[#059669]/60 rounded-lg text-xs">
-                        <span className="text-[#4ade80] font-semibold flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-[#4ade80] animate-pulse shrink-0" />
-                          <span>যে কোনো তারিখ (তারিখের সীমাবদ্ধতা ছাড়া সমস্ত ফিড সংকলন)</span>
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setTargetDate(todayStr)}
-                          className="text-[10px] text-[#38bdf8] hover:underline font-mono shrink-0 ml-2"
-                        >
-                          নির্দিষ্ট দিন নির্বাচন
-                        </button>
-                      </div>
-                    ) : targetDate === "7days" ? (
-                      <div className="flex items-center justify-between p-2.5 bg-[#0f141c] border border-[#38bdf8]/60 rounded-lg text-xs">
-                        <span className="text-[#38bdf8] font-semibold flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-[#38bdf8] animate-pulse shrink-0" />
-                          <span>বিগত ৭ দিন (এক সপ্তাহের সংবাদ সংকলন)</span>
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setTargetDate(todayStr)}
-                          className="text-[10px] text-[#94a3b8] hover:underline font-mono shrink-0 ml-2"
-                        >
-                          নির্দিষ্ট দিন নির্বাচন
-                        </button>
-                      </div>
-                    ) : (
-                      <input
-                        type="date"
-                        value={targetDate}
-                        onChange={(e) => setTargetDate(e.target.value)}
-                        className="w-full text-xs p-2.5 bg-[#0f141c] border border-[#2b3545] rounded-lg text-white font-mono outline-none focus:border-[#f5c66b]"
-                        title="যেকোনো নির্দিষ্ট ক্যালেন্ডার তারিখ নির্বাচন করুন"
-                      />
-                    )}
-                  </div>
-
-                  {/* Language Selection */}
-                  <div>
-                    <label className="text-xs font-semibold text-[#cbd5e1] block mb-1.5">
-                      সংবাদ মাধ্যমের ভাষা (Language)
-                    </label>
-                    <select
-                      value={language}
-                      onChange={(e) => setLanguage(e.target.value as any)}
-                      className="w-full text-xs p-2.5 bg-[#0f141c] border border-[#2b3545] rounded-lg text-white outline-none focus:border-[#f5c66b]"
-                    >
-                      <option value="all">উভয় মাধ্যম (চাকরি প্রস্তুতি বাংলা ও ইংরেজি লার্নিং)</option>
-                      <option value="bn">শুধুমাত্র বাংলা (চাকরি ও পরীক্ষা প্রস্তুতি - newspapers_bn.csv)</option>
-                      <option value="en">শুধুমাত্র ইংরেজি (English Learning Mode - newspapers_en.csv)</option>
-                    </select>
-                  </div>
-
-                  {/* Category Filter */}
-                  <div>
-                    <label className="text-xs font-semibold text-[#cbd5e1] block mb-1.5">
-                      নির্দিষ্ট বিভাগ ফিল্টার (Category Filter)
-                    </label>
-                    <select
-                      value={categorySlug}
-                      onChange={(e) => setCategorySlug(e.target.value)}
-                      className="w-full text-xs p-2.5 bg-[#0f141c] border border-[#2b3545] rounded-lg text-white outline-none focus:border-[#f5c66b]"
-                    >
-                      {CATEGORIES.map((c) => (
-                        <option key={c.slug} value={c.slug}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Target Newspaper */}
-                  <div>
-                    <label className="text-xs font-semibold text-[#cbd5e1] block mb-1.5">
-                      নির্দিষ্ট সংবাদপত্র নির্বাচন (Target Source)
-                    </label>
-                    <select
-                      value={sourceName}
-                      onChange={(e) => setSourceName(e.target.value)}
-                      className="w-full text-xs p-2.5 bg-[#0f141c] border border-[#2b3545] rounded-lg text-white outline-none focus:border-[#f5c66b]"
-                    >
-                      <option value="all">সকল সংযুক্ত পত্রিকা (All Sources)</option>
-                      {sources.map((s, idx) => (
-                        <option key={idx} value={s.name}>
-                          {s.name} ({s.language === "bn" ? "বাংলা" : "ইংরেজি"})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Fetch Limit per source */}
-                  <div>
-                    <label className="text-xs font-semibold text-[#cbd5e1] block mb-1.5">
-                      প্রতি পত্রিকা থেকে সর্বোচ্চ সংবাদ সীমা (Limit per Source)
-                    </label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={50}
-                      value={limitPerSource}
-                      onChange={(e) => setLimitPerSource(Number(e.target.value))}
-                      className="w-full text-xs p-2.5 bg-[#0f141c] border border-[#2b3545] rounded-lg text-white font-mono outline-none focus:border-[#f5c66b]"
-                    />
-                  </div>
-
-                  {/* Dry Run Toggle */}
-                  <div className="flex items-center pt-6">
-                    <label className="flex items-center gap-2.5 text-xs text-[#cbd5e1] cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={dryRun}
-                        onChange={(e) => setDryRun(e.target.checked)}
-                        className="w-4 h-4 accent-[#f5c66b] rounded"
-                      />
-                      <span>
-                        <strong className="text-[#f5c66b]">ড্রাই-রান মোড (Dry-Run Preview)</strong>:{" "}
-                        <span className="text-[#94a3b8]">ডেটাবেজে সেভ না করে টেস্ট করুন</span>
-                      </span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Submit Action Button */}
-                <div className="pt-2">
-                  <button
-                    onClick={handleExecuteSpider}
-                    disabled={spiderRunning}
-                    className="w-full py-3 px-4 bg-gradient-to-r from-[#842323] to-[#a32d2d] hover:from-[#9c2b2b] hover:to-[#bd3535] text-white font-bold text-sm rounded-lg shadow-md transition flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    {spiderRunning ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin text-[#f5c66b]" />
-                        <span>স্পাইডার ক্রলিং ও বিশ্লেষণ সক্রিয় রয়েছে...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-4 h-4 fill-current text-[#f5c66b]" />
-                        <span>
-                          {dryRun
-                            ? "স্পাইডার টেস্ট চালান (Preview Dry Run)"
-                            : "স্পাইডার ক্রলার চালু করুন (Run Live Crawl)"}
-                        </span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* Execution Console Output */}
-              <div className="bg-[#0b0f15] border border-[#1e2633] rounded-xl p-4 font-mono text-xs shadow-inner">
-                <div className="flex items-center justify-between border-b border-[#1b222e] pb-2 mb-3">
-                  <div className="flex items-center gap-2 text-[#94a3b8]">
-                    <Terminal className="w-4 h-4 text-[#4ade80]" />
-                    <span className="font-bold text-white uppercase text-[11px] tracking-wider">
-                      ক্রলার টার্মিনাল কনসোল (Live Execution Logs)
-                    </span>
-                  </div>
-                  {runResult && (
-                    <span className="text-[10px] text-[#4ade80]">
-                      সময়: {(runResult.durationMs / 1000).toFixed(2)}s
-                    </span>
-                  )}
-                </div>
-
-                {spiderRunning && (
-                  <div className="py-6 flex flex-col items-center justify-center gap-3 text-[#94a3b8]">
-                    <RefreshCw className="w-6 h-6 animate-spin text-[#f5c66b]" />
-                    <p className="text-xs animate-pulse text-[#f5c66b]">
-                      সংবাদ উৎসসমূহ স্ক্যান করা হচ্ছে... তারিখ ও কন্টেন্ট বিশ্লেষণ চলছে...
+                    <h2 className="text-sm font-bold text-white">সংবাদ সংগ্রহ (Crawler)</h2>
+                    <p className="text-[11px] text-[#94a3b8] mt-0.5">
+                      প্রতি ৬ ঘণ্টায় নিজে থেকেই চলে। এখনই চালাতে নিচের বোতাম চাপুন।
                     </p>
                   </div>
-                )}
+                </div>
 
-                {!spiderRunning && !runResult && (
-                  <div className="text-[#64748b] py-6 text-center text-xs">
-                    স্পাইডার ক্রলার রান করার পর এখানে রিয়েলটাইম আউটপুট, হেডলাইন এবং পরিসংখ্যান প্রদর্শিত হবে।
-                  </div>
-                )}
+                <button
+                  type="button"
+                  onClick={handleExecuteSpider}
+                  disabled={spiderRunning}
+                  className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-[#842323] hover:bg-[#6e1c1c] disabled:opacity-60 text-white text-sm font-bold transition"
+                >
+                  {spiderRunning ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>সংবাদ সংগ্রহ চলছে… (এক মিনিট পর্যন্ত লাগতে পারে)</span>
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="w-4 h-4" />
+                      <span>এখনই সংবাদ সংগ্রহ করুন</span>
+                    </>
+                  )}
+                </button>
 
-                {!spiderRunning && runResult && (
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-[11px] border-b border-[#1b222e] pb-3">
-                      <div className="bg-[#141b24] p-2 rounded border border-[#212936]">
-                        <span className="text-[#8e9aa8] block">লক্ষ্য তারিখ:</span>
-                        <strong className="text-white">
-                          {runResult.targetDate === "all"
-                            ? "যে কোনো তারিখ"
-                            : runResult.targetDate === "7days"
-                            ? "বিগত ৭ দিন"
-                            : runResult.targetDate}
-                        </strong>
-                      </div>
-                      <div className="bg-[#141b24] p-2 rounded border border-[#212936]">
-                        <span className="text-[#8e9aa8] block">স্ক্যানকৃত সোর্স:</span>
-                        <strong className="text-[#38bdf8]">{runResult.sourcesCount} টি</strong>
-                      </div>
-                      <div className="bg-[#141b24] p-2 rounded border border-[#212936]">
-                        <span className="text-[#8e9aa8] block">সংরক্ষিত / ম্যাচড:</span>
-                        <strong className="text-[#4ade80]">{runResult.saved} টি</strong>
-                      </div>
-                      <div className="bg-[#141b24] p-2 rounded border border-[#212936]">
-                        <span className="text-[#8e9aa8] block">নন-এক্সাম ছাঁটাই:</span>
-                        <strong className="text-rose-400">{(runResult as any).filteredExamNoise ?? 0} টি</strong>
-                      </div>
-                      <div className="bg-[#141b24] p-2 rounded border border-[#212936]">
-                        <span className="text-[#8e9aa8] block">তারিখ অমিল:</span>
-                        <strong className="text-[#f5c66b]">{runResult.dateMismatched} টি</strong>
-                      </div>
+                {runResult && (
+                  <div className="rounded-lg border border-[#212936] bg-[#0f151d] p-4 space-y-3">
+                    <h3 className="text-xs font-bold text-white">সর্বশেষ সংগ্রহের ফল ({runResult.targetDate})</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                      {[
+                        ["নতুন সংরক্ষিত", runResult.saved],
+                        ["দৈনিক ৩০-এর বাইরে বাদ", runResult.trimmed || 0],
+                        ["অপ্রাসঙ্গিক বাদ", runResult.filteredExamNoise || 0],
+                        ["আগেই ছিল / পুনরাবৃত্তি", runResult.skipped],
+                      ].map(([label, value]) => (
+                        <div key={label as string} className="rounded-md bg-[#141b24] border border-[#212936] p-2.5">
+                          <div className="text-lg font-bold text-white">{Number(value).toLocaleString("bn-BD")}</div>
+                          <div className="text-[11px] text-[#94a3b8]">{label}</div>
+                        </div>
+                      ))}
                     </div>
-
-                    <div>
-                      <h4 className="text-[11px] font-bold text-[#cbd5e1] mb-1.5 flex items-center justify-between">
-                        <span>সংগৃহীত সংবাদ শিরোনাম ({runResult.items.length})</span>
-                        {runResult.dryRun && (
-                          <span className="text-[10px] text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800">
-                            ড্রাই-রান প্রিভিউ
-                          </span>
-                        )}
-                      </h4>
-                      {runResult.items.length === 0 ? (
-                        <p className="text-[#64748b] text-[11px]">
-                          নির্বাচিত তারিখে কোনো নতুন সংবাদ মেলেনি অথবা সবগুলো ইতিমধ্যে সংরক্ষিত রয়েছে।
-                        </p>
-                      ) : (
-                        <ul className="space-y-1 max-h-52 overflow-y-auto pr-1">
-                          {runResult.items.map((item: string, i: number) => (
-                            <li
-                              key={i}
-                              className="text-[11px] text-[#94a3b8] flex items-start gap-1.5 bg-[#141b24]/60 p-1.5 rounded"
-                            >
-                              <span className="text-[#4ade80] shrink-0 font-bold">•</span>
-                              <span className="text-[#e2e8f0]">{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
+                    <p className="text-[11px] text-[#94a3b8]">
+                      {runResult.sourcesCount?.toLocaleString("bn-BD")}টি সংবাদপত্র ফিড • সময় {(runResult.durationMs / 1000).toFixed(1)} সেকেন্ড
+                      {runResult.errors ? ` • ${runResult.errors.toLocaleString("bn-BD")}টি ফিডে সমস্যা` : ""}
+                    </p>
+                    {runResult.items?.length > 0 && (
+                      <ul className="text-xs text-[#cbd5e1] space-y-1 max-h-60 overflow-y-auto border-t border-[#212936] pt-2">
+                        {runResult.items.map((it: string, i: number) => (
+                          <li key={i} className="truncate">• {it}</li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Right Col: Quick Guidelines & System Specs */}
-            <div className="space-y-4">
-              <div className="bg-[#141b24] border border-[#212936] rounded-xl p-4 space-y-3">
-                <h3 className="text-xs font-bold text-white flex items-center gap-1.5 uppercase font-serif tracking-wider">
-                  <Shield className="w-4 h-4 text-[#38bdf8]" />
-                  <span>ক্রলার পরিচালনা নীতিমালা</span>
-                </h3>
-                <ul className="text-xs text-[#94a3b8] space-y-2">
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-[#f5c66b]">•</span>
-                    <span>
-                      <strong>তারিখ ফিল্টারিং:</strong> আরএসএস ফিডের <code>pubDate</code> বা <code>isoDate</code> যাচাই করে নির্দিষ্ট দিনের সংবাদ ছাঁটাই করা হয়।
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-[#f5c66b]">•</span>
-                    <span>
-                      <strong>ডুপ্লিকেট প্রতিরোধ:</strong> স্ল্যাগ এবং শিরোনামের ভিত্তিতে পূর্বে সংরক্ষিত সংবাদ স্বয়ংক্রিয়ভাবে বাদ দেওয়া হয়।
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-[#4ade80]">•</span>
-                    <span>
-                      <strong>বিসিএস ও ভর্তি ফিল্টারিং (AI Gatekeeper):</strong> পারিবারিক বিরোধ, জমি কোন্দল ও সাধারণ সেলিব্রিটি গসিপ স্বয়ংক্রিয়ভাবে বাদ দেওয়া হয়; সড়ক দুর্ঘটনা জরিপ ও ক্রীড়া পুরস্কার লিখিত পরীক্ষার জন্য সংরক্ষিত থাকে।
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-[#38bdf8]">•</span>
-                    <span>
-                      <strong>তথ্য ছক ও সোর্স লিঙ্কিং:</strong> প্রতিটি সংবাদের সাথে সুনির্দিষ্ট উপাত্ত, নিয়ন্ত্রক প্রতিষ্ঠান ও সিলেবাস কোণ যুক্ত হয়ে ফ্যাক্ট টেবিল ও বিস্তারিত আউটবাউন্ড লিংক তৈরি হয়।
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-[#f5c66b]">•</span>
-                    <span>
-                      <strong>এডটেক প্রসেসিং:</strong> সংবাদ সেভ করার সময় স্বয়ংক্রিয়ভাবে ৩টি মূলবিন্দু, ধারণাগত শব্দকোষ এবং কুইজ তৈরি হয়।
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-[#f5c66b]">•</span>
-                    <span>
-                      <strong>ড্রাই-রান:</strong> লাইভ ডেটাবেজ স্পর্শ না করে ফিড পরীক্ষা করার নিরাপদ পদ্ধতি।
-                    </span>
-                  </li>
+            {/* What a run does (kept accurate to the code) */}
+            <div className="space-y-6">
+              <div className="bg-[#141b24] border border-[#212936] rounded-xl p-5 shadow-sm">
+                <h3 className="text-xs font-bold text-white mb-3">প্রতিবার সংগ্রহে যা হয়</h3>
+                <ul className="text-[11px] text-[#94a3b8] space-y-2 leading-relaxed list-disc pl-4">
+                  <li>তালিকার সব সংবাদপত্রের ফিড থেকে আজকের সংবাদ পড়া হয়।</li>
+                  <li>সিলেবাসের সঙ্গে সম্পর্কহীন সংবাদ (অপরাধ, গসিপ, পারিবারিক বিরোধ) বাদ যায়; আলোচিত জাতীয় ও আন্তর্জাতিক সংবাদ থাকে।</li>
+                  <li>বাংলা (চাকরি ও বিসিএস) সংবাদ দিনে সর্বোচ্চ ৩০টি: প্রতিবার দিনের সব সংবাদ মিলিয়ে সেরা ৩০টি রাখা হয়, দুর্বলগুলো বাদ যায় এবং আর সংগ্রহ হয় না।</li>
+                  <li>কোনো শিক্ষার্থী যে সংবাদ সংরক্ষণ করেছে, পড়েছে, নোট নিয়েছে বা যার কুইজ দিয়েছে, সেটি কখনো বাদ যায় না।</li>
+                  <li>ইংরেজি সংবাদের কোনো দৈনিক সীমা নেই।</li>
+                  <li>একই সংবাদ দুবার সংরক্ষিত হয় না; পুরো লেখা সংরক্ষণ বা প্রকাশ করা হয় না, শুধু মূল তথ্য ও মূল সংবাদের লিংক।</li>
                 </ul>
-              </div>
-
-              {/* Quick Feed Tester Card */}
-              <div className="bg-[#141b24] border border-[#212936] rounded-xl p-4 space-y-3">
-                <h3 className="text-xs font-bold text-white flex items-center gap-1.5 uppercase font-serif tracking-wider">
-                  <Activity className="w-4 h-4 text-[#4ade80]" />
-                  <span>দ্রুত ফিড পিং / টেস্ট (Quick Ping)</span>
-                </h3>
-                <p className="text-[11px] text-[#94a3b8]">
-                  সংযুক্ত যে কোনো সংবাদপত্রের আরএসএস সচল কিনা অবিলম্বে পরীক্ষা করুন:
-                </p>
-                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                  {sources.slice(0, 6).map((s, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between text-xs bg-[#0f141c] p-2 rounded border border-[#212936]"
-                    >
-                      <div className="truncate max-w-[140px]">
-                        <span className="font-semibold text-white truncate block">{s.name}</span>
-                        <span className="text-[10px] text-[#64748b] block">{s.language === "bn" ? "বাংলা" : "English"}</span>
-                      </div>
-                      <button
-                        onClick={() => handleTestFeed(s.feedUrl)}
-                        disabled={testingUrl === s.feedUrl}
-                        className="px-2 py-1 bg-[#1e293b] hover:bg-[#283548] text-[#38bdf8] text-[10px] rounded font-mono font-bold transition disabled:opacity-50"
-                      >
-                        {testingUrl === s.feedUrl ? "চেকিং..." : "টেস্ট ফিড"}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                {Object.keys(testResult).length > 0 && (
-                  <div className="bg-[#0b0f15] p-2.5 rounded border border-[#1b222e] text-[11px]">
-                    {Object.entries(testResult).slice(-1).map(([url, res]: any, i) => (
-                      <div key={i}>
-                        {res.success ? (
-                          <div className="text-[#4ade80] space-y-1">
-                            <div className="font-bold flex items-center gap-1.5">
-                              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                              <span>ফিড সচল রয়েছে ({res.itemCount} টি আইটেম)</span>
-                            </div>
-                            <div className="text-[10px] text-[#cbd5e1] truncate">
-                              শিরোনাম: {res.sampleTitles?.[0] || "N/A"}
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-[#f87171] flex items-center gap-1.5">
-                            <XCircle className="w-3.5 h-3.5 shrink-0" />
-                            <span>সংযোগ ব্যর্থ: {res.error}</span>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -1230,7 +843,7 @@ export default function AdminDashboardClient() {
                     <div className="flex items-center justify-between">
                       <span className="text-[#94a3b8]">অনুমোদন (Security / Secret):</span>
                       <span className="text-[10px] bg-[#1e293b] text-[#cbd5e1] px-2 py-0.5 rounded font-mono">
-                        Bearer Token বা ?secret=
+                        শুধু Authorization: Bearer হেডার
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
@@ -1242,61 +855,11 @@ export default function AdminDashboardClient() {
                   </div>
 
                   <div className="pt-2 flex items-center justify-between gap-4">
-                    <label className="flex items-center gap-2 text-xs text-[#cbd5e1] cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={cronTestDryRun}
-                        onChange={(e) => setCronTestDryRun(e.target.checked)}
-                        className="w-4 h-4 accent-[#f5c66b] rounded"
-                      />
-                      <span>
-                        <strong className="text-[#f5c66b]">ড্রাই-রান মোড</strong> (সেভ না করে টেস্ট করুন)
-                      </span>
-                    </label>
-
-                    <button
-                      onClick={handleTestCronApi}
-                      disabled={cronTestRunning}
-                      className="px-4 py-2 bg-[#842323] hover:bg-[#9c2b2b] text-white text-xs font-bold rounded-lg transition shadow flex items-center gap-1.5 disabled:opacity-50"
-                    >
-                      {cronTestRunning ? (
-                        <>
-                          <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#f5c66b]" />
-                          <span>এক্সিকিউট হচ্ছে...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Play className="w-3.5 h-3.5 fill-current text-[#f5c66b]" />
-                          <span>ক্রন ট্রিগার করুন</span>
-                        </>
-                      )}
-                    </button>
+                    <p className="text-[11px] text-[#94a3b8]">ক্রলার এখনই চালাতে "স্পাইডার" ট্যাবের বোতাম ব্যবহার করুন।</p>
                   </div>
                 </div>
 
                 {/* Response Output Box */}
-                {cronTestResponse && (
-                  <div className="mt-4 pt-3 border-t border-[#212936] space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-white flex items-center gap-1.5">
-                        <Terminal className="w-3.5 h-3.5 text-[#4ade80]" />
-                        <span>API রেসপন্স:</span>
-                      </span>
-                      <span
-                        className={`text-[10px] font-mono px-2 py-0.5 rounded ${
-                          cronTestResponse.success
-                            ? "bg-[#064e3b] text-[#34d399]"
-                            : "bg-[#7f1d1d] text-[#f87171]"
-                        }`}
-                      >
-                        {cronTestResponse.success ? "200 OK" : "FAILED"}
-                      </span>
-                    </div>
-                    <pre className="bg-[#0b0f15] border border-[#1b222e] p-3 rounded text-[11px] font-mono text-[#cbd5e1] overflow-x-auto max-h-56">
-                      {JSON.stringify(cronTestResponse, null, 2)}
-                    </pre>
-                  </div>
-                )}
               </div>
 
               {/* Right Column: Production Vercel & Local Setup Guide */}
@@ -1702,265 +1265,6 @@ export default function AdminDashboardClient() {
           </div>
         )}
 
-        {/* TAB 5: AUTOMATED SCHEDULER & CRON */}
-        {activeTab === "scheduler" && (
-          <div className="space-y-6">
-            {/* Header Banner */}
-            <div className="bg-[#141b24] border border-[#212936] rounded-xl p-5 shadow-xs">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-[#0f766e]/30 border border-[#14b8a6]/40 flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-[#2dd4bf]" />
-                  </div>
-                  <div>
-                    <h2 className="text-base font-bold text-white font-serif">
-                      স্বয়ংক্রিয় ক্রলার শিডিউলার ও ক্রন ইঞ্জিন (Automated Spider Scheduler)
-                    </h2>
-                    <p className="text-xs text-[#8e9aa8] mt-0.5">
-                      প্রতিদিন নির্দিষ্ট সময়ে স্বয়ংক্রিয়ভাবে সংবাদপত্র স্ক্যান, এডটেক সারসংক্ষেপ ও ৫-মিনিট ক্যাপসুল আপডেট
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] bg-[#064e3b] text-[#34d399] px-3 py-1 rounded-full border border-[#059669]/50 font-mono font-bold flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
-                    Cron Endpoint Active
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Grid: 2 Columns */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Left Column: Interactive Webhook Tester */}
-              <div className="bg-[#141b24] border border-[#212936] rounded-xl p-5 space-y-4 shadow-sm">
-                <div className="flex items-center justify-between border-b border-[#212936] pb-3">
-                  <div className="flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-[#f5c66b]" />
-                    <h3 className="text-sm font-bold text-white font-serif uppercase tracking-wider">
-                      ওয়েবহুক এন্ডপয়েন্ট টেস্ট (Live Webhook Trigger)
-                    </h3>
-                  </div>
-                  <span className="text-[10px] text-[#38bdf8] font-mono">GET / POST</span>
-                </div>
-
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-xs font-semibold text-[#cbd5e1] block mb-1">
-                      ক্রন এন্ডপয়েন্ট URL:
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 bg-[#0f141c] border border-[#283548] p-2.5 rounded font-mono text-xs text-[#38bdf8] truncate">
-                        /api/cron/spider
-                      </div>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(
-                            `${window.location.origin}/api/cron/spider`
-                          );
-                          setCopiedCurl(true);
-                          setTimeout(() => setCopiedCurl(false), 2000);
-                        }}
-                        className="px-3 py-2.5 bg-[#1e293b] hover:bg-[#283548] text-white text-xs rounded border border-[#334155] transition flex items-center gap-1.5 shrink-0"
-                        title="URL কপি করুন"
-                      >
-                        {copiedCurl ? (
-                          <>
-                            <Check className="w-3.5 h-3.5 text-green-400" />
-                            <span>কপি হয়েছে</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3.5 h-3.5" />
-                            <span>কপি</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="bg-[#0f141c] border border-[#212936] p-3 rounded-lg text-xs space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[#94a3b8]">অনুমোদন (Security / Secret):</span>
-                      <span className="text-[10px] bg-[#1e293b] text-[#cbd5e1] px-2 py-0.5 rounded font-mono">
-                        Bearer Token বা ?secret=
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[#94a3b8]">ডিফল্ট ফিল্টারিং:</span>
-                      <span className="text-[10px] text-[#cbd5e1] font-mono">
-                        targetDate=আজ, language=all
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="pt-2 flex items-center justify-between gap-4">
-                    <label className="flex items-center gap-2 text-xs text-[#cbd5e1] cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={cronTestDryRun}
-                        onChange={(e) => setCronTestDryRun(e.target.checked)}
-                        className="w-4 h-4 accent-[#f5c66b] rounded"
-                      />
-                      <span>
-                        <strong className="text-[#f5c66b]">ড্রাই-রান মোড</strong> (সেভ না করে টেস্ট করুন)
-                      </span>
-                    </label>
-
-                    <button
-                      onClick={handleTestCronApi}
-                      disabled={cronTestRunning}
-                      className="px-4 py-2 bg-[#842323] hover:bg-[#9c2b2b] text-white text-xs font-bold rounded-lg transition shadow flex items-center gap-1.5 disabled:opacity-50"
-                    >
-                      {cronTestRunning ? (
-                        <>
-                          <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#f5c66b]" />
-                          <span>এক্সিকিউট হচ্ছে...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Play className="w-3.5 h-3.5 fill-current text-[#f5c66b]" />
-                          <span>ক্রন ট্রিগার করুন</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Response Output Box */}
-                {cronTestResponse && (
-                  <div className="mt-4 pt-3 border-t border-[#212936] space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-white flex items-center gap-1.5">
-                        <Terminal className="w-3.5 h-3.5 text-[#4ade80]" />
-                        <span>API রেসপন্স:</span>
-                      </span>
-                      <span
-                        className={`text-[10px] font-mono px-2 py-0.5 rounded ${
-                          cronTestResponse.success
-                            ? "bg-[#064e3b] text-[#34d399]"
-                            : "bg-[#7f1d1d] text-[#f87171]"
-                        }`}
-                      >
-                        {cronTestResponse.success ? "200 OK" : "FAILED"}
-                      </span>
-                    </div>
-                    <pre className="bg-[#0b0f15] border border-[#1b222e] p-3 rounded text-[11px] font-mono text-[#cbd5e1] overflow-x-auto max-h-56">
-                      {JSON.stringify(cronTestResponse, null, 2)}
-                    </pre>
-                  </div>
-                )}
-              </div>
-
-              {/* Right Column: Production Vercel & Local Setup Guide */}
-              <div className="space-y-6">
-                {/* Vercel Crons Card */}
-                <div className="bg-[#141b24] border border-[#212936] rounded-xl p-5 space-y-3 shadow-sm">
-                  <div className="flex items-center justify-between border-b border-[#212936] pb-2.5">
-                    <div className="flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-[#38bdf8]" />
-                      <h3 className="text-sm font-bold text-white font-serif uppercase tracking-wider">
-                        প্রোডাকশন ক্রন শিডিউল (Vercel Cron)
-                      </h3>
-                    </div>
-                    <span className="text-[10px] text-[#4ade80] bg-[#14261d] px-2 py-0.5 rounded border border-[#059669]/40 font-mono">
-                      vercel.json Ready
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-[#94a3b8] leading-relaxed">
-                    প্রোডাকশনে (যেমন: Vercel) ডিপ্লয় করলে <code>vercel.json</code> কনফিগারেশন অনুযায়ী প্রতিদিন স্বয়ংক্রিয়ভাবে দুটি সংস্করণে ক্রলিং চলবে:
-                  </p>
-
-                  <div className="space-y-2 text-xs">
-                    <div className="bg-[#0f141c] p-2.5 rounded border border-[#212936] flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-[#f5c66b]" />
-                        <span className="text-white font-semibold">ভোরের সংস্করণ (Morning Capsule)</span>
-                      </div>
-                      <span className="text-[#38bdf8] font-mono text-[11px]">
-                        00:00 UTC (সকাল ০৬:০০ BST)
-                      </span>
-                    </div>
-
-                    <div className="bg-[#0f141c] p-2.5 rounded border border-[#212936] flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-[#38bdf8]" />
-                        <span className="text-white font-semibold">অপরাহ্ন সংস্করণ (Afternoon Update)</span>
-                      </div>
-                      <span className="text-[#38bdf8] font-mono text-[11px]">
-                        08:00 UTC (দুপুর ০২:০০ BST)
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="relative pt-2">
-                    <pre className="bg-[#0b0f15] border border-[#1e2633] p-3 rounded text-[11px] font-mono text-[#cbd5e1] overflow-x-auto">
-{`{
-  "crons": [
-    {
-      "path": "/api/cron/spider?language=all",
-      "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/cron/spider?language=all",
-      "schedule": "0 8 * * *"
-    }
-  ]
-}`}
-                    </pre>
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(
-                          JSON.stringify(
-                            {
-                              crons: [
-                                { path: "/api/cron/spider?language=all", schedule: "0 0 * * *" },
-                                { path: "/api/cron/spider?language=all", schedule: "0 8 * * *" },
-                              ],
-                            },
-                            null,
-                            2
-                          )
-                        );
-                        setCopiedVercel(true);
-                        setTimeout(() => setCopiedVercel(false), 2000);
-                      }}
-                      className="absolute top-4 right-2 text-[10px] bg-[#1e293b] hover:bg-[#283548] text-[#94a3b8] hover:text-white px-2 py-1 rounded border border-[#334155] transition flex items-center gap-1"
-                    >
-                      {copiedVercel ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
-                      <span>{copiedVercel ? "কপি হয়েছে" : "কপি JSON"}</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Local & VPS Background Worker */}
-                <div className="bg-[#141b24] border border-[#212936] rounded-xl p-5 space-y-3 shadow-sm">
-                  <div className="flex items-center gap-2 border-b border-[#212936] pb-2.5">
-                    <Terminal className="w-4 h-4 text-[#a78bfa]" />
-                    <h3 className="text-sm font-bold text-white font-serif uppercase tracking-wider">
-                      লোকাল ও VPS ব্যাকগ্রাউন্ড অটোমেশন (Background Worker)
-                    </h3>
-                  </div>
-
-                  <p className="text-xs text-[#94a3b8] leading-relaxed">
-                    লোকাল মেশিনে বা নিজস্ব সার্ভারে সার্বক্ষণিক অটো-ক্রলার চালু রাখতে টার্মিনালে নিচের কমান্ডটি চালাতে পারেন:
-                  </p>
-
-                  <div className="bg-[#0b0f15] border border-[#1e2633] p-3 rounded font-mono text-xs text-[#34d399] flex items-center justify-between">
-                    <span>npm run cron</span>
-                    <span className="text-[10px] text-[#64748b]">scripts/cron-worker.js</span>
-                  </div>
-
-                  <p className="text-[11px] text-[#64748b]">
-                    এটি স্বয়ংক্রিয়ভাবে প্রতি ৬ ঘণ্টা পরপর <code>/api/cron/spider</code> কল করে আপনার ডেটাবেজে সর্বশেষ সংবাদ ও কুইজ হালনাগাদ রাখবে।
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </main>
 
       {/* Modal: Add New Newspaper Source */}
