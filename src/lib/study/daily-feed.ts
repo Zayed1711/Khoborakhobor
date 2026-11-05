@@ -2,7 +2,7 @@ import { getPublishedArticles } from "@/actions/articles";
 import { prisma } from "@/lib/prisma";
 import { toFeedCard } from "@/lib/feed-card";
 import { selectDaily, selectDailyFeed, type RankedCard } from "@/lib/study/daily-selection";
-import { buildDayNotes, dhakaDay, type KeyNote, type KeyNoteDay } from "@/lib/study/key-notes";
+import { buildDayNotes, dhakaDay, readSavedNotes, saveNotesJson, type KeyNoteDay } from "@/lib/study/key-notes";
 
 /**
  * One place that decides what readers see each day, so the homepage, the date
@@ -108,7 +108,10 @@ export async function getKeyNotes(lang: "bn" | "en" = "bn"): Promise<KeyNoteDay[
 async function computeKeyNotes(lang: "bn" | "en", today: string): Promise<KeyNoteDay[]> {
   const days = Array.from({ length: KEY_NOTE_DAYS }, (_, i) => dhakaDay(new Date(today + "T12:00:00Z").getTime() - i * 86400000));
   const stored = new Map(
-    (await prisma.dailyNote.findMany({ where: { lang, day: { in: days } } })).map((r) => [r.day, JSON.parse(r.items) as KeyNote[]])
+    // Rows from an older rule read as missing, so they are rebuilt once
+    (await prisma.dailyNote.findMany({ where: { lang, day: { in: days } } }))
+      .map((r) => [r.day, readSavedNotes(r.items)] as const)
+      .filter((e): e is readonly [string, NonNullable<ReturnType<typeof readSavedNotes>>] => e[1] !== null)
   );
 
   // Stories are needed for today, and for any past day not saved yet (e.g. right after this feature ships)
@@ -131,12 +134,17 @@ async function computeKeyNotes(lang: "bn" | "en", today: string): Promise<KeyNot
       if (day === today) {
         await prisma.dailyNote.upsert({
           where: { day_lang: { day, lang } },
-          create: { day, lang, items: JSON.stringify(items) },
-          update: { items: JSON.stringify(items) },
+          create: { day, lang, items: saveNotesJson(items) },
+          update: { items: saveNotesJson(items) },
         });
       } else if (items.length) {
         // A past day is saved once and then frozen
-        await prisma.dailyNote.create({ data: { day, lang, items: JSON.stringify(items) } }).catch(() => undefined);
+        // Saved once (or rebuilt once from an older rule's row), then frozen
+        await prisma.dailyNote.upsert({
+          where: { day_lang: { day, lang } },
+          create: { day, lang, items: saveNotesJson(items) },
+          update: { items: saveNotesJson(items) },
+        });
       }
     }
     result.push({ day, items });

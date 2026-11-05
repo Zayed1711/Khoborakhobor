@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { toFeedCard, type FeedCard } from "@/lib/feed-card";
 import { scoreStory, selectDaily } from "@/lib/study/daily-selection";
+import { anySavedNotes } from "@/lib/study/key-notes";
 
 const DAILY_LIMIT = 30;
 
@@ -100,7 +101,7 @@ export async function keepDailyBest(days: string[], today: string): Promise<{ re
     // A past day's key notes are frozen; keep every story they quote
     if (day !== today) {
       const note = await prisma.dailyNote.findUnique({ where: { day_lang: { day, lang: "bn" } } });
-      const slugs = new Set(parse<{ slug: string }[]>(note?.items, []).map((n) => n.slug));
+      const slugs = new Set(anySavedNotes(note?.items).map((n) => n.slug));
       for (const c of candidates) if (slugs.has(c.slug)) protectedIds.add(c.id);
     }
 
