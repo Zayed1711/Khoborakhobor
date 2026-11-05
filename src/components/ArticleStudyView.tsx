@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ExternalLink, Quote, Share2, BookOpen } from "lucide-react";
+import { ArrowLeft, ExternalLink, Quote, Share2, BookOpen, Languages } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MobileBottomNav from "@/components/MobileBottomNav";
@@ -11,6 +11,7 @@ import MicroQuiz from "@/components/MicroQuiz";
 import VocabularyTable from "@/components/VocabularyTable";
 import ArticleSummaryReflection from "@/components/ArticleSummaryReflection";
 import ShareStudyModal from "@/components/ShareStudyModal";
+import FocusDictionaryModal from "@/components/FocusDictionaryModal";
 import { trackArticleReadAction } from "@/actions/student";
 import { isBengaliText } from "@/lib/bilingual";
 import type { FeedCard } from "@/lib/feed-card";
@@ -65,6 +66,15 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
 export default function ArticleStudyView({ article, relatedArticles, initialNotes, student, englishVocabRows }: Props) {
   const [notes, setNotes] = useState<StudyNote[]>(initialNotes);
   const [isShareOpen, setIsShareOpen] = useState(false);
+  // AI lexicon (src/lib/dictionary-engine.ts): opens with the word the reader selected, if any
+  const [isDictOpen, setIsDictOpen] = useState(false);
+  const [dictWord, setDictWord] = useState("");
+  const openLexicon = (word?: string) => {
+    const selected = typeof window !== "undefined" ? window.getSelection()?.toString().trim() || "" : "";
+    const w = (word ?? selected).slice(0, 40);
+    setDictWord(w);
+    setIsDictOpen(true);
+  };
   const isEnglish = !isBengaliText(article.title);
   const sourceLabel = article.sourceName || "মূল পত্রিকা";
 
@@ -114,7 +124,17 @@ export default function ArticleStudyView({ article, relatedArticles, initialNote
             </p>
           )}
 
-          <div className="flex items-center gap-3 text-sm">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+            <button
+              type="button"
+              // Keep a text selection alive when the button is pressed
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => openLexicon()}
+              className="inline-flex items-center gap-1.5 text-[#525a68] hover:text-[#842323]"
+            >
+              <Languages className="w-4 h-4" />
+              অভিধান
+            </button>
             <button
               type="button"
               onClick={() => setIsShareOpen(true)}
@@ -124,6 +144,7 @@ export default function ArticleStudyView({ article, relatedArticles, initialNote
               শেয়ার করুন
             </button>
           </div>
+          <p className="text-xs text-[#8a909b]">কোনো শব্দ সিলেক্ট করে “অভিধান” চাপলে তার অর্থ দেখাবে।</p>
         </header>
 
         {/* Key points, quoted */}
@@ -183,7 +204,16 @@ export default function ArticleStudyView({ article, relatedArticles, initialNote
             <dl className="divide-y divide-[#ece6db] rounded-xl bg-white border border-[#ece6db]">
               {article.vocabulary.map((v) => (
                 <div key={v.id} className="p-4">
-                  <dt className="font-semibold text-[#17191d]">{v.term}</dt>
+                  <dt>
+                    <button
+                      type="button"
+                      onClick={() => openLexicon(v.term.split("[")[0].trim())}
+                      className="font-semibold text-[#17191d] hover:text-[#842323] underline decoration-dotted underline-offset-4"
+                      title="অভিধানে দেখুন"
+                    >
+                      {v.term}
+                    </button>
+                  </dt>
                   <dd className="text-[15px] leading-relaxed text-[#525a68] mt-1">{v.definition}</dd>
                 </div>
               ))}
@@ -235,6 +265,13 @@ export default function ArticleStudyView({ article, relatedArticles, initialNote
           keyTakeaways: article.keyTakeaways,
           slug: article.slug,
         }}
+      />
+      <FocusDictionaryModal
+        isOpen={isDictOpen}
+        onClose={() => setIsDictOpen(false)}
+        initialWord={dictWord}
+        articleSlug={article.slug}
+        student={student}
       />
       <MobileBottomNav />
       <Footer />

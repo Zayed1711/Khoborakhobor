@@ -614,25 +614,27 @@ async function fetchSmartOnlineLexicon(query: string, isBangla: boolean): Promis
     const enFormatted = enWord ? enWord.charAt(0).toUpperCase() + enWord.slice(1).toLowerCase() : "";
     const synonymStr = synonyms.length > 0 ? synonyms.join(", ") : enFormatted;
 
-    // Build synthesized, high-utility Bengali meaning
+    // Bengali meaning: only what Wiktionary / the translation lookup returned. If nothing
+    // reliable came back, say so instead of writing a stock sentence that looks like a definition.
+    // A bare transliteration (e.g. a made-up word spelled in Latin letters) is not a translation:
+    // trust the English word only when the dictionary also returned synonyms or a definition.
+    const hasRealTranslation = Boolean(enFormatted) && (synonyms.length > 0 || Boolean(enDef));
     let finalBanglaMeaning = bnDef;
     if (!finalBanglaMeaning || /^[a-zA-Z,\s]+$/.test(finalBanglaMeaning)) {
-      // If Wiktionary only had English words or was empty, provide a clean semantic explanation
-      finalBanglaMeaning = `সুনির্দিষ্ট লক্ষ্য, প্রাসঙ্গিক প্রেক্ষাপট বা কোনো বিশেষ কার্যক্রম বাস্তবায়নে '${clean}' ধারণাটি ব্যবহৃত হয়।`;
-      if (enFormatted) {
-        finalBanglaMeaning = `${clean} — ইংরেজিতে ${enFormatted}${synonymStr ? ` (${synonymStr})` : ""}; প্রাতিষ্ঠানিক ও সমসাময়িক প্রসঙ্গে ব্যবহৃত গুরুত্বপূর্ণ ধারণা।`;
-      }
+      finalBanglaMeaning = hasRealTranslation
+        ? `${clean} — ইংরেজিতে ${enFormatted}${synonyms.length > 0 ? ` (${synonyms.join(", ")})` : ""}`
+        : "এই শব্দের নির্ভরযোগ্য অর্থ এখন পাওয়া যায়নি।";
     }
 
-    // Build simplified English meaning
+    // English meaning: the dictionary definition when there is one, otherwise just the translation
     const finalSimplifiedMeaning = enDef
       ? `${enFormatted} (${synonymStr}): ${enDef}`
-      : `${enFormatted || clean}: The standard English academic concept corresponding to "${clean}".`;
+      : hasRealTranslation ? enFormatted : "No reliable English definition was found.";
 
     // Build practical real-life example
     const finalExample = enExample
       ? `যেমন: বাস্তব জীবনে ও আন্তর্জাতিক সংবাদে "${enFormatted}" প্রত্যয়টি এভাবে ব্যবহৃত হয়— "${enExample}"`
-      : `যেমন: দেশীয় সংবাদপত্র ও প্রাতিষ্ঠানিক আলোচনায় '${clean}' প্রত্যয়টি সুনির্দিষ্ট ঘটনা ও সিদ্ধান্তের বিশ্লেষণে ব্যাপকভাবে ব্যবহৃত হয়।`;
+      : ""; // no real example found: show none
 
     return {
       term: `${clean}${enFormatted ? ` (${enFormatted})` : ""}`,
@@ -644,7 +646,7 @@ async function fetchSmartOnlineLexicon(query: string, isBangla: boolean): Promis
       category: pos,
       examRelevance: "বিসিএস প্রিলিমিনারি, লিখিত অনুবাদ ও প্রতিযোগিতামূলক পরীক্ষার জন্য প্রাসঙ্গিক পরিভাষা।",
       definition: finalBanglaMeaning,
-      context: `প্রতিবেদনে '${clean}' সুনির্দিষ্ট ভাব প্রকাশের জন্য ব্যবহৃত হয়েছে।`,
+      context: "",
     };
 
   } else {
@@ -689,10 +691,10 @@ async function fetchSmartOnlineLexicon(query: string, isBangla: boolean): Promis
       ? `${bnTranslation}${bnSynonyms.length > 0 ? ` (সমার্থক: ${bnSynonyms.join(", ")})` : ""}`
       : `${capitalized} (ইংরেজি শব্দ)`;
 
-    const finalSimplifiedMeaning = enDef || `The conceptual meaning of "${capitalized}" in standard academic English.`;
+    const finalSimplifiedMeaning = enDef || "";
     const finalExample = enExample
       ? `যেমন (Example): "${enExample}"`
-      : `যেমন: আন্তর্জাতিক সংবাদ বা একাডেমিক রচনায় '${capitalized}' শব্দটি সঠিক ভাব প্রকাশে ব্যবহৃত হয়।`;
+      : ""; // no real example found: show none
 
     return {
       term: `${capitalized}${bnTranslation ? ` (${bnTranslation})` : ""}`,
@@ -704,7 +706,7 @@ async function fetchSmartOnlineLexicon(query: string, isBangla: boolean): Promis
       category: pos,
       examRelevance: "বিসিএস প্রিলিমিনারি ভোকাবুলারি, সিনোনিম-অ্যান্টনিম ও প্যাসেজ অনুবাদের অত্যন্ত গুরুত্বপূর্ণ শব্দ।",
       definition: bnMeaningStr,
-      context: `ইংরেজি সম্পাদকীয় ও সংবাদে '${capitalized}' একটি প্রাসঙ্গিক শব্দ হিসেবে ব্যবহৃত হয়েছে।`,
+      context: "",
     };
   }
 }
@@ -754,18 +756,18 @@ export async function lookupConceptDictionary(rawQuery: string): Promise<Diction
     DYNAMIC_CACHE.set(queryLower, result);
     return result;
   } catch {
-    // Graceful offline fallback in the rare event of complete network timeout
+    // Lookup failed (offline / timeout): say so plainly instead of inventing a meaning
     return {
       term: query,
       query,
       language: isBangla ? "bangla" : "english",
-      banglaMeaning: `${query} — প্রাতিষ্ঠানিক ও সমসাময়িক ধারণা`,
-      simplifiedMeaning: `The conceptual term for "${query}".`,
-      realLifeExample: `যেমন: সংবাদে বা শিক্ষণীয় আলোচনায় '${query}' শব্দটি বিশেষ ভাব প্রকাশে ব্যবহৃত হয়।`,
+      banglaMeaning: "এই মুহূর্তে অর্থ খুঁজে পাওয়া যায়নি। ইন্টারনেট সংযোগ দেখে একটু পরে আবার চেষ্টা করুন।",
+      simplifiedMeaning: "",
+      realLifeExample: "",
       category: "পারিভাষিক শব্দকোষ",
-      examRelevance: "পরীক্ষার্থী ও গবেষকদের শব্দভাণ্ডার সমৃদ্ধ করতে সহায়ক।",
-      definition: `${query} একটি গুরুত্বপূর্ণ পরিভাষা।`,
-      context: `চলতি পাঠে '${query}' প্রাসঙ্গিক শব্দ হিসেবে উল্লেখিত হয়েছে।`,
+      examRelevance: "",
+      definition: "",
+      context: "",
     };
   }
 }
