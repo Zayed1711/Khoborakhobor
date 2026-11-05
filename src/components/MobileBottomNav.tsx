@@ -1,12 +1,19 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Home, Zap, Award, Bookmark, UserCheck } from "lucide-react";
 import { useAppMode } from "@/context/LanguageContext";
 
 export default function MobileBottomNav() {
-  const pathname = usePathname();
+  const pathname = usePathname() || "/";
+  // "?tab=" of the current address, read after the page loads (and on each page change);
+  // tapping one of these tabs sets it straight away
+  const [tab, setTab] = useState<string | null>(null);
+  useEffect(() => {
+    setTab(new URLSearchParams(window.location.search).get("tab"));
+  }, [pathname]);
   const { isEnglishMode } = useAppMode();
 
   const navItems = isEnglishMode
@@ -37,14 +44,21 @@ export default function MobileBottomNav() {
       <div className="flex items-center justify-around max-w-md mx-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
+          // "/saved?tab=analytics" (quiz recall) and "/saved" (notebook) share one page,
+          // so the tab decides which of the two is lit
+          const [path, query] = item.href.split("?");
+          const itemTab = query ? new URLSearchParams(query).get("tab") : null;
           const isActive =
-            pathname === item.href ||
-            (item.href !== "/" && pathname.startsWith(item.href) && !item.href.includes("?"));
+            path === "/"
+              ? pathname === "/"
+              : (pathname === path || pathname.startsWith(path + "/")) && (itemTab ? tab === itemTab : tab !== "analytics");
 
           return (
             <Link
               key={item.label}
               href={item.href}
+              aria-current={isActive ? "page" : undefined}
+              onClick={() => setTab(itemTab)}
               className={`flex flex-col items-center justify-center min-w-[54px] min-h-[46px] py-1 px-2 rounded-xl transition-all ${
                 isActive ? `${activeColor} ${activeBg} shadow-2xs` : "text-[#646c7a] hover:text-[#17191d]"
               }`}

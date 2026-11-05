@@ -84,7 +84,7 @@ export default function ArticleStudyView({ article, relatedArticles, initialNote
 
   return (
     <div className="min-h-screen bg-[#fbf9f5] flex flex-col pb-16 md:pb-0">
-      <Header />
+      <Header activeSection={article.category?.slug} />
 
       <main className="flex-1 w-full max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-10">
         {/* Headline and publisher summary */}

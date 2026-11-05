@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { 
   Search, Globe, Bookmark, Calendar, UserCheck, 
@@ -17,6 +18,8 @@ import { FEATURES } from "@/lib/features";
 interface HeaderProps {
   categories?: { id: string; name: string; slug: string }[];
   session?: UserSession | null;
+  /** On a story page: the story's section, so the bar shows where the reader is */
+  activeSection?: string;
 }
 
 const DEFAULT_CATEGORIES = [
@@ -45,7 +48,29 @@ const ENGLISH_CATEGORY_NAMES: Record<string, string> = {
   "exam-prep": "Vocabulary & Exams",
 };
 
-export default function Header({ categories = DEFAULT_CATEGORIES, session }: HeaderProps) {
+export default function Header({ categories = DEFAULT_CATEGORIES, session, activeSection }: HeaderProps) {
+  // Which part of the site the reader is in: highlighted in the section bar and menu
+  const pathname = usePathname() || "/";
+  const current =
+    activeSection ??
+    (pathname === "/"
+      ? "home"
+      : pathname.startsWith("/category/")
+      ? decodeURIComponent(pathname.split("/")[2] || "")
+      : pathname.startsWith("/capsule")
+      ? "capsule"
+      : null);
+  // A story page shows its section, but is not that section's page itself
+  const currentKind = activeSection ? "true" : "page";
+  // Filled chip for where the reader is; plain white for the rest
+  const chipClass = (active: boolean, extra: string) =>
+    `${extra} py-1.5 rounded-full text-xs whitespace-nowrap transition border ${
+      active
+        ? isEnglishMode
+          ? "bg-[#1e40af] border-[#1e40af] text-white shadow-2xs"
+          : "bg-[#842323] border-[#842323] text-white shadow-2xs"
+        : "bg-[#ffffff] hover:bg-[#ede7da] text-[#343a46] border-[#ded8cb]"
+    }`;
   const [sessionState, setSessionState] = useState<UserSession | null>(session || null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
@@ -111,6 +136,8 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
 
   const primaryCategories = categories.slice(0, 5);
   const extraCategories = categories.slice(5);
+  // When the reader is in a section under "অন্যান্য বিভাগ", that button shows its name
+  const activeExtra = extraCategories.find((c) => c.slug === current);
 
   // Dynamic 14-day Founding Pro Trial computed per active student
   const studentJoined = sessionState?.student && (sessionState.student as any).createdAt
@@ -227,11 +254,14 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
             <Link
               href="/"
               onClick={() => setIsMobileCategoryOpen(false)}
+              aria-current={current === "home" ? "page" : undefined}
               className={`block px-3 py-2 rounded-lg font-bold text-xs ${
-                isEnglishMode ? "text-[#1e40af] bg-blue-50" : "text-[#842323] bg-[#f5ebeb]"
+                current === "home"
+                  ? isEnglishMode ? "text-white bg-[#1e40af]" : "text-white bg-[#842323]"
+                  : isEnglishMode ? "text-[#1e40af] bg-blue-50" : "text-[#842323] bg-[#f5ebeb]"
               }`}
             >
-              {isEnglishMode ? "All News Feed" : "প্রচ্ছদ (সকল খবর)"}
+              {isEnglishMode ? "Home: today's top 10" : "প্রচ্ছদ (আজকের জরুরি ১০)"}
             </Link>
             <div className="grid grid-cols-2 gap-1.5 pt-1">
               {categories.map((cat) => {
@@ -244,7 +274,12 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
                     key={cat.id}
                     href={`/category/${cat.slug}`}
                     onClick={() => setIsMobileCategoryOpen(false)}
-                    className="block px-3 py-2.5 text-sm text-[#3b414d] hover:bg-[#ede7da] bg-white rounded-lg border border-[#ded8cb] font-medium truncate"
+                    aria-current={current === cat.slug ? currentKind : undefined}
+                    className={`block px-3 py-2.5 text-sm rounded-lg border font-medium truncate ${
+                      current === cat.slug
+                        ? isEnglishMode ? "bg-[#1e40af] border-[#1e40af] text-white" : "bg-[#842323] border-[#842323] text-white"
+                        : "text-[#3b414d] hover:bg-[#ede7da] bg-white border-[#ded8cb]"
+                    }`}
                   >
                     {displayName}
                   </Link>
@@ -424,11 +459,10 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
             <div className="flex items-center gap-2">
               <Link
                 href="/"
-                className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap shadow-2xs transition ${
-                  isEnglishMode ? "bg-[#1e40af] text-white" : "bg-[#842323] text-white"
-                }`}
+                aria-current={current === "home" ? "page" : undefined}
+                className={chipClass(current === "home", "px-4 font-bold")}
               >
-                {isEnglishMode ? "All News Feed" : "প্রচ্ছদ"}
+                {isEnglishMode ? "Home" : "প্রচ্ছদ"}
               </Link>
               {primaryCategories.map((cat) => {
                 const displayName = isEnglishMode
@@ -439,7 +473,8 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
                   <Link
                     key={cat.id}
                     href={`/category/${cat.slug}`}
-                    className="px-3.5 py-1.5 rounded-full text-xs font-medium bg-[#ffffff] hover:bg-[#ede7da] text-[#343a46] border border-[#ded8cb] whitespace-nowrap transition"
+                    aria-current={current === cat.slug ? currentKind : undefined}
+                    className={chipClass(current === cat.slug, "px-3.5 font-medium")}
                   >
                     {displayName}
                   </Link>
@@ -451,11 +486,24 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
                 <div className="relative" ref={moreRef}>
                   <button
                     onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
-                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#ffffff] hover:bg-[#ede7da] border border-[#ded8cb] transition ${
-                      isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"
-                    }`}
+                    aria-current={activeExtra ? currentKind : undefined}
+                    className={
+                      activeExtra
+                        ? `${chipClass(true, "px-3.5 font-semibold")} flex items-center gap-1.5`
+                        : `flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#ffffff] hover:bg-[#ede7da] border border-[#ded8cb] transition ${
+                            isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"
+                          }`
+                    }
                   >
-                    <span>{isEnglishMode ? "More Tracks" : "অন্যান্য বিভাগ"}</span>
+                    <span>
+                      {activeExtra
+                        ? isEnglishMode
+                          ? ENGLISH_CATEGORY_NAMES[activeExtra.slug] || activeExtra.name
+                          : activeExtra.name
+                        : isEnglishMode
+                        ? "More Tracks"
+                        : "অন্যান্য বিভাগ"}
+                    </span>
                     <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isMoreMenuOpen ? "rotate-180" : ""}`} />
                   </button>
 
@@ -471,7 +519,12 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
                             key={cat.id}
                             href={`/category/${cat.slug}`}
                             onClick={() => setIsMoreMenuOpen(false)}
-                            className="block px-4 py-2 hover:bg-[#f6f2e9] text-[#2d333f] font-medium transition"
+                            aria-current={current === cat.slug ? currentKind : undefined}
+                            className={`block px-4 py-2 font-medium transition ${
+                              current === cat.slug
+                                ? isEnglishMode ? "bg-blue-50 text-[#1e40af] font-bold" : "bg-[#f5ebeb] text-[#842323] font-bold"
+                                : "hover:bg-[#f6f2e9] text-[#2d333f]"
+                            }`}
                           >
                             {displayName}
                           </Link>
@@ -486,9 +539,12 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
             <div className="hidden lg:flex items-center gap-3 text-xs text-[#717887]">
               <Link
                 href="/capsule"
-                className={`font-semibold flex items-center gap-1 transition ${
-                  isEnglishMode ? "hover:text-[#1e40af]" : "hover:text-[#842323]"
-                }`}
+                aria-current={current === "capsule" ? "page" : undefined}
+                className={
+                  current === "capsule"
+                    ? `${chipClass(true, "px-3.5 font-semibold")} flex items-center gap-1`
+                    : `font-semibold flex items-center gap-1 transition ${isEnglishMode ? "hover:text-[#1e40af]" : "hover:text-[#842323]"}`
+                }
               >
                 <Zap className={`w-3.5 h-3.5 ${isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"}`} />
                 <span>{isEnglishMode ? "5-Min English Capsule" : "আজকের ক্যাপসুল"}</span>
