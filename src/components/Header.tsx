@@ -12,6 +12,7 @@ import ThemeSwitcher from "./ThemeSwitcher";
 import KhoborLogo from "./KhoborLogo";
 import { getCurrentSession, UserSession } from "@/actions/auth";
 import { useAppMode } from "@/context/LanguageContext";
+import { FEATURES } from "@/lib/features";
 
 interface HeaderProps {
   categories?: { id: string; name: string; slug: string }[];
@@ -158,7 +159,7 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
             </div>
 
             {/* Logged-in Reverse Trial Navbar Pill (Mobile) */}
-            {isLoggedIn ? (
+            {isLoggedIn && FEATURES.trialPromo ? (
               <Link
                 href="/saved"
                 className="inline-flex items-center gap-1.5 h-9 px-2.5 rounded-full bg-amber-500/10 text-amber-700 text-xs font-medium border border-amber-500/20 shrink-0"
@@ -166,6 +167,15 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
                 <span>Pro</span>
+              </Link>
+            ) : isLoggedIn ? (
+              <Link
+                href="/saved"
+                className="w-9 h-9 rounded-lg bg-[#faf8f4] border border-[#ded8cb] text-[#842323] flex items-center justify-center"
+                title="আমার প্রোফাইল"
+                aria-label="আমার প্রোফাইল"
+              >
+                <UserCheck className="w-4 h-4" />
               </Link>
             ) : (
               <Link
@@ -368,7 +378,8 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
 
           {/* Right Column: Founding Pro Badge & Profile / Login */}
           <div className="shrink-0 flex items-center gap-2.5 justify-end">
-            {/* Reverse Trial Navbar Pill (Visible to all users, highlighting Founding Pro 14-Day Access) */}
+            {/* Founding Pro trial pill: hidden until there is a real paid plan (lib/features.ts) */}
+            {FEATURES.trialPromo && (
             <Link
               href={isLoggedIn ? "/saved" : "/login"}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-700 text-xs font-medium border border-amber-500/30 hover:bg-amber-500/15 transition shrink-0"
@@ -380,6 +391,7 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session }: Hea
                 {isLoggedIn ? `| ${trialDaysRemaining}d remaining` : "| 14-Day Trial"}
               </span>
             </Link>
+            )}
 
             {/* Profile or Login Action Button */}
             {isLoggedIn ? (

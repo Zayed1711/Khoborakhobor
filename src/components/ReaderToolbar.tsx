@@ -112,9 +112,6 @@ export default function ReaderToolbar({
                   >
                     <BookOpen className="w-3.5 h-3.5 text-[#1e40af] shrink-0" />
                     <span>অভিধান</span>
-                    <span className="px-1 py-0.2 rounded text-xs font-bold tracking-wider uppercase bg-amber-500/15 text-amber-800 border border-amber-500/25 shrink-0">
-                      PRO • FREE IN NOV
-                    </span>
                   </button>
                 )}
                 <div
@@ -163,9 +160,6 @@ export default function ReaderToolbar({
             >
               <Edit3 className="w-3.5 h-3.5" />
               <span>নোটবুক</span>
-              <span className="px-1 py-0.2 rounded text-xs font-bold tracking-wider uppercase bg-amber-500/15 text-amber-800 border border-amber-500/25 shrink-0">
-                PRO • FREE IN NOV
-              </span>
               {noteCount > 0 && (
                 <span
                   className={`px-1.5 py-0.2 rounded-full text-xs font-bold ${

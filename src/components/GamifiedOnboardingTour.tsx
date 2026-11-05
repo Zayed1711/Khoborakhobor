@@ -91,7 +91,10 @@ export default function GamifiedOnboardingTour() {
     if (typeof window === "undefined") return;
 
     const hasSeenTour = localStorage.getItem("khobor_onboarding_completed");
-    if (!hasSeenTour) {
+    // Auto-open on first visit is off: the full-screen popup covered the news for new
+    // visitors. The tour still opens on request.
+    const AUTO_OPEN_ON_FIRST_VISIT = false;
+    if (!hasSeenTour && AUTO_OPEN_ON_FIRST_VISIT) {
       // Auto launch after 800ms delay so DOM is fully settled
       const timer = setTimeout(() => {
         setIsOpen(true);

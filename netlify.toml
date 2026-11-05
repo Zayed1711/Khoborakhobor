@@ -1,5 +1,5 @@
 [build]
-  command = "node -e \"require('fs').copyFileSync('prisma/dev.db', 'dev.db')\" && prisma generate && npm run build"
+  command = "npm run build"
   publish = ".next"
 
 [build.environment]

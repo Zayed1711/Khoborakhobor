@@ -7,6 +7,12 @@ function resolveDatabaseUrl(): string {
   if (envUrl && !envUrl.startsWith("file:")) {
     return envUrl;
   }
+  // Production keeps the SQLite file outside the repository, e.g.
+  // DATABASE_URL="file:/var/www/kkhobor-data/kkhobor.db". Only absolute paths are
+  // honoured, so an old relative value in a server .env cannot redirect the live site.
+  if (envUrl && /^file:(\/|[A-Za-z]:[\\/])/.test(envUrl)) {
+    return envUrl;
+  }
 
   const isServerless = Boolean(
     process.env.NETLIFY ||

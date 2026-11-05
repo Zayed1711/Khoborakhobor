@@ -1,4 +1,5 @@
 "use client";
+import { FEATURES } from "@/lib/features";
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -248,7 +249,8 @@ function AuthForm() {
 
       {/* Main Card */}
       <div className="bg-white border border-[#ded8cb] rounded-2xl shadow-sm p-6 sm:p-8 space-y-5">
-        {/* Founding Pro Trial Header Banner */}
+        {FEATURES.trialPromo && (<>
+{/* Founding Pro Trial Header Banner */}
         <div className="bg-[#fcfaf6] border border-[#ebd8b0] rounded-xl p-3 flex items-center justify-between gap-3 shadow-2xs">
           <div>
             <div className="flex items-center gap-1.5">
@@ -265,8 +267,10 @@ function AuthForm() {
             FREE TRIAL
           </span>
         </div>
+        </>)}
 
-        {/* Meta / In-App Browser Warning Alert */}
+        {FEATURES.passwordlessLogin && (<>
+{/* Meta / In-App Browser Warning Alert */}
         {isInApp && (
           <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs text-amber-950 flex items-start gap-2 shadow-2xs">
             <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
@@ -278,8 +282,10 @@ function AuthForm() {
             </div>
           </div>
         )}
+        </>)}
 
-        {/* 1-Click Google Sign-In */}
+        {FEATURES.googleSignIn && (<>
+{/* 1-Click Google Sign-In */}
         <button
           type="button"
           onClick={handleGoogleSignIn}
@@ -314,8 +320,10 @@ function AuthForm() {
             অথবা বিকল্প পদ্ধতিতে
           </span>
         </div>
+        </>)}
 
-        {/* Main Category Switcher: Quick (OTP/Magic) vs Traditional (Password) */}
+        {FEATURES.passwordlessLogin && (<>
+{/* Main Category Switcher: Quick (OTP/Magic) vs Traditional (Password) */}
         <div className="flex rounded-xl bg-[#f5f1e8] p-1 border border-[#e8e2d4]">
           <button
             type="button"
@@ -342,6 +350,7 @@ function AuthForm() {
             <span>ইমেইল ও পাসওয়ার্ড</span>
           </button>
         </div>
+        </>)}
 
         {/* Alerts */}
         {error && (

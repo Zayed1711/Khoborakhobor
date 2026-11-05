@@ -1,3 +1,52 @@
+# VPS operations (current setup, November 2026)
+
+This section is the source of truth for the production server. Older sections below
+describe earlier Vercel/Netlify plans and are kept for reference only.
+
+## Layout
+| What | Where |
+|---|---|
+| App (git checkout of `main`) | `/var/www/khoborakhobor` |
+| Database (never in git) | `/var/www/kkhobor-data/kkhobor.db`, set via `DATABASE_URL="file:/var/www/kkhobor-data/kkhobor.db"` in `.env` |
+| Backups | `/var/backups/kkhobor` (nightly + before every deploy) |
+| Processes | PM2: `kkhobor-web` (Next.js on :3000) and `kkhobor-cron` (crawler), from `ecosystem.config.js` |
+| Secrets | `/var/www/khoborakhobor/.env`: `SESSION_SECRET`, `ADMIN_PASSCODE` (12+ chars), `CRON_SECRET`, `DATABASE_URL` |
+
+## Deploy (from your computer)
+```bash
+python scripts/ops/deploy.py
+```
+Key-only SSH (set `DEPLOY_HOST`, optional `DEPLOY_USER` / `DEPLOY_KEY` in your local `.env`).
+It backs up, pulls `main`, runs `prisma migrate deploy`, cleans content, builds, restarts and
+checks the site answers 200; on failure it rolls back to the previous version.
+
+## Schema changes
+Create a migration locally with `npx prisma migrate dev --name <change>`, commit it, deploy.
+Never use `prisma db push` on the server (the deploy does it once, only to adopt the
+baseline on a database that predates migrations).
+
+## Backups
+```bash
+crontab -e
+# 15 3 * * * /var/www/khoborakhobor/scripts/ops/backup-db.sh >> /var/log/kkhobor-backup.log 2>&1
+# 30 4 * * 0 /var/www/khoborakhobor/scripts/ops/restore-test.sh >> /var/log/kkhobor-backup.log 2>&1
+```
+Set `RCLONE_REMOTE` (after `rclone config`) to also copy each backup off the server.
+
+## One-time move to this setup
+1. SSH key login works and the root password is changed (see the commands in chat / below).
+2. On the server, copy the live database out of the repository while the site runs:
+   ```bash
+   mkdir -p /var/www/kkhobor-data /var/backups/kkhobor
+   sqlite3 /var/www/khoborakhobor/prisma/dev.db ".backup '/var/www/kkhobor-data/kkhobor.db'"
+   cd /var/www/khoborakhobor && sed -i '/^DATABASE_URL=/d' .env && echo 'DATABASE_URL="file:/var/www/kkhobor-data/kkhobor.db"' >> .env
+   ```
+3. From your computer: `python scripts/ops/deploy.py` (first run adopts the migration baseline).
+4. Install the two cron lines above.
+5. Optional: `python scripts/ops/deploy.py --purge-bodies` to delete stored publisher text.
+
+---
+
 # 🚀 খবরাখবর (KhoboraKhobor) - Production Deployment & Operations Guide
 
 > **লক্ষ্য**: শিক্ষার্থী ও গবেষক কেন্দ্রিক ডিজিটাল পত্রিকা ও একটিভ রিকল লার্নিং প্ল্যাটফর্ম খবরাখবর-এর নিরবচ্ছিন্ন প্রোডাকশন ডেপ্লয়মেন্ট, ক্লাউড ডাটাবেজ কনফিগারেশন, স্বয়ংক্রিয় ক্রন শিডিউলার এবং ডেটা ব্যাকআপ গাইড।
