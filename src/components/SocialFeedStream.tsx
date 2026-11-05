@@ -93,7 +93,10 @@ export default function SocialFeedStream({
       result = bnOnly.length > 0 ? bnOnly : (selectedDate === "all" ? bnOnly : list);
     }
 
-    // 3. Guarantee strictly latest news appears on top, then sequentially down
+    // 3. The daily selection comes ranked (জরুরি ১০ first); otherwise latest news on top
+    if (result.some((a) => a.dailyRank)) {
+      return [...result].sort((a, b) => (a.dailyRank || 999) - (b.dailyRank || 999));
+    }
     return [...result].sort((a, b) => {
       const timeA = new Date(a.createdAtIso || a.createdAt).getTime() || 0;
       const timeB = new Date(b.createdAtIso || b.createdAt).getTime() || 0;
@@ -176,18 +179,35 @@ export default function SocialFeedStream({
           </div>
         ) : filteredArticles.length > 0 ? (
           <>
-            {filteredArticles.slice(0, visibleCount).map((article, index) => (
-              <div
-                key={article.id}
-                {...(index === 0 ? { id: "tutorial-smart-reading" } : {})}
-              >
-                <SocialFeedCard
-                  article={article}
-                  studentId={studentId}
-                  eagerImage={index === 0}
-                />
-              </div>
-            ))}
+            {filteredArticles.slice(0, visibleCount).map((article, index, shown) => {
+              const startsTier = article.dailyTier && article.dailyTier !== shown[index - 1]?.dailyTier;
+              return (
+                <div key={article.id} className="space-y-3 sm:space-y-4">
+                  {startsTier && (
+                    <FeedSectionHeading
+                      tier={article.dailyTier}
+                      isEnglishMode={isEnglishMode}
+                      isToday={selectedDate === "all"}
+                      count={filteredArticles.filter((a) => a.dailyTier === article.dailyTier).length}
+                    />
+                  )}
+                  <div {...(index === 0 ? { id: "tutorial-smart-reading" } : {})}>
+                    <SocialFeedCard
+                      article={article}
+                      studentId={studentId}
+                      eagerImage={index === 0}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+            {!hasMore && filteredArticles.some((a) => a.dailyTier) && (
+              <p className="text-center text-xs text-[#717887] py-2">
+                {isEnglishMode
+                  ? `That's ${selectedDate === "all" ? "today's" : "this day's"} selection. Pick a date above to see other days.`
+                  : `${selectedDate === "all" ? "আজকের" : "এই দিনের"} বাছাই এখানেই শেষ। অন্য দিনের খবর দেখতে ওপরে তারিখ বেছে নিন।`}
+              </p>
+            )}
             {hasMore && (
               <div ref={sentinelRef} className="flex justify-center py-2">
                 <button
@@ -244,6 +264,44 @@ export default function SocialFeedStream({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/** Heading above each part of the daily selection. Calm: a label and one line, no alarm colours. */
+function FeedSectionHeading({
+  tier,
+  isEnglishMode,
+  isToday,
+  count,
+}: {
+  tier: "urgent" | "more";
+  isEnglishMode: boolean;
+  isToday: boolean;
+  count: number;
+}) {
+  const accent = isEnglishMode ? "text-[#1e40af]" : "text-[#842323]";
+  const bn = (n: number) => n.toLocaleString("bn-BD");
+  const title =
+    tier === "urgent"
+      ? isEnglishMode
+        ? `${isToday ? "Today's" : "The day's"} top ${count}`
+        : `${isToday ? "আজকের" : "এই দিনের"} জরুরি ${bn(count)}`
+      : isEnglishMode
+      ? "More worth knowing"
+      : "আরও যা জানা দরকার";
+  const note =
+    tier === "urgent"
+      ? isEnglishMode
+        ? "The stories most useful for exams, each story once."
+        : "পরীক্ষার জন্য সবচেয়ে কাজের খবর, একই খবর একবারই।"
+      : isEnglishMode
+      ? "Read these if you have time."
+      : "সময় থাকলে এগুলোও পড়ে নিন।";
+  return (
+    <div className="px-1 pt-1">
+      <h2 className={`font-serif text-lg ${accent}`}>{title}</h2>
+      <p className="text-xs text-[#717887]">{note}</p>
     </div>
   );
 }

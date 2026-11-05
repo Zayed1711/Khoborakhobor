@@ -10,6 +10,7 @@ import { getTrendingHashtagsAction } from "@/actions/search";
 import { prisma } from "@/lib/prisma";
 import { pickDailyQuiz } from "@/lib/study/daily";
 import { toFeedCard } from "@/lib/feed-card";
+import { selectDailyFeed } from "@/lib/study/daily-selection";
 
 export const dynamic = "force-dynamic";
 
@@ -46,9 +47,13 @@ export default async function Home() {
 
   // The daily challenge is one of today's real (extracted) quizzes; the client otherwise
   // receives slim feed cards with no bodies, vocabulary or quiz answers.
-  const dailyBnQuiz = pickDailyQuiz(articles, "bn");
-  const dailyEnQuiz = pickDailyQuiz(articles, "en");
-  const feedCards = articles.map(toFeedCard);
+  // The feed is the daily selection: জরুরি ১০ + up to 20 more, duplicates removed
+  const feedCards = selectDailyFeed(articles.map(toFeedCard), "latest");
+  // The daily quiz comes from one of the ten when possible
+  const urgentIds = new Set(feedCards.filter((c) => c.dailyTier === "urgent").map((c) => c.id));
+  const urgentArticles = articles.filter((a) => urgentIds.has(a.id));
+  const dailyBnQuiz = pickDailyQuiz(urgentArticles, "bn") ?? pickDailyQuiz(articles, "bn");
+  const dailyEnQuiz = pickDailyQuiz(urgentArticles, "en") ?? pickDailyQuiz(articles, "en");
   const capsuleArticles = feedCards.filter((a) => a.isCapsule);
   const trendingHashtags = await getTrendingHashtagsAction();
 

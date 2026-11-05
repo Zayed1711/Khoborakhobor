@@ -6,6 +6,7 @@ import { shuffleQuizOptions } from "@/lib/quiz/shuffle";
 import { extractFacts, extractTakeaways, buildExtractiveQuiz, plainText } from "@/lib/study/extractive";
 import { requireAdmin } from "@/lib/guards";
 import { toFeedCard, FeedCard } from "@/lib/feed-card";
+import { selectDailyFeed } from "@/lib/study/daily-selection";
 import { sanitizeArticleHtml, textToParagraphHtml } from "@/lib/sanitize-html";
 
 function safeParseJson<T>(value: any, fallback: T): T {
@@ -85,7 +86,7 @@ export async function getDateArchiveStatsAction(): Promise<DateArchiveStats> {
 export async function getArticlesByDateAction(dateKey: string): Promise<FeedCard[]> {
   try {
     if (!dateKey || dateKey === "all") {
-      return (await getPublishedArticles(150)).map(toFeedCard);
+      return selectDailyFeed((await getPublishedArticles(150)).map(toFeedCard), "latest");
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return [];
 
@@ -131,7 +132,8 @@ export async function getArticlesByDateAction(dateKey: string): Promise<FeedCard
       return timeB - timeA;
     });
 
-    return parsed.map(toFeedCard);
+    // A chosen day shows that day's selection: জরুরি ১০ + up to 20 more
+    return selectDailyFeed(parsed.map(toFeedCard), "all");
   } catch (err) {
     console.error(`[ARTICLES] Error loading articles for date (${dateKey}):`, err);
     return [];
