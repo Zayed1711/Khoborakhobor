@@ -52,7 +52,8 @@ q() { sqlite3 -readonly "$DB" "$1" 2>/dev/null || echo "?"; }
 if [ "${1:-}" = "--weekly" ]; then
   week=$(since_ms $((7 * 86400)))
   stories=$(q "SELECT COUNT(*) FROM Article WHERE sourceUrl IS NOT NULL AND createdAt >= $week;")
-  quizzes=$(q "SELECT COUNT(*) FROM QuizQuestion WHERE createdAt >= $week;")
+  # Quiz questions have no date of their own; count those whose story arrived this week
+  quizzes=$(q "SELECT COUNT(*) FROM QuizQuestion qq JOIN Article a ON a.id = qq.articleId WHERE a.createdAt >= $week;")
   signups=$(q "SELECT COUNT(*) FROM Student WHERE createdAt >= $week;")
   students=$(q "SELECT COUNT(*) FROM Student;")
   attempts=$(q "SELECT COUNT(*) FROM QuizAttempt WHERE createdAt >= $week;")
