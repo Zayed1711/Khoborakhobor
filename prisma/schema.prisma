@@ -37,6 +37,7 @@ model Student {
   quizAttempts  QuizAttempt[]
   wordBank      SavedWord[]
   readHistory   ArticleRead[]
+  writings      WritingSubmission[]
   telemetry     StudyTelemetry?
 
   createdAt     DateTime  @default(now())
@@ -94,6 +95,7 @@ model Article {
   savedBy       SavedArticle[]
   notes         StudyNote[]
   readHistory   ArticleRead[]
+  writings      WritingSubmission[]
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -290,4 +292,29 @@ model SkippedStory {
   createdAt DateTime @default(now())
 
   @@index([day])
+}
+
+// A student's short IELTS-style writing on an English story, reviewed by the admin
+// (by hand, until an AI reviewer is added). The story's title and the prompt are kept
+// with the writing, so it stays readable even if the story is later removed.
+model WritingSubmission {
+  id           String    @id @default(cuid())
+  studentId    String
+  student      Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  articleId    String?
+  article      Article?  @relation(fields: [articleId], references: [id], onDelete: SetNull)
+  articleSlug  String
+  articleTitle String
+  topic        String
+  prompt       String
+  text         String
+  wordCount    Int
+  status       String    @default("pending") // pending | reviewed
+  feedback     String?
+  band         Float?    // optional IELTS-style band, 1–9
+  reviewedAt   DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([status, createdAt])
+  @@index([studentId])
 }

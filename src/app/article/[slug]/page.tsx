@@ -7,6 +7,9 @@ import { forClient } from "@/lib/study/daily-feed";
 import { extractVocabularyTableRows } from "@/lib/vocabulary-table-engine";
 import { isBengaliText } from "@/lib/bilingual";
 import { ensurePractice } from "@/lib/study/ielts-store";
+import { englishTopic } from "@/lib/study/topics";
+import { writingPromptFor } from "@/lib/study/writing-prompts";
+import { getMyWritingsAction } from "@/actions/writing";
 
 export const dynamic = "force-dynamic";
 
@@ -66,11 +69,20 @@ export default async function ArticleDetailPage({ params }: Props) {
         keyTakeaways: Array.isArray(article.keyTakeaways) ? article.keyTakeaways : [],
         factTable: Array.isArray(article.factTable) ? article.factTable : [],
       }).catch(() => []);
-
+  // English Learning stories: a short IELTS Task 2 style writing task, reviewed by hand
+  const writingTopic = isBengaliText(article.title) ? null : englishTopic(article.title, article.summary);
+  const writing = writingTopic
+    ? {
+        topic: writingTopic,
+        prompt: writingPromptFor(writingTopic, article.id),
+        previous: student ? await getMyWritingsAction(article.slug).catch(() => []) : [],
+      }
+    : null;
 
   return (
     <ArticleStudyView
       practice={practice}
+      writing={writing}
       article={view}
       relatedArticles={relatedArticles}
       initialNotes={notes as never}

@@ -5,6 +5,7 @@ import StudentHubView from "@/components/StudentHubView";
 import { getActiveStudent, getStudentQuizAnalytics, getStudentActivityStatsAction } from "@/actions/student";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { getMyWritingsAction } from "@/actions/writing";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,7 @@ export default async function SavedNotebookPage() {
     redirect("/login?redirect=/saved");
   }
 
-  const [notes, savedWords, quizAnalytics, activityStats] = await Promise.all([
+  const [notes, savedWords, quizAnalytics, activityStats, writings] = await Promise.all([
     prisma.studyNote.findMany({
       where: { studentId: student.id },
       include: {
@@ -52,6 +53,7 @@ export default async function SavedNotebookPage() {
     }),
     getStudentQuizAnalytics(student.id),
     getStudentActivityStatsAction(student.id),
+    getMyWritingsAction(),
   ]);
 
   return (
@@ -67,6 +69,7 @@ export default async function SavedNotebookPage() {
           savedWords={savedWords}
           quizAnalytics={quizAnalytics}
           activityStats={activityStats}
+          writings={writings}
         />
       </main>
 

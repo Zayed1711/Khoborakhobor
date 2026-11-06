@@ -50,8 +50,10 @@ import {
   BookOpen,
   HelpCircle,
   GraduationCap,
+  PenLine,
 } from "lucide-react";
 import UserManagementTab from "./UserManagementTab";
+import WritingReviewTab from "./WritingReviewTab";
 import { getEnToBnPhonetics } from "@/lib/phonetics/en-to-bn";
 
 const CATEGORIES = [
@@ -69,7 +71,7 @@ const CATEGORIES = [
 
 export default function AdminDashboardClient() {
 
-  const [activeTab, setActiveTab] = useState<"spider" | "users" | "sources" | "history" | "articles" | "scheduler">("spider");
+  const [activeTab, setActiveTab] = useState<"spider" | "users" | "writing" | "sources" | "history" | "articles" | "scheduler">("spider");
 
   // Cron / Scheduler state
   const [copiedVercel, setCopiedVercel] = useState(false);
@@ -171,6 +173,7 @@ export default function AdminDashboardClient() {
       const tabParam = params.get("tab");
       if (
         tabParam === "users" ||
+        tabParam === "writing" ||
         tabParam === "spider" ||
         tabParam === "sources" ||
         tabParam === "history" ||
@@ -532,6 +535,18 @@ export default function AdminDashboardClient() {
           </button>
 
           <button
+            onClick={() => setActiveTab("writing")}
+            className={`px-4 py-2.5 rounded-t-lg transition flex items-center gap-2 border-b-2 font-semibold ${
+              activeTab === "writing"
+                ? "bg-[#141b24] text-[#f5c66b] border-[#f5c66b]"
+                : "text-[#8e9aa8] hover:text-white border-transparent hover:bg-[#141b24]/50"
+            }`}
+          >
+            <PenLine className="w-4 h-4" />
+            <span>Writing reviews</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab("sources")}
             className={`px-4 py-2.5 rounded-t-lg transition flex items-center gap-2 border-b-2 font-semibold ${
               activeTab === "sources"
@@ -582,6 +597,9 @@ export default function AdminDashboardClient() {
 
         {/* TAB: USER & ACCOUNT MANAGEMENT */}
         {activeTab === "users" && <UserManagementTab showNotify={showNotify} />}
+
+        {/* TAB: WRITING REVIEWS (by hand) */}
+        {activeTab === "writing" && <WritingReviewTab showNotify={showNotify} />}
 
         {/* TAB 1: SPIDER CONTROL CENTER */}
         {activeTab === "spider" && (

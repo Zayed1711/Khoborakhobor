@@ -39,7 +39,10 @@ import {
   Award,
   UserCheck,
   Volume2,
+  PenLine,
 } from "lucide-react";
+import { WritingCard } from "@/components/WritingTask";
+import type { WritingView } from "@/actions/writing";
 
 interface StudentHubViewProps {
   student: any;
@@ -53,6 +56,8 @@ interface StudentHubViewProps {
     mistakes: any[];
   };
   activityStats?: any;
+  /** English Learning writing submissions, newest first */
+  writings?: WritingView[];
 }
 
 export default function StudentHubView({
@@ -61,14 +66,15 @@ export default function StudentHubView({
   savedWords,
   quizAnalytics,
   activityStats,
+  writings = [],
 }: StudentHubViewProps) {
   const router = useRouter();
   const { mode, isEnglishMode } = useAppMode();
-  const [activeTab, setActiveTab] = useState<"notes" | "flashcards" | "analytics" | "profile">(() => {
+  const [activeTab, setActiveTab] = useState<"notes" | "flashcards" | "analytics" | "writing" | "profile">(() => {
     if (typeof window !== "undefined") {
       const urlParams = new URLSearchParams(window.location.search);
       const tabParam = urlParams.get("tab");
-      if (tabParam === "flashcards" || tabParam === "notes" || tabParam === "analytics" || tabParam === "profile") {
+      if (tabParam === "flashcards" || tabParam === "notes" || tabParam === "analytics" || tabParam === "writing" || tabParam === "profile") {
         return tabParam;
       }
     }
@@ -482,6 +488,20 @@ export default function StudentHubView({
         >
           <Trophy className={`w-4 h-4 ${isEnglishMode ? "text-[#0284c7]" : "text-[#842323]"}`} />
           <span>{isEnglishMode ? "Comprehension & Quiz Analytics" : "কুইজ স্কোরকার্ড ও ভুল বিশ্লেষণ"} ({quizAnalytics.totalAttempts})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("writing")}
+          className={`px-4 py-2.5 rounded-t-lg transition flex items-center gap-2 border-b-2 ${
+            activeTab === "writing"
+              ? isEnglishMode
+                ? "bg-white text-[#0284c7] border-[#0284c7] shadow-2xs font-bold"
+                : "bg-white text-[#842323] border-[#842323] shadow-2xs font-bold"
+              : "text-[#646c7a] hover:text-[#17191d] border-transparent"
+          }`}
+        >
+          <PenLine className="w-4 h-4" />
+          <span>Writing ({writings.length})</span>
         </button>
 
         <button
@@ -1143,6 +1163,21 @@ export default function StudentHubView({
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {activeTab === "writing" && (
+        <div className="space-y-4">
+          <p className="text-sm text-[#525a68]">
+            Your short writing answers from English stories. Each one is read and reviewed by hand; feedback appears here once it is ready.
+          </p>
+          {writings.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-[#ded8cb] bg-white p-6 text-center text-sm text-[#68707f]">
+              No writing yet. Open any English story and answer the writing task at the end.
+            </p>
+          ) : (
+            writings.map((w) => <WritingCard key={w.id} w={w} showStory />)
+          )}
         </div>
       )}
 
