@@ -1511,9 +1511,9 @@ export default function AdminDashboardClient() {
                                       <Volume2 className="w-3.5 h-3.5" />
                                     </button>
                                   </div>
-                                  <div className="text-[11px] text-[#fbbf24] font-medium mt-0.5">
-                                    [{phonetics}]
-                                  </div>
+                                  {phonetics && (
+                                    <div className="text-[11px] text-[#fbbf24] font-medium mt-0.5">[{phonetics}]</div>
+                                  )}
                                 </td>
                                 <td className="px-3.5 py-3 align-top text-[#cbd5e1] space-y-1">
                                   <div className="font-semibold text-white">

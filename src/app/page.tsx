@@ -11,6 +11,7 @@ import { prisma } from "@/lib/prisma";
 import { forClient, getKeyNotes, getTodaySelection, urgentOnly } from "@/lib/study/daily-feed";
 import type { KeyNoteDay } from "@/lib/study/key-notes";
 import ExamBanner from "@/components/exam/ExamBanner";
+import { EarlyBirdBanner } from "@/components/EarlyBird";
 import { getExamSummaryAction } from "@/actions/exam";
 
 export const dynamic = "force-dynamic";
@@ -76,6 +77,7 @@ export default async function Home() {
         {/* Center Column: Social Media Newsfeed Stream */}
         <div className="flex-1 max-w-2xl min-w-0 w-full">
           <ExamBanner summary={examSummary} />
+          <EarlyBirdBanner className="mb-3" />
           <SocialFeedStream
             articles={feedCards}
             capsuleArticles={capsuleArticles}

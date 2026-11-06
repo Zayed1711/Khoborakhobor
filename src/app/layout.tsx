@@ -4,6 +4,10 @@ import { Noto_Sans_Bengali } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/context/LanguageContext";
 import PomodoroWidget from "@/components/PomodoroWidget";
+import DictionaryHost from "@/components/DictionaryHost";
+import StaleVersionReload from "@/components/StaleVersionReload";
+import { EarlyBirdPopup } from "@/components/EarlyBird";
+import AuthGateHost from "@/components/AuthGateHost";
 import GamifiedOnboardingTour from "@/components/GamifiedOnboardingTour";
 
 // Text and headlines use Nirmala UI, the Bengali font built into Windows (chosen by
@@ -86,6 +90,10 @@ export default function RootLayout({
         <LanguageProvider>
           {children}
           <PomodoroWidget />
+          <DictionaryHost />
+          <StaleVersionReload />
+          <EarlyBirdPopup />
+          <AuthGateHost />
           <GamifiedOnboardingTour />
         </LanguageProvider>
       </body>

@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { hashPassword, verifyPassword } from "@/lib/auth-crypto";
 import { readSession, writeSession, clearSession, safeEqual, rateLimit, clientKey } from "@/lib/session";
 import crypto from "crypto";
+import { codeEmail, isEmailReady, sendEmail } from "@/lib/email";
+import { CHECK_ERRORS, checkCode, issueCode, type CodePurpose } from "@/lib/email-code";
 
 const SESSION_DISABLED_ERROR =
   "লগইন সেবা সাময়িকভাবে বন্ধ রয়েছে (সার্ভার কনফিগারেশন অসম্পূর্ণ)। অনুগ্রহ করে পরে আবার চেষ্টা করুন।";
@@ -118,6 +120,12 @@ export async function studentSignupAction(data: {
     },
   });
 
+  // The account starts once the email is proven with a code (when email sending is set up)
+  if (isEmailReady()) {
+    const sent = await sendCode(email, "verify");
+    return { success: false as const, needsVerification: true as const, email, error: sent ? "" : EMAIL_SEND_ERROR };
+  }
+
   const sessionStarted = await startStudentSession(student.id, student.role);
   if (!sessionStarted) {
     return { success: false as const, error: SESSION_DISABLED_ERROR };
@@ -185,6 +193,11 @@ export async function studentLoginAction(emailOrInput: string, passwordInput?: s
     };
   }
 
+  if (!student.emailVerified && isEmailReady()) {
+    const sent = await sendCode(email, "verify");
+    return { success: false as const, needsVerification: true as const, email, error: sent ? "" : EMAIL_SEND_ERROR };
+  }
+
   // Update streak if active on a new day
   const now = new Date();
   const lastActive = new Date(student.lastActive);
@@ -223,6 +236,81 @@ export async function studentLoginAction(emailOrInput: string, passwordInput?: s
       avatar: student.avatar,
     },
   };
+}
+
+// ---------------------------------------------------------------------------
+// Email codes: verification at sign-up and "forgot password"
+// ---------------------------------------------------------------------------
+
+const EMAIL_SEND_ERROR = "কোড পাঠানো যায়নি। এক মিনিট পর \"আবার কোড পাঠান\" চাপুন।";
+const GENERIC_SENT = "এই ইমেইলে অ্যাকাউন্ট থাকলে একটি ৬ সংখ্যার কোড পাঠানো হয়েছে। ইনবক্স (ও স্প্যাম ফোল্ডার) দেখুন।";
+
+/** Issue and email a code. Rate-limited per email (1 a minute, 5 an hour) and per IP. Not a server action. */
+async function sendCode(email: string, purpose: CodePurpose): Promise<boolean> {
+  const ip = await clientKey();
+  if (!rateLimit(`code:min:${email}`, 1, 60_000) || !rateLimit(`code:hour:${email}`, 5, 3600_000) || !rateLimit(`code:ip:${ip}`, 20, 3600_000)) {
+    return false;
+  }
+  const code = await issueCode(email, purpose);
+  const r = await sendEmail(codeEmail(email, code, purpose));
+  return r.ok;
+}
+
+/** Send a new verification code (the "send again" button). */
+export async function resendVerificationCodeAction(rawEmail: string) {
+  const email = (rawEmail || "").trim().toLowerCase();
+  const student = email ? await prisma.student.findUnique({ where: { email }, select: { emailVerified: true } }) : null;
+  if (!student || student.emailVerified) return { success: true as const, message: GENERIC_SENT };
+  const sent = await sendCode(email, "verify");
+  return sent
+    ? { success: true as const, message: "নতুন কোড পাঠানো হয়েছে।" }
+    : { success: false as const, error: "একটু পরে আবার চেষ্টা করুন (প্রতি মিনিটে একটি কোড পাঠানো যায়)।" };
+}
+
+/** Check the sign-up code; on success the account is verified and the student is logged in. */
+export async function verifyEmailCodeAction(rawEmail: string, code: string) {
+  const email = (rawEmail || "").trim().toLowerCase();
+  const ip = await clientKey();
+  if (!rateLimit(`verify:ip:${ip}`, 30, 15 * 60_000)) return { success: false as const, error: RATE_LIMIT_ERROR };
+  const student = await prisma.student.findUnique({ where: { email } });
+  if (!student) return { success: false as const, error: CHECK_ERRORS.none };
+  if (student.status === "suspended") return { success: false as const, error: "আপনার অ্যাকাউন্টটি সাময়িকভাবে স্থগিত রয়েছে।" };
+  const result = await checkCode(email, "verify", code);
+  if (result !== "ok") return { success: false as const, error: CHECK_ERRORS[result] };
+  await prisma.student.update({ where: { id: student.id }, data: { emailVerified: true, lastActive: new Date() } });
+  if (!(await startStudentSession(student.id, student.role))) return { success: false as const, error: SESSION_DISABLED_ERROR };
+  return { success: true as const };
+}
+
+/** "Forgot password": email a reset code. The answer is the same whether or not the account exists. */
+export async function requestPasswordResetAction(rawEmail: string) {
+  const email = (rawEmail || "").trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { success: false as const, error: "সঠিক ইমেইল ঠিকানা লিখুন।" };
+  if (!isEmailReady()) {
+    return { success: false as const, error: "পাসওয়ার্ড রিসেট সেবা এখনো চালু হয়নি। সাহায্যের জন্য আমাদের ফেসবুক পেজে যোগাযোগ করুন।" };
+  }
+  const student = await prisma.student.findUnique({ where: { email }, select: { status: true } });
+  if (student && student.status !== "suspended") await sendCode(email, "reset");
+  return { success: true as const, message: GENERIC_SENT };
+}
+
+/** Set a new password with the reset code; this also proves the email, and logs the student in. */
+export async function resetPasswordAction(rawEmail: string, code: string, newPassword: string) {
+  const email = (rawEmail || "").trim().toLowerCase();
+  const password = (newPassword || "").trim();
+  if (password.length < 6) return { success: false as const, error: "পাসওয়ার্ড ন্যূনতম ৬ অক্ষরের হতে হবে।" };
+  const ip = await clientKey();
+  if (!rateLimit(`reset:ip:${ip}`, 30, 15 * 60_000)) return { success: false as const, error: RATE_LIMIT_ERROR };
+  const student = await prisma.student.findUnique({ where: { email } });
+  if (!student || student.status === "suspended") return { success: false as const, error: CHECK_ERRORS.none };
+  const result = await checkCode(email, "reset", code);
+  if (result !== "ok") return { success: false as const, error: CHECK_ERRORS[result] };
+  await prisma.student.update({
+    where: { id: student.id },
+    data: { passwordHash: hashPassword(password), emailVerified: true, lastActive: new Date() },
+  });
+  if (!(await startStudentSession(student.id, student.role))) return { success: false as const, error: SESSION_DISABLED_ERROR };
+  return { success: true as const };
 }
 
 /**

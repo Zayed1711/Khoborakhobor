@@ -9,6 +9,7 @@ import {
   BookOpen, Lightbulb, BookmarkCheck, Eye, EyeOff
 } from "lucide-react";
 import ProAuthGateModal from "./ProAuthGateModal";
+import { openDictionary } from "./DictionaryHost";
 
 interface VocabularyTableProps {
   rows: VocabularyTableRow[];
@@ -344,6 +345,11 @@ export default function VocabularyTable({
                         <p className="text-xs text-[#475569] leading-relaxed italic">
                           "{row.englishDefinition}"
                         </p>
+                        {!row.banglaMeaning && (
+                          <button type="button" onClick={() => openDictionary(row.word)} className="text-xs text-[#1e40af] font-semibold hover:underline text-left">
+                            (বাংলা অর্থ জানতে অভিধান ব্যবহার করুন)
+                          </button>
+                        )}
                       </div>
 
                       {row.synonyms && row.synonyms.length > 0 && (
@@ -453,6 +459,11 @@ export default function VocabularyTable({
                       <span className="text-xs font-bold text-[#64748b] block font-mono">English meaning:</span>
                       <p className="text-xs text-[#475569] leading-relaxed italic">{row.englishDefinition}</p>
                       {row.synonyms && row.synonyms.length > 0 && <p className="text-xs text-[#64748b]">Synonyms: {row.synonyms.join(", ")}</p>}
+                      {!row.banglaMeaning && (
+                        <button type="button" onClick={() => openDictionary(row.word)} className="text-xs text-[#1e40af] font-semibold hover:underline text-left">
+                          (বাংলা অর্থ জানতে অভিধান ব্যবহার করুন)
+                        </button>
+                      )}
                     </div>
                   )}
 

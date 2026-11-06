@@ -389,16 +389,15 @@ export function getBanglaPronunciation(term: string): string {
     return COMMON_WORD_PHONETICS[clean];
   }
 
-  // 3. Multi-word phrase handling (e.g. "rein in", "curb inflation")
+  // 3. Multi-word phrase handling (e.g. "rein in", "curb inflation"): only when every word is known
   if (clean.includes(" ")) {
-    return clean
-      .split(" ")
-      .map((part) => getBanglaPronunciation(part))
-      .join(" ");
+    const parts = clean.split(" ").map((part) => getBanglaPronunciation(part));
+    return parts.every(Boolean) ? parts.join(" ") : "";
   }
 
-  // 4. Syllabic Fallback
-  return phoneticRuleFallback(clean);
+  // 4. Unknown word: nothing. A letter-by-letter Bengali spelling ("রএলএগঅশন") misleads more
+  // than it helps; the dictionary shows the real pronunciation (IPA) instead.
+  return "";
 }
 
 export const getEnToBnPhonetics = getBanglaPronunciation;

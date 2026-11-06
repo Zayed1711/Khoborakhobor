@@ -31,47 +31,49 @@ export interface DateArchiveStats {
   enAll: number;
 }
 
+/** Stories a reader sees for a chosen date in Bengali (the day's জরুরি ১০). */
+const DAILY_SHOWN = 10;
+
 export async function getDateArchiveStatsAction(): Promise<DateArchiveStats> {
   try {
+    // The last 7 days, counted by Bangladesh date
+    const since = new Date(Date.now() - 8 * 86400000);
     const articles = await prisma.article.findMany({
-      where: { sourceUrl: { not: null } }, // link-out model: listed stories must link to the original
+      where: { sourceUrl: { not: null }, createdAt: { gte: since } }, // link-out model: listed stories must link to the original
       select: {
         title: true,
         createdAt: true,
       },
     });
+    const dhakaKey = (d: Date) => new Date(d.getTime() + 6 * 3600000).toISOString().slice(0, 10);
+    const today = Date.parse(dhakaKey(new Date()) + "T00:00:00Z");
+    const week = new Set(Array.from({ length: 7 }, (_, i) => new Date(today - i * 86400000).toISOString().slice(0, 10)));
 
     const totalCounts: Record<string, number> = {};
     const bnCounts: Record<string, number> = {};
     const enCounts: Record<string, number> = {};
-    let bnAll = 0;
-    let enAll = 0;
-
     for (const a of articles) {
-      if (a.createdAt) {
-        const key = a.createdAt instanceof Date
-          ? a.createdAt.toISOString().split("T")[0]
-          : new Date(a.createdAt).toISOString().split("T")[0];
-
-        totalCounts[key] = (totalCounts[key] || 0) + 1;
-        const isBn = /[\u0980-\u09FF]/.test(a.title || "");
-        if (isBn) {
-          bnCounts[key] = (bnCounts[key] || 0) + 1;
-          bnAll++;
-        } else {
-          enCounts[key] = (enCounts[key] || 0) + 1;
-          enAll++;
-        }
-      }
+      const key = dhakaKey(new Date(a.createdAt));
+      if (!week.has(key)) continue;
+      const isBn = /[ঀ-৿]/.test(a.title || "");
+      if (isBn) bnCounts[key] = (bnCounts[key] || 0) + 1;
+      else enCounts[key] = (enCounts[key] || 0) + 1;
     }
+    // A chosen date shows that day's জরুরি ১০ in Bengali, so count what readers will see
+    for (const k of Object.keys(bnCounts)) bnCounts[k] = Math.min(bnCounts[k], DAILY_SHOWN);
+    for (const k of week) {
+      const t = (bnCounts[k] || 0) + (enCounts[k] || 0);
+      if (t) totalCounts[k] = t;
+    }
+    const sum = (o: Record<string, number>) => Object.values(o).reduce((a, b) => a + b, 0);
 
     return {
       totalCounts,
       bnCounts,
       enCounts,
-      totalAll: articles.length,
-      bnAll,
-      enAll,
+      totalAll: sum(totalCounts),
+      bnAll: sum(bnCounts),
+      enAll: sum(enCounts),
     };
   } catch (err) {
     console.error("[ARTICLES] Error loading date archive stats:", err);

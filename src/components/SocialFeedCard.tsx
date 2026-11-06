@@ -9,7 +9,9 @@ import {
   Lightbulb, BookOpen, Layers, Globe
 } from "lucide-react";
 import ShareStudyModal from "./ShareStudyModal";
-import { useLanguage } from "@/context/LanguageContext";
+import { toggleSaveArticleAction } from "@/actions/student";
+import { rememberSaved, savedStoryIds } from "@/lib/saved-stories-client";
+import { useLanguage, useAppMode } from "@/context/LanguageContext";
 import { isBengaliText, knownBengaliTitle, translateSummaryToBengali } from "@/lib/bilingual";
 import { getNewspaperSourceInfo } from "@/lib/sources";
 
@@ -58,6 +60,7 @@ export default function SocialFeedCard({
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   const { language } = useLanguage();
+  const { isEnglishMode } = useAppMode();
   const isEnglish = !isBengaliText(article.title);
   // Offer a Bengali view only when a genuine translation exists; never a template.
   const bengaliTitle = isEnglish ? knownBengaliTitle(article.title, article.titleBn) : null;
@@ -77,8 +80,26 @@ export default function SocialFeedCard({
 
   const sourceInfo = getNewspaperSourceInfo(article.imageCaption, article.title);
 
-  const handleToggleSave = () => {
-    setIsSaved(!isSaved);
+  // The bookmark saves the story to the student's notebook (Saved stories)
+  useEffect(() => {
+    let live = true;
+    savedStoryIds().then((ids) => live && ids.has(article.id) && setIsSaved(true));
+    return () => {
+      live = false;
+    };
+  }, [article.id]);
+
+  const handleToggleSave = async () => {
+    const before = isSaved;
+    setIsSaved(!before);
+    const r = await toggleSaveArticleAction(article.id).catch(() => ({ ok: false as const }));
+    if (r.ok) {
+      setIsSaved(r.saved);
+      rememberSaved(article.id, r.saved);
+    } else {
+      setIsSaved(before);
+      if ("needsLogin" in r && r.needsLogin) window.dispatchEvent(new CustomEvent("khobor_open_auth_gate", { detail: { feature: "notebook" } }));
+    }
   };
 
   return (
@@ -142,6 +163,7 @@ export default function SocialFeedCard({
         <button
           type="button"
           onClick={() => setIsShareModalOpen(true)}
+            aria-label="শেয়ার করুন"
           className="p-2 shrink-0 text-[#788191] hover:text-[#1c1d21] hover:bg-[#faf8f4] rounded-full transition"
           title="শেয়ার করুন"
         >
@@ -278,6 +300,8 @@ export default function SocialFeedCard({
                 : "text-[#717887] hover:bg-[#ece7dc] hover:text-[#1c1d21]"
             }`}
             title={isSaved ? "সংরক্ষিত হয়েছে" : "নোটবুকে সংরক্ষণ করুন"}
+            aria-label={isSaved ? "সংরক্ষিত খবর (আবার চাপলে সরান)" : "খবরটি নোটবুকে সংরক্ষণ করুন"}
+            aria-pressed={isSaved}
           >
             <Bookmark className={`w-4 h-4 ${isSaved ? "fill-current" : ""}`} />
           </button>
@@ -299,8 +323,8 @@ export default function SocialFeedCard({
             href={`/article/${article.slug}`}
             className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#ffffff] hover:bg-[#ece7da] border border-[#ded8cb] text-xs font-semibold text-[#1c1d21] flex items-center gap-1 sm:gap-1.5 transition shadow-2xs group shrink-0 whitespace-nowrap"
           >
-            <span className="hidden sm:inline">বিশদ স্টাডি নোট ও উপাত্ত ছক</span>
-            <span className="sm:hidden font-bold">পড়ুন</span>
+            <span className="hidden sm:inline">{isEnglishMode ? "Study notes & facts" : "বিশদ স্টাডি নোট ও উপাত্ত ছক"}</span>
+            <span className="sm:hidden font-bold">{isEnglishMode ? "Read" : "পড়ুন"}</span>
             <ArrowRight className="w-3 h-3 text-[#842323] group-hover:translate-x-0.5 transition-transform shrink-0" />
           </Link>
         </div>

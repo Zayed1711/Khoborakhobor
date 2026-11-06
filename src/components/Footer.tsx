@@ -5,6 +5,8 @@ import Link from "next/link";
 import KhoborLogo from "./KhoborLogo";
 import { subscribeNewsletterAction } from "@/actions/newsletter";
 import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import FacebookButton from "./FacebookButton";
+import StudyPartner from "./StudyPartner";
 
 const FOOTER_CATEGORIES = [
   { name: "জাতীয় পরিক্রমা", slug: "national" },
@@ -46,7 +48,7 @@ export default function Footer() {
   return (
     <footer className="mt-20 border-t border-[#d8d2c4] bg-[#2a303c] text-[#cbd3de]">
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
           <div className="md:col-span-1">
             <div className="mb-3">
               <KhoborLogo variant="horizontal" size="sm" theme="dark" showTagline={true} />
@@ -139,6 +141,15 @@ export default function Footer() {
                 </div>
               )}
             </form>
+          </div>
+
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#d0d7e0] mb-3">যোগাযোগ (Contact us)</h3>
+            <p className="text-xs text-[#9aa4b2] mb-3">প্রশ্ন, পরামর্শ বা সমস্যা? আমাদের ফেসবুক পেজে বার্তা পাঠান।</p>
+            <FacebookButton label="ফেসবুক পেজ" />
+            <div className="mt-5">
+              <StudyPartner variant="footer" />
+            </div>
           </div>
         </div>
 

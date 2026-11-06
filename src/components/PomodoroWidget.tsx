@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Timer, Play, Pause, RotateCcw, X, Bell, Coffee, ChevronUp, ChevronDown } from "lucide-react";
+import { useAppMode } from "@/context/LanguageContext";
 
 export default function PomodoroWidget() {
+  const { isEnglishMode } = useAppMode();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(true);
 
@@ -79,19 +81,21 @@ export default function PomodoroWidget() {
       {isMinimized ? (
         <button
           onClick={() => setIsMinimized(false)}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-full shadow-lg border transition-all ${
+          aria-label={isEnglishMode ? "Study timer" : "স্টাডি টাইমার"}
+          className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-full shadow-lg border transition-all ${
             isActive
               ? "bg-[#842323] text-white border-[#842323] animate-pulse"
               : isBreak
               ? "bg-[#2d5a40] text-white border-[#2d5a40]"
               : "bg-[#ffffff] text-[#1c1d21] border-[#ded8cb] hover:bg-[#faf8f4]"
           }`}
-          title="পমোডোরো স্টাডি টাইমার"
+          title={isEnglishMode ? "Pomodoro study timer" : "পমোডোরো স্টাডি টাইমার"}
         >
           <Timer className="w-4 h-4 text-current" />
           <span className="font-mono text-xs font-bold">{formatTime(secondsLeft)}</span>
-          <span className="text-xs uppercase font-semibold tracking-wider opacity-85">
-            {isBreak ? "বিরতি" : "ফোকাস"}
+          {/* On phones only the time shows, so the pill covers less of the story */}
+          <span className="hidden sm:inline text-xs uppercase font-semibold tracking-wider opacity-85">
+            {isEnglishMode ? (isBreak ? "Break" : "Focus") : isBreak ? "বিরতি" : "ফোকাস"}
           </span>
         </button>
       ) : (

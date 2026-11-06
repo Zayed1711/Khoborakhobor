@@ -81,3 +81,20 @@ describe("IELTS second passage", () => {
     expect(examProblems(fullExam(), { ielts: "First." })).toEqual([]);
   });
 });
+
+import { buildExtractiveQuiz } from "@/lib/study/extractive";
+
+describe("job-mode quiz options stay possible", () => {
+  it("a percentage never becomes more than 100", () => {
+    const q = buildExtractiveQuiz(
+      "এইচএসসিতে পাসের হার কমেছে",
+      "এবার পাস করেছেন ৫১ দশমিক ৬২ শতাংশ পরীক্ষার্থী। এ বছর সিলেট বোর্ডে পাসের হার ৮৯.৫০ শতাংশ, যা গত বছরের চেয়ে কম। মোট পরীক্ষার্থী ছিলেন ১২ লাখ ৩৪ হাজার জন।"
+    );
+    if (q) {
+      for (const o of q.options) {
+        const n = Number(o.replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d))).match(/[0-9.]+/)?.[0]);
+        if (/শতাংশ/.test(o)) expect(n).toBeLessThanOrEqual(100);
+      }
+    }
+  });
+});

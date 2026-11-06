@@ -1,4 +1,5 @@
 "use client";
+import StudyPartner from "@/components/StudyPartner";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -115,6 +116,9 @@ export default function LeftNavSidebar({ session }: LeftNavSidebarProps) {
               {isEnglishMode ? "Replay" : "পুনরায়"}
             </span>
           </button>
+          <div className="mt-3">
+            <StudyPartner english={isEnglishMode} />
+          </div>
         </div>
       </div>
 

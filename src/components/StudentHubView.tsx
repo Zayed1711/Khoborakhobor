@@ -44,6 +44,7 @@ import {
 import { WritingCard } from "@/components/WritingTask";
 import type { WritingView } from "@/actions/writing";
 import NotesPrintSheet from "@/components/NotesPrintSheet";
+import { EarlyBirdBanner } from "@/components/EarlyBird";
 
 interface StudentHubViewProps {
   student: any;
@@ -59,6 +60,10 @@ interface StudentHubViewProps {
   activityStats?: any;
   /** English Learning writing submissions, newest first */
   writings?: WritingView[];
+  /** The tab asked for in the address (?tab=…), read on the server so the first view is right */
+  initialTab?: string;
+  /** Stories saved with the bookmark on story cards, newest first */
+  savedStories?: { id: string; slug: string; title: string; sourceName: string | null; savedAt: string }[];
 }
 
 export default function StudentHubView({
@@ -68,19 +73,16 @@ export default function StudentHubView({
   quizAnalytics,
   activityStats,
   writings = [],
+  initialTab,
+  savedStories = [],
 }: StudentHubViewProps) {
   const router = useRouter();
   const { mode, isEnglishMode } = useAppMode();
-  const [activeTab, setActiveTab] = useState<"notes" | "flashcards" | "analytics" | "writing" | "profile">(() => {
-    if (typeof window !== "undefined") {
-      const urlParams = new URLSearchParams(window.location.search);
-      const tabParam = urlParams.get("tab");
-      if (tabParam === "flashcards" || tabParam === "notes" || tabParam === "analytics" || tabParam === "writing" || tabParam === "profile") {
-        return tabParam;
-      }
-    }
-    return isEnglishMode ? "flashcards" : "notes";
-  });
+  const TABS = ["notes", "flashcards", "analytics", "writing", "profile"] as const;
+  type Tab = (typeof TABS)[number];
+  const [activeTab, setActiveTab] = useState<Tab>(() =>
+    (TABS as readonly string[]).includes(initialTab || "") ? (initialTab as Tab) : isEnglishMode ? "flashcards" : "notes"
+  );
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [copied, setCopied] = useState(false);
 
@@ -295,6 +297,8 @@ export default function StudentHubView({
       data-digital-signature={`KK-AUTH-SHA256-${student.id}`}
       className="space-y-8 print:hidden"
     >
+      <EarlyBirdBanner />
+
       {/* Top Banner: Student Identity & Live Streak */}
       <div className="p-6 bg-white border border-[#ded8cb] rounded-xl shadow-2xs flex flex-wrap items-center justify-between gap-6 print:border-none print:p-0">
         <div className="flex items-start gap-4">
@@ -528,6 +532,24 @@ export default function StudentHubView({
       {/* ======================================================== */}
       {activeTab === "notes" && (
         <div className="space-y-6">
+          {/* Stories saved with the bookmark */}
+          {savedStories.length > 0 && (
+            <section className="rounded-xl border border-[#ded8cb] bg-white p-4 space-y-2 print:hidden" aria-label="Saved stories">
+              <h3 className="text-sm font-bold text-[#17191d]">
+                {isEnglishMode ? "Saved stories" : "সংরক্ষিত খবর"} ({savedStories.length.toLocaleString(isEnglishMode ? "en-US" : "bn-BD")})
+              </h3>
+              <ul className="divide-y divide-[#f0ebe1]">
+                {savedStories.map((s) => (
+                  <li key={s.id} className="py-2 flex items-start justify-between gap-3">
+                    <Link href={`/article/${s.slug}`} className="text-sm font-medium text-[#17191d] hover:text-[#842323] leading-snug">
+                      {s.title}
+                    </Link>
+                    <span className="text-xs text-[#8a909b] shrink-0">{s.sourceName || ""}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
           {/* Export Action Suite Bar */}
           <div className="p-4 bg-[#fbf9f5] border border-[#e5dfd2] rounded-xl flex flex-wrap items-center justify-between gap-3 no-print">
             <div className="flex items-center gap-2">
@@ -813,7 +835,7 @@ export default function StudentHubView({
                           </button>
                         )}
                       </div>
-                      {isEnglishMode && (
+                      {isEnglishMode && getBanglaPronunciation(currentFlashcard.term.term) && (
                         <div className="text-sm font-semibold text-[#c29547] mt-1">
                           [{getBanglaPronunciation(currentFlashcard.term.term)}]
                         </div>
@@ -940,7 +962,7 @@ export default function StudentHubView({
                               </button>
                             )}
                           </div>
-                          {isEnglishMode && (
+                          {isEnglishMode && getBanglaPronunciation(item.term.term) && (
                             <div className="text-xs font-medium text-[#c29547]">
                               [{getBanglaPronunciation(item.term.term)}]
                             </div>

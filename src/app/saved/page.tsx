@@ -9,14 +9,15 @@ import { getMyWritingsAction } from "@/actions/writing";
 
 export const dynamic = "force-dynamic";
 
-export default async function SavedNotebookPage() {
+export default async function SavedNotebookPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  const { tab } = await searchParams;
   const student = await getActiveStudent();
 
   if (!student) {
     redirect("/login?redirect=/saved");
   }
 
-  const [notes, savedWords, quizAnalytics, activityStats, writings] = await Promise.all([
+  const [notes, savedWords, quizAnalytics, activityStats, writings, savedStories] = await Promise.all([
     prisma.studyNote.findMany({
       where: { studentId: student.id },
       include: {
@@ -54,6 +55,12 @@ export default async function SavedNotebookPage() {
     getStudentQuizAnalytics(student.id),
     getStudentActivityStatsAction(student.id),
     getMyWritingsAction(),
+    prisma.savedArticle.findMany({
+      where: { studentId: student.id },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+      select: { id: true, createdAt: true, article: { select: { slug: true, title: true, sourceName: true } } },
+    }),
   ]);
 
   return (
@@ -70,6 +77,8 @@ export default async function SavedNotebookPage() {
           quizAnalytics={quizAnalytics}
           activityStats={activityStats}
           writings={writings}
+          initialTab={tab}
+          savedStories={savedStories.map((s) => ({ id: s.id, slug: s.article.slug, title: s.article.title, sourceName: s.article.sourceName, savedAt: s.createdAt.toISOString() }))}
         />
       </main>
 

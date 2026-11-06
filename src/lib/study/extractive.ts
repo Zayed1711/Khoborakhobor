@@ -324,14 +324,19 @@ function numberDistractors(answer: string, others: string[], rand: () => number)
       // The first number of a date is a day of the month: keep distractors to real days
       const ascii = toAsciiDigits(answer);
       const isDay = MONTH_RE.test(answer) && n >= 1 && n <= 31 && ascii.search(/[0-9]/) === ascii.indexOf(raw);
+      // A percentage stays a possible percentage (never "123.6 per cent" for a pass rate)
+      const isPercent = /%|শতাংশ|percent|per cent|pc\b/i.test(answer);
+      const decimals = (raw.split(".")[1] || "").length;
       const candidates = isDay
         ? [n + 2, n - 3, n + 5, n - 1].map((d) => ((d - 1 + 28) % 28) + 1)
         : isYear
         ? [n - 1, n + 1, n - 2, n + 3]
+        : isPercent
+        ? [n - 10, n + 10, n - 5, n + 5, n - 15].map((c) => Number(c.toFixed(decimals))).filter((c) => c > 0 && c <= 100)
         : [n * 2, Math.round(n / 2), Math.round(n * 1.5), n + (n < 10 ? 2 : Math.round(n * 0.25))];
       for (const c of candidates) {
         if (!Number.isFinite(c) || c <= 0 || c === n) continue;
-        const txt = raw.includes(",") ? c.toLocaleString("en-US") : String(c);
+        const txt = raw.includes(",") ? c.toLocaleString("en-US") : isPercent && decimals ? c.toFixed(decimals) : String(c);
         pool.add(answer.replace(raw.replace(/[0-9]/g, (d) => (bengali ? BN_DIGITS[Number(d)] : d)), toScriptDigits(txt, bengali)));
       }
     }

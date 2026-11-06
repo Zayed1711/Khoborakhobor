@@ -141,11 +141,26 @@ export function rateLimit(key: string, limit: number, windowMs: number): boolean
   return bucket.count <= limit;
 }
 
+/**
+ * The visitor's real IP, for rate limits. The site is behind Cloudflare, which sets
+ * CF-Connecting-IP itself (a value sent by the visitor is replaced), so it is trusted first.
+ * The first entry of X-Forwarded-For is written by the visitor and can be faked, so only
+ * the last entry (added by our own proxy) is used, and only as a last resort.
+ */
+export function pickClientIp(get: (name: string) => string | null | undefined): string {
+  const cf = get("cf-connecting-ip")?.trim();
+  if (cf) return cf;
+  const real = get("x-real-ip")?.trim();
+  if (real) return real;
+  const forwarded = (get("x-forwarded-for") || "").split(",").map((p) => p.trim()).filter(Boolean);
+  return forwarded[forwarded.length - 1] || "unknown";
+}
+
 export async function clientKey(): Promise<string> {
   try {
     const { headers } = await import("next/headers");
     const h = await headers();
-    return (h.get("x-forwarded-for")?.split(",")[0] || h.get("x-real-ip") || "unknown").trim();
+    return pickClientIp((name) => h.get(name));
   } catch {
     return "unknown";
   }

@@ -16,6 +16,8 @@ model Student {
   email        String   @unique
   name         String
   passwordHash String
+  // Email proven by a code (accounts made before email codes existed count as verified)
+  emailVerified Boolean  @default(false)
   phone        String? // Contact phone number
   role         String   @default("student") // student, admin, moderator
   status       String   @default("active") // active, suspended, pending
@@ -391,4 +393,18 @@ model ExamAnswer {
   updatedAt  DateTime    @updatedAt
 
   @@unique([attemptId, questionId])
+}
+
+// One-time email codes: sign-up verification and "forgot password"
+model EmailCode {
+  id        String   @id @default(cuid())
+  email     String
+  purpose   String // verify | reset
+  codeHash  String // sha256 of the code; the code itself is never stored
+  attempts  Int      @default(0)
+  used      Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email, purpose, createdAt])
 }

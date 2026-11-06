@@ -316,6 +316,7 @@ export async function adminCreateUserAction(data: {
         name,
         email,
         passwordHash,
+        emailVerified: true, // created by the admin, who vouches for the address
         phone: data.phone?.trim() || null,
         institution: data.institution?.trim() || null,
         targetTrack: data.targetTrack || "BCS_GOVT",

@@ -105,6 +105,7 @@ export default function ShareStudyModal({
           </div>
           <button
             onClick={onClose}
+            aria-label="বন্ধ করুন"
             className="p-1 rounded-md text-[#788191] hover:text-[#1c1d21] hover:bg-[#ede7da] transition"
           >
             <X className="w-4 h-4" />

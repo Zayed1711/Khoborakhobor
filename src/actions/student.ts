@@ -470,33 +470,30 @@ export async function saveMarkerHighlightAction(
 // -------------------------------------------------------------
 // 5. Daily 5-Minute Current Affairs Capsule Engine
 // -------------------------------------------------------------
+/**
+ * The 5-minute capsule: the same stories the homepage's capsule strip shows (today's daily
+ * selection), so a story the selection rejected never appears here. Falls back to the top
+ * of today's জরুরি ১০ when no story is marked as a capsule.
+ */
 export async function getDailyCapsuleArticles() {
-  let articles = await prisma.article.findMany({
-    where: { isCapsule: true, sourceUrl: { not: null } },
-    include: {
-      category: true,
-      vocabulary: true,
-    },
-    orderBy: { createdAt: "desc" },
-    take: 6,
+  const { getTodaySelection, urgentOnly } = await import("@/lib/study/daily-feed");
+  const { cards } = await getTodaySelection();
+  let picked = cards.filter((c) => c.isCapsule).slice(0, 6);
+  if (picked.length < 4) picked = urgentOnly(cards).slice(0, 6);
+  const vocab = await prisma.vocabularyTerm.findMany({
+    where: { articleId: { in: picked.map((c) => c.id) } },
+    select: { id: true, term: true, definition: true, context: true, articleId: true },
   });
-
-  if (articles.length < 4) {
-    articles = await prisma.article.findMany({
-      where: { sourceUrl: { not: null } },
-      include: {
-        category: true,
-        vocabulary: true,
-      },
-      orderBy: { createdAt: "desc" },
-      take: 6,
-    });
-  }
-
-  return articles.map((a) => ({
-    ...a,
-    content: "", // link-out model
-    keyTakeaways: safeParseJson<string[]>(a.keyTakeaways, []),
+  return picked.map((c) => ({
+    id: c.id,
+    slug: c.slug,
+    title: c.title,
+    summary: c.summary,
+    readTime: c.readTime,
+    category: c.category,
+    keyTakeaways: c.keyTakeaways,
+    // Job-mode terms only (English story vocabulary rows are shown on the story page)
+    vocabulary: vocab.filter((v) => v.articleId === c.id && !v.definition.startsWith('{"v":"story-vocab')),
   }));
 }
 
@@ -764,4 +761,32 @@ export async function getStudentStudyWrappedAction(studentId?: string) {
   }
 
   return telemetry;
+}
+
+// -------------------------------------------------------------
+// Saved stories (the bookmark on each story card)
+// -------------------------------------------------------------
+
+/** Ids of the stories the logged-in student has saved (empty when logged out). */
+export async function getMySavedArticleIdsAction(): Promise<string[]> {
+  const student = await getSessionStudent().catch(() => null);
+  if (!student) return [];
+  const rows = await prisma.savedArticle.findMany({ where: { studentId: student.id }, select: { articleId: true } });
+  return rows.map((r) => r.articleId);
+}
+
+/** Save or un-save a story for the logged-in student. */
+export async function toggleSaveArticleAction(articleId: string): Promise<{ ok: true; saved: boolean } | { ok: false; needsLogin?: boolean }> {
+  const student = await getSessionStudent().catch(() => null);
+  if (!student) return { ok: false, needsLogin: true };
+  const article = await prisma.article.findUnique({ where: { id: articleId }, select: { id: true } });
+  if (!article) return { ok: false };
+  const existing = await prisma.savedArticle.findUnique({ where: { studentId_articleId: { studentId: student.id, articleId } } });
+  if (existing) {
+    await prisma.savedArticle.delete({ where: { id: existing.id } });
+  } else {
+    await prisma.savedArticle.create({ data: { studentId: student.id, articleId } });
+  }
+  revalidatePath("/saved");
+  return { ok: true, saved: !existing };
 }

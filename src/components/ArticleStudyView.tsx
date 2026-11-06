@@ -15,7 +15,7 @@ import type { PracticeForClient } from "@/lib/study/ielts-store";
 import WritingTask from "@/components/WritingTask";
 import type { WritingView } from "@/actions/writing";
 import ShareStudyModal from "@/components/ShareStudyModal";
-import FocusDictionaryModal from "@/components/FocusDictionaryModal";
+import { openDictionary, STORY_SLUG_KEY } from "@/components/DictionaryHost";
 import SelectionNoteButton from "@/components/SelectionNoteButton";
 import { trackArticleReadAction } from "@/actions/student";
 import { isBengaliText } from "@/lib/bilingual";
@@ -79,15 +79,19 @@ export default function ArticleStudyView({ article, relatedArticles, initialNote
   const [notes, setNotes] = useState<StudyNote[]>(initialNotes);
   const mainRef = useRef<HTMLElement>(null);
   const [isShareOpen, setIsShareOpen] = useState(false);
-  // AI lexicon (src/lib/dictionary-engine.ts): opens with the word the reader selected, if any
-  const [isDictOpen, setIsDictOpen] = useState(false);
-  const [dictWord, setDictWord] = useState("");
+  // The site dictionary (src/components/DictionaryHost.tsx): opens with the word the reader selected, if any
   const openLexicon = (word?: string) => {
     const selected = typeof window !== "undefined" ? window.getSelection()?.toString().trim() || "" : "";
-    const w = (word ?? selected).slice(0, 40);
-    setDictWord(w);
-    setIsDictOpen(true);
+    openDictionary((word ?? selected).slice(0, 40));
   };
+  // Tell the dictionary which story this is, so looked-up words can be saved to it
+  useEffect(() => {
+    const w = window as unknown as Record<string, string>;
+    w[STORY_SLUG_KEY] = article.slug;
+    return () => {
+      delete w[STORY_SLUG_KEY];
+    };
+  }, [article.slug]);
   const isEnglish = !isBengaliText(article.title);
 
   // While a story is open the site stays in that story's mode (Bengali story: job/BCS,
@@ -310,13 +314,6 @@ export default function ArticleStudyView({ article, relatedArticles, initialNote
           keyTakeaways: article.keyTakeaways,
           slug: article.slug,
         }}
-      />
-      <FocusDictionaryModal
-        isOpen={isDictOpen}
-        onClose={() => setIsDictOpen(false)}
-        initialWord={dictWord}
-        articleSlug={article.slug}
-        student={student}
       />
       <MobileBottomNav />
       <Footer />

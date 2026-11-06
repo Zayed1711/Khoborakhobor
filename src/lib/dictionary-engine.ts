@@ -20,6 +20,8 @@ export interface DictionaryEntry {
   realLifeExample: string;
   category: string;
   examRelevance?: string;
+  /** Pronunciation in IPA from the Free Dictionary API, e.g. "/rɛlɪˈɡeɪʃən/" (English words) */
+  ipa?: string;
   // Backward compatibility fields
   definition: string;
   context: string;
@@ -687,6 +689,16 @@ async function fetchSmartOnlineLexicon(query: string, isBangla: boolean): Promis
       }
     } catch {}
 
+    // Step C: Pronunciation (IPA) from the Free Dictionary API (open Wiktionary data)
+    let ipa = "";
+    try {
+      const ipaRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(clean.toLowerCase())}`, { signal: AbortSignal.timeout(3000) });
+      if (ipaRes.ok) {
+        const ipaData = await ipaRes.json();
+        ipa = ipaData?.[0]?.phonetic || (ipaData?.[0]?.phonetics || []).find((p: { text?: string }) => p.text)?.text || "";
+      }
+    } catch {}
+
     const bnMeaningStr = bnTranslation
       ? `${bnTranslation}${bnSynonyms.length > 0 ? ` (সমার্থক: ${bnSynonyms.join(", ")})` : ""}`
       : `${capitalized} (ইংরেজি শব্দ)`;
@@ -705,6 +717,7 @@ async function fetchSmartOnlineLexicon(query: string, isBangla: boolean): Promis
       realLifeExample: finalExample,
       category: pos,
       examRelevance: "বিসিএস প্রিলিমিনারি ভোকাবুলারি, সিনোনিম-অ্যান্টনিম ও প্যাসেজ অনুবাদের অত্যন্ত গুরুত্বপূর্ণ শব্দ।",
+      ipa,
       definition: bnMeaningStr,
       context: "",
     };

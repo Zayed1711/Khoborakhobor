@@ -48,7 +48,9 @@ export default function FocusDictionaryModal({
 
   if (!mounted || !isOpen) return null;
 
-  const handleLookup = async (word: string) => {
+  // A function declaration is hoisted, so the effect above can call it even on a render
+  // that returned early (opening the dictionary with a word already filled in)
+  async function handleLookup(word: string) {
     const q = word.trim();
     if (!q) return;
 
@@ -65,7 +67,7 @@ export default function FocusDictionaryModal({
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -194,9 +196,9 @@ export default function FocusDictionaryModal({
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                    {banglaPhonetic && (
+                    {(banglaPhonetic || entry.ipa) && (
                       <span className="text-xs bg-amber-50 text-amber-950 font-mono font-medium px-2 py-0.5 rounded border border-amber-200">
-                        উচ্চারণ: [{banglaPhonetic}]
+                        উচ্চারণ: {banglaPhonetic ? `[${banglaPhonetic}]` : entry.ipa}
                       </span>
                     )}
                     <span className="text-xs text-[#64748b] bg-slate-100 px-2 py-0.5 rounded font-medium">
@@ -205,7 +207,8 @@ export default function FocusDictionaryModal({
                   </div>
                 </div>
 
-                <button
+                {/* Saving needs a story to attach the word to: offered on story pages only */}
+                {articleSlug && (<button
                   type="button"
                   onClick={handleSaveToWordBank}
                   disabled={saved}
@@ -217,7 +220,7 @@ export default function FocusDictionaryModal({
                 >
                   {saved ? <Check className="w-3.5 h-3.5" /> : <BookmarkPlus className="w-3.5 h-3.5" />}
                   <span>{saved ? "সংরক্ষিত" : "ওয়ার্ড ব্যাংকে সেভ"}</span>
-                </button>
+                </button>)}
               </div>
 
               {/* Bangla Meaning Box */}

@@ -36,7 +36,7 @@ export async function searchArticlesAction(query: string): Promise<SearchResultI
 
   try {
     // 1. Clean query: strip leading '#', trim whitespace and lowercase
-    let clean = query.trim().replace(/^[#]+/, "").trim().toLowerCase();
+    const clean = query.trim().replace(/^[#]+/, "").trim().toLowerCase();
     if (!clean) return [];
 
     // Helper: execute search against title, summary, examTags, and category name

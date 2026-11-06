@@ -2,9 +2,11 @@
 import { FEATURES } from "@/lib/features";
 
 import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import KhoborLogo from "@/components/KhoborLogo";
+import FacebookButton from "@/components/FacebookButton";
+import { VerifyEmailPanel, ForgotPasswordPanel } from "@/components/auth/EmailCodePanel";
 import { 
   studentLoginAction, 
   studentSignupAction, 
@@ -20,7 +22,6 @@ import {
 } from "lucide-react";
 
 function AuthForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab") === "signup" ? "signup" : "login";
   const rawRedirect = searchParams.get("redirect") || "/";
@@ -52,6 +53,9 @@ function AuthForm() {
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState("");
+  // Email code steps: the address waiting for its sign-up code, and "forgot password"
+  const [verifyEmail, setVerifyEmail] = useState<string | null>(null);
+  const [forgotOpen, setForgotOpen] = useState(false);
   const [loginPassword, setLoginPassword] = useState("");
 
   // Signup form state
@@ -78,15 +82,14 @@ function AuthForm() {
       setError("");
       verifyMagicLinkAction(token).then((res) => {
         if (res.success) {
-          router.push(redirectUrl);
-          router.refresh();
+          window.location.assign(redirectUrl);
         } else {
           setError(res.error || "ম্যাজিক লিংকের মেয়াদ শেষ বা ভুল।");
           setLoading(false);
         }
       });
     }
-  }, [searchParams, redirectUrl, router]);
+  }, [searchParams, redirectUrl]);
 
   const handleGoogleSignIn = () => {
     setError("গুগল সরাসরি ওয়ান-ক্লিক সাইন-ইন সেবা দ্রুত সংহত হচ্ছে। অনুগ্রহ করে নিচের ফর্মে আপনার জিমেইল ও পাসওয়ার্ড দিয়ে সরাসরি লগইন বা নিবন্ধন করুন।");
@@ -127,8 +130,7 @@ function AuthForm() {
     try {
       const res = await verifyPhoneOtpAction(phoneInput, otpCode);
       if (res.success) {
-        router.push(redirectUrl);
-        router.refresh();
+        window.location.assign(redirectUrl);
       } else {
         setError(res.error || "ওটিপি যাচাই ব্যর্থ হয়েছে।");
       }
@@ -175,9 +177,11 @@ function AuthForm() {
 
     try {
       const res = await studentLoginAction(loginEmail, loginPassword);
-      if (res.success) {
-        router.push(redirectUrl);
-        router.refresh();
+      if ("needsVerification" in res && res.needsVerification) {
+        setVerifyEmail(res.email);
+        if (res.error) setError(res.error);
+      } else if (res.success) {
+        window.location.assign(redirectUrl);
       } else {
         setError(res.error || "লগইন ব্যর্থ হয়েছে। তথ্য পুনরায় যাচাই করুন।");
       }
@@ -219,9 +223,11 @@ function AuthForm() {
         institution,
       });
 
-      if (res.success) {
-        router.push(redirectUrl);
-        router.refresh();
+      if ("needsVerification" in res && res.needsVerification) {
+        setVerifyEmail(res.email);
+        if (res.error) setError(res.error);
+      } else if (res.success) {
+        window.location.assign(redirectUrl);
       } else {
         setError(res.error || "নিবন্ধন সম্পন্ন করা সম্ভব হয়নি।");
       }
@@ -542,7 +548,27 @@ function AuthForm() {
         {/* ======================================================== */}
         {/* OPTION B: TRADITIONAL EMAIL & PASSWORD                   */}
         {/* ======================================================== */}
-        {authCategory === "password" && (
+        {/* Email code: verify a new account, or reset a forgotten password */}
+        {authCategory === "password" && verifyEmail && (
+          <VerifyEmailPanel
+            email={verifyEmail}
+            onDone={() => {
+              window.location.assign(redirectUrl);
+            }}
+            onBack={() => setVerifyEmail(null)}
+          />
+        )}
+        {authCategory === "password" && !verifyEmail && forgotOpen && (
+          <ForgotPasswordPanel
+            initialEmail={loginEmail}
+            onDone={() => {
+              window.location.assign(redirectUrl);
+            }}
+            onBack={() => setForgotOpen(false)}
+          />
+        )}
+
+        {authCategory === "password" && !verifyEmail && !forgotOpen && (
           <div className="space-y-4">
             {/* Sub-toggle: Login vs Signup */}
             <div className="flex rounded-xl bg-[#f5f1e8] p-1 border border-[#e8e2d4]">
@@ -611,8 +637,21 @@ function AuthForm() {
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-[#87909f] hover:text-[#1c1d21] transition"
                       tabIndex={-1}
+                      aria-label={showPassword ? "পাসওয়ার্ড লুকান" : "পাসওয়ার্ড দেখুন"}
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <div className="text-right mt-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setError("");
+                        setForgotOpen(true);
+                      }}
+                      className="text-xs text-[#842323] font-semibold hover:underline"
+                    >
+                      পাসওয়ার্ড ভুলে গেছেন?
                     </button>
                   </div>
                 </div>
@@ -727,6 +766,12 @@ function AuthForm() {
             )}
           </div>
         )}
+
+        {/* Help: our Facebook page */}
+        <div className="pt-4 border-t border-[#ece7dc] text-center space-y-2">
+          <p className="text-xs text-[#717887]">লগইন বা নিবন্ধনে সমস্যা? আমাদের ফেসবুক পেজে জানান।</p>
+          <FacebookButton label="আমাদের ফেসবুক পেজ" className="w-full" />
+        </div>
 
         {/* Bottom Gateway Nav */}
         <div className="pt-4 border-t border-[#ece7dc] flex items-center justify-center text-xs text-[#717887]">

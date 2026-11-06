@@ -10,6 +10,16 @@ interface ThemeSwitcherProps {
   className?: string;
 }
 
+/** Apply the reading theme to the page (declared before use, so it is always defined). */
+function applyTheme(newTheme: ReadingTheme) {
+  if (typeof document === "undefined") return;
+  if (newTheme === "parchment") {
+    document.documentElement.removeAttribute("data-theme");
+  } else {
+    document.documentElement.setAttribute("data-theme", newTheme);
+  }
+}
+
 export default function ThemeSwitcher({ compact = false, className = "" }: ThemeSwitcherProps) {
   const [theme, setTheme] = useState<ReadingTheme>("parchment");
   const [mounted, setMounted] = useState(false);
@@ -25,14 +35,6 @@ export default function ThemeSwitcher({ compact = false, className = "" }: Theme
     }
   }, []);
 
-  const applyTheme = (newTheme: ReadingTheme) => {
-    if (typeof document === "undefined") return;
-    if (newTheme === "parchment") {
-      document.documentElement.removeAttribute("data-theme");
-    } else {
-      document.documentElement.setAttribute("data-theme", newTheme);
-    }
-  };
 
   const handleSelect = (newTheme: ReadingTheme) => {
     setTheme(newTheme);

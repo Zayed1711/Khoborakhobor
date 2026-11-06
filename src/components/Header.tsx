@@ -1,4 +1,5 @@
 "use client";
+import StudyPartner from "@/components/StudyPartner";
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
@@ -306,6 +307,9 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session, activ
               })}
             </div>
             </>)}
+            <div className="pt-2 mt-1 border-t border-[#ece7dc]">
+              <StudyPartner variant="menu" english={isEnglishMode} />
+            </div>
           </div>
         )}
 
