@@ -7,8 +7,10 @@ import { forClient } from "@/lib/study/daily-feed";
 import { extractVocabularyTableRows } from "@/lib/vocabulary-table-engine";
 import { isBengaliText } from "@/lib/bilingual";
 import { ensurePractice } from "@/lib/study/ielts-store";
+import { extractPassage } from "@/lib/study/passage";
+import { passageSentences } from "@/lib/study/ielts-practice";
 import { englishTopic } from "@/lib/study/topics";
-import { writingPromptFor } from "@/lib/study/writing-prompts";
+import { writingTaskFor } from "@/lib/study/writing-prompts";
 import { getMyWritingsAction } from "@/actions/writing";
 
 export const dynamic = "force-dynamic";
@@ -60,28 +62,37 @@ export default async function ArticleDetailPage({ params }: Props) {
   const englishVocabRows = isBengaliText(article.title)
     ? []
     : extractVocabularyTableRows(article.title, "", article.vocabulary).map((row, i) => ({ ...row, id: `vocab-${i}` }));
-  // English Learning stories: IELTS reading practice, built once from the story's own text
-  const practice = isBengaliText(article.title)
-    ? []
-    : await ensurePractice(article.id, {
-        title: article.title,
-        summary: article.summary,
-        keyTakeaways: Array.isArray(article.keyTakeaways) ? article.keyTakeaways : [],
-        factTable: Array.isArray(article.factTable) ? article.factTable : [],
-      }).catch(() => []);
+  // English Learning stories: the reading passage (a part of the original article, 80–150
+  // words) and IELTS practice built only from it. When the article text is missing, the
+  // summary and key points stand in. Only the passage is sent to the browser, not the article.
+  const isEnglishStory = !isBengaliText(article.title);
+  let passage: string[][] = isEnglishStory ? extractPassage(article.content || "") : [];
+  if (isEnglishStory && !passage.length) {
+    const fallback = passageSentences({
+      title: article.title,
+      summary: article.summary,
+      keyTakeaways: Array.isArray(article.keyTakeaways) ? article.keyTakeaways : [],
+      factTable: Array.isArray(article.factTable) ? article.factTable : [],
+    });
+    passage = fallback.length ? [fallback] : [];
+  }
+  const practice = isEnglishStory ? await ensurePractice(article.id, passage.flat(), article.title).catch(() => []) : [];
   // English Learning stories: a short IELTS Task 2 style writing task, reviewed by hand
-  const writingTopic = isBengaliText(article.title) ? null : englishTopic(article.title, article.summary);
-  const writing = writingTopic
-    ? {
-        topic: writingTopic,
-        prompt: writingPromptFor(writingTopic, article.id),
-        previous: student ? await getMyWritingsAction(article.slug).catch(() => []) : [],
-      }
+  // The task follows the story's core theme (football → popularity of football), found from its own words
+  const task = isEnglishStory
+    ? writingTaskFor(
+        { id: article.id, title: article.title, summary: article.summary, keyTakeaways: Array.isArray(article.keyTakeaways) ? article.keyTakeaways : [] },
+        englishTopic(article.title, article.summary)
+      )
+    : null;
+  const writing = task
+    ? { topic: task.theme, prompt: task.prompt, previous: student ? await getMyWritingsAction(article.slug).catch(() => []) : [] }
     : null;
 
   return (
     <ArticleStudyView
       practice={practice}
+      passage={passage}
       writing={writing}
       article={view}
       relatedArticles={relatedArticles}

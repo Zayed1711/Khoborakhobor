@@ -22,14 +22,15 @@ export default function IeltsPractice({
   sourceUrl,
 }: {
   items: PracticeForClient[];
-  /** The passage the questions come from: the author's summary and key points shown on this page */
-  passage?: string[];
+  /** The passage the questions come from: a part of the original article, as paragraphs */
+  passage?: string[][];
   sourceName?: string | null;
   sourceUrl?: string | null;
 }) {
   if (!items.length) return null;
   const mcqs = items.filter((i) => i.kind === "mcq");
   const blanks = items.filter((i) => i.kind === "blank");
+  const tfs = items.filter((i) => i.kind === "tf");
 
   return (
     <section className="space-y-4" aria-label="IELTS Reading practice">
@@ -44,11 +45,15 @@ export default function IeltsPractice({
       {passage.length > 0 && (
         <figure className="rounded-xl border border-[#d6dcea] bg-[#f6f8fc] p-4 space-y-3">
           <figcaption className="text-xs font-bold uppercase tracking-wide text-[#1e40af]">Reading passage</figcaption>
-          <p className="text-[15px] leading-relaxed text-[#1c1d21]">{passage.join(" ")}</p>
+          <div className="space-y-3 text-[15px] leading-relaxed text-[#1c1d21]">
+            {passage.map((para, i) => (
+              <p key={i}>{para.join(" ")}</p>
+            ))}
+          </div>
           {sourceName && (
             <p className="text-xs text-[#68707f] flex flex-wrap items-center gap-x-2">
               <span>
-                From the summary and key points of a report by <span className="font-semibold">{sourceName}</span>.
+                A part of a report by <span className="font-semibold">{sourceName}</span>.
               </span>
               {sourceUrl && (
                 <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[#1e40af] font-semibold hover:underline">
@@ -75,6 +80,17 @@ export default function IeltsPractice({
           {blanks.map((q, i) => (q.kind === "blank" ? <BlankItem key={q.id} q={q} n={mcqs.length + i + 1} /> : null))}
         </div>
       )}
+
+      {tfs.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-bold text-[#1e40af]">
+            {range(mcqs.length + blanks.length + 1, mcqs.length + blanks.length + tfs.length)}: Do the following statements agree with the passage? Choose TRUE or FALSE.
+          </h3>
+          {tfs.map((q, i) => (
+            <McqItem key={q.id} q={{ id: q.id, kind: "mcq", question: q.question, options: ["TRUE", "FALSE"] }} n={mcqs.length + blanks.length + i + 1} plain />
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -95,7 +111,7 @@ function Feedback({ result }: { result: Result }) {
   );
 }
 
-function McqItem({ q, n }: { q: Extract<PracticeForClient, { kind: "mcq" }>; n: number }) {
+function McqItem({ q, n, plain = false }: { q: Extract<PracticeForClient, { kind: "mcq" }>; n: number; plain?: boolean }) {
   const [chosen, setChosen] = useState<number | null>(null);
   const [result, setResult] = useState<Result | null>(null);
   const [busy, setBusy] = useState(false);
@@ -114,7 +130,7 @@ function McqItem({ q, n }: { q: Extract<PracticeForClient, { kind: "mcq" }>; n: 
         <span className="font-bold text-[#1e40af] mr-1.5">{n}.</span>
         {q.question}
       </p>
-      <div className="grid gap-2">
+      <div className={plain ? "flex flex-wrap gap-2" : "grid gap-2"}>
         {q.options.map((opt, i) => {
           const isAnswer = result && opt === result.correctAnswer;
           const isWrongPick = result && i === chosen && !result.isCorrect;
@@ -134,7 +150,7 @@ function McqItem({ q, n }: { q: Extract<PracticeForClient, { kind: "mcq" }>; n: 
                   : "border-[#ded8cb] hover:bg-[#faf8f4]"
               }`}
             >
-              <span className="font-semibold mr-1.5">{String.fromCharCode(65 + i)}</span>
+              {!plain && <span className="font-semibold mr-1.5">{String.fromCharCode(65 + i)}</span>}
               {opt}
             </button>
           );

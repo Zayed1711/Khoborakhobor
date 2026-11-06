@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionStudent, requireAdmin } from "@/lib/guards";
 import { rateLimit } from "@/lib/session";
 import { englishTopic } from "@/lib/study/topics";
-import { WRITING_MAX_WORDS, WRITING_MIN_WORDS, wordCount, writingPromptFor } from "@/lib/study/writing-prompts";
+import { WRITING_MAX_WORDS, WRITING_MIN_WORDS, wordCount, writingTaskFor } from "@/lib/study/writing-prompts";
 import { revalidatePath } from "next/cache";
 
 export interface WritingView {
@@ -50,19 +50,27 @@ export async function submitWritingAction(articleSlug: string, text: string) {
   if (words < WRITING_MIN_WORDS) return { ok: false as const, message: `Please write at least ${WRITING_MIN_WORDS} words (you have ${words}).` };
   if (words > WRITING_MAX_WORDS) return { ok: false as const, message: `Please keep it under ${WRITING_MAX_WORDS} words (you have ${words}).` };
 
-  const article = await prisma.article.findUnique({ where: { slug: articleSlug }, select: { id: true, slug: true, title: true, summary: true, sourceUrl: true } });
+  const article = await prisma.article.findUnique({ where: { slug: articleSlug }, select: { id: true, slug: true, title: true, summary: true, keyTakeaways: true, sourceUrl: true } });
   if (!article || !article.sourceUrl || /[ঀ-৿]/.test(article.title)) return { ok: false as const, message: "Story not found." };
 
-  // The prompt is decided on the server from the story's topic (not taken from the browser)
-  const topic = englishTopic(article.title, article.summary);
+  // The prompt is decided on the server from the story's theme (not taken from the browser),
+  // exactly as the story page shows it
+  let points: string[] = [];
+  try {
+    const v = JSON.parse(article.keyTakeaways || "[]");
+    points = Array.isArray(v) ? v : [];
+  } catch {
+    points = [];
+  }
+  const task = writingTaskFor({ id: article.id, title: article.title, summary: article.summary, keyTakeaways: points }, englishTopic(article.title, article.summary));
   const saved = await prisma.writingSubmission.create({
     data: {
       studentId: student.id,
       articleId: article.id,
       articleSlug: article.slug,
       articleTitle: article.title,
-      topic,
-      prompt: writingPromptFor(topic, article.id),
+      topic: task.theme,
+      prompt: task.prompt,
       text: clean,
       wordCount: words,
     },

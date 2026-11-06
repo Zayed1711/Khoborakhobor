@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { getSessionStudent } from "@/lib/guards";
 import { isAcceptedAnswer } from "@/lib/study/ielts-practice";
+import { PRACTICE_ORIGINS } from "@/lib/study/ielts-store";
 
 /**
  * Check one IELTS reading practice answer on the server (answers never reach the
@@ -11,7 +12,7 @@ import { isAcceptedAnswer } from "@/lib/study/ielts-practice";
  */
 export async function checkPracticeAnswerAction(questionId: string, answer: number | string) {
   const q = await prisma.quizQuestion.findUnique({ where: { id: questionId } });
-  if (!q || (q.origin !== "ielts_mcq" && q.origin !== "ielts_blank")) {
+  if (!q || !(PRACTICE_ORIGINS as readonly string[]).includes(q.origin)) {
     return { ok: false as const, message: "Question not found." };
   }
   let options: string[] = [];
@@ -21,7 +22,8 @@ export async function checkPracticeAnswerAction(questionId: string, answer: numb
     options = [];
   }
 
-  const isMcq = q.origin === "ielts_mcq";
+  // Multiple choice and True/False are answered by option number; fill in the blank by a typed word
+  const isMcq = q.origin === "ielts_mcq" || q.origin === "ielts_tf";
   const isCorrect = isMcq ? Number(answer) === q.correctOption : isAcceptedAnswer(String(answer ?? "").slice(0, 60), options);
   const correctAnswer = isMcq ? options[q.correctOption] ?? "" : options[0] ?? "";
 

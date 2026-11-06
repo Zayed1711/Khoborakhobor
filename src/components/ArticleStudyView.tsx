@@ -11,7 +11,6 @@ import MicroQuiz from "@/components/MicroQuiz";
 import VocabularyTable from "@/components/VocabularyTable";
 import ArticleSummaryReflection from "@/components/ArticleSummaryReflection";
 import IeltsPractice from "@/components/IeltsPractice";
-import { passageSentences } from "@/lib/study/ielts-practice";
 import type { PracticeForClient } from "@/lib/study/ielts-store";
 import WritingTask from "@/components/WritingTask";
 import type { WritingView } from "@/actions/writing";
@@ -57,6 +56,8 @@ interface Props {
   englishVocabRows: VocabularyTableRow[];
   /** English Learning stories: IELTS reading practice (questions only; answers stay on the server) */
   practice?: PracticeForClient[];
+  /** English Learning stories: the reading passage (a part of the article), as paragraphs of sentences */
+  passage?: string[][];
   /** English Learning stories: the writing task and this student's earlier submissions */
   writing?: { topic: string; prompt: string; previous: WritingView[] } | null;
 }
@@ -73,7 +74,7 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
   );
 }
 
-export default function ArticleStudyView({ article, relatedArticles, initialNotes, student, englishVocabRows, practice = [], writing = null }: Props) {
+export default function ArticleStudyView({ article, relatedArticles, initialNotes, student, englishVocabRows, practice = [], passage = [], writing = null }: Props) {
   const [notes, setNotes] = useState<StudyNote[]>(initialNotes);
   const [isShareOpen, setIsShareOpen] = useState(false);
   // AI lexicon (src/lib/dictionary-engine.ts): opens with the word the reader selected, if any
@@ -243,7 +244,7 @@ export default function ArticleStudyView({ article, relatedArticles, initialNote
         {isEnglish && (
           <IeltsPractice
             items={practice}
-            passage={passageSentences({ title: article.title, summary: article.summary, keyTakeaways: article.keyTakeaways, factTable: article.factTable })}
+            passage={passage}
             sourceName={article.sourceName}
             sourceUrl={article.sourceUrl}
           />

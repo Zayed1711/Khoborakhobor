@@ -36,7 +36,7 @@ const SIGNALS: Record<Exclude<EnglishTopic, "Society">, RegExp> = {
   International:
     /\b(?:UN|United Nations|US|USA|United States|America|American|Iran|Israel|Israeli|India|Indian|China|Chinese|Russia|Russian|Ukraine|Gaza|Palestin\w*|Saudi|Netanyahu|Trump|Switzerland|Swiss|Japan|Myanmar|Rohingya|summit|treaty|diplomat\w*|foreign|war|ceasefire|sanction\w*|missile|NATO|EU|Australia|Pakistan)\b/i,
   "Sport & Culture":
-    /\b(?:cricket|football|Test|ODI|T20|wicket|wickets|match|tournament|Olympic\w*|athlete|film|films|cinema|music|festival|culture|cultural|art|book|books|Puja|Eid)\b/i,
+    /\b(?:cricket|football|footballers?|soccer|league|Premier League|Champions League|Europa League|World Cup|FIFA|UEFA|goals?|striker|midfielder|goalkeeper|penalty|Test|ODI|T20|wickets?|innings|bowlers?|batters?|match|matches|tournament|championship|medals?|Olympic\w*|athletes?|tennis|hockey|badminton|chess|stadium|film|films|cinema|music|festival|culture|cultural|art|book|books|Puja|Eid)\b/i,
 };
 
 function count(re: RegExp, text: string): number {
