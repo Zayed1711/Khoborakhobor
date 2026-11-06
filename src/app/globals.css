@@ -232,3 +232,19 @@ mark.kk-highlight:hover {
   cursor: pointer;
 }
 
+
+/*
+ * Printing / "Save as PDF": parts marked .no-print (site header, footer, phone menu,
+ * notebook controls) are left out, so a printed notebook holds only the notes.
+ */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  @page {
+    margin: 14mm;
+  }
+  body {
+    background: #fff !important;
+  }
+}

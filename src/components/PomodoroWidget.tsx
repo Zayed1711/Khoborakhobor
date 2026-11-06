@@ -74,7 +74,7 @@ export default function PomodoroWidget() {
     : ((customMinutes * 60 - secondsLeft) / (customMinutes * 60)) * 100;
 
   return (
-    <div id="tutorial-pomodoro-widget" className="fixed bottom-16 lg:bottom-5 right-4 sm:right-5 z-40">
+    <div id="tutorial-pomodoro-widget" className="fixed bottom-16 lg:bottom-5 right-4 sm:right-5 z-40 print:hidden">
       {/* Minimized Floating Pill */}
       {isMinimized ? (
         <button

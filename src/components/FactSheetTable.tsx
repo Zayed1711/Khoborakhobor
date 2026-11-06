@@ -107,11 +107,9 @@ export default function FactSheetTable({
       const quoteText = formattedStudyCard;
       const memo = "বিসিএস লিখিত ও প্রিলিমিনারি রিভিশন উপাত্ত ছক";
 
-      if (onSaveToNotebook) {
-        onSaveToNotebook(quoteText, memo);
-      } else {
-        await createStudyNoteAction(student.id, articleSlug, quoteText, memo);
-      }
+      // Always saved on the server; the page is then told so it can show the note at once
+      await createStudyNoteAction(student.id, articleSlug, quoteText, memo);
+      onSaveToNotebook?.(quoteText, memo);
 
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);

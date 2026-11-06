@@ -43,6 +43,7 @@ import {
 } from "lucide-react";
 import { WritingCard } from "@/components/WritingTask";
 import type { WritingView } from "@/actions/writing";
+import NotesPrintSheet from "@/components/NotesPrintSheet";
 
 interface StudentHubViewProps {
   student: any;
@@ -287,9 +288,12 @@ export default function StudentHubView({
   const currentFlashcard = localWords[currentCardIndex];
 
   return (
+    <>
+      {/* Print / PDF: only the saved notes (the page itself is hidden when printing) */}
+      <NotesPrintSheet notes={filteredNotes} studentName={student.name} heading={isEnglishMode ? "Study Notebook" : "স্টাডি নোটবুক"} />
     <div
       data-digital-signature={`KK-AUTH-SHA256-${student.id}`}
-      className="space-y-8"
+      className="space-y-8 print:hidden"
     >
       {/* Top Banner: Student Identity & Live Streak */}
       <div className="p-6 bg-white border border-[#ded8cb] rounded-xl shadow-2xs flex flex-wrap items-center justify-between gap-6 print:border-none print:p-0">
@@ -1304,5 +1308,6 @@ export default function StudentHubView({
         </div>
       )}
     </div>
+    </>
   );
 }

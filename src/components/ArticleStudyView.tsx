@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink, Quote, Share2, BookOpen, Languages } from "lucide-react";
 import Header from "@/components/Header";
@@ -16,6 +16,7 @@ import WritingTask from "@/components/WritingTask";
 import type { WritingView } from "@/actions/writing";
 import ShareStudyModal from "@/components/ShareStudyModal";
 import FocusDictionaryModal from "@/components/FocusDictionaryModal";
+import SelectionNoteButton from "@/components/SelectionNoteButton";
 import { trackArticleReadAction } from "@/actions/student";
 import { isBengaliText } from "@/lib/bilingual";
 import { useAppMode } from "@/context/LanguageContext";
@@ -76,6 +77,7 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
 
 export default function ArticleStudyView({ article, relatedArticles, initialNotes, student, englishVocabRows, practice = [], passage = [], writing = null }: Props) {
   const [notes, setNotes] = useState<StudyNote[]>(initialNotes);
+  const mainRef = useRef<HTMLElement>(null);
   const [isShareOpen, setIsShareOpen] = useState(false);
   // AI lexicon (src/lib/dictionary-engine.ts): opens with the word the reader selected, if any
   const [isDictOpen, setIsDictOpen] = useState(false);
@@ -105,7 +107,16 @@ export default function ArticleStudyView({ article, relatedArticles, initialNote
     <div className="min-h-screen bg-[#fbf9f5] flex flex-col pb-16 md:pb-0">
       <Header activeSection={article.category?.slug} />
 
-      <main className="flex-1 w-full max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-10">
+      {/* Select any text in the story to save exactly that part to the notebook */}
+      <SelectionNoteButton
+        containerRef={mainRef}
+        articleSlug={article.slug}
+        studentId={student?.id ?? null}
+        english={isEnglish}
+        onSaved={(n) => setNotes((prev) => [{ ...n, studentId: student?.id || "", articleId: article.id, memo: n.memo ?? undefined } as StudyNote, ...prev])}
+      />
+
+      <main ref={mainRef} className="flex-1 w-full max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-10">
         {/* Headline and publisher summary */}
         <header className="space-y-4">
           <Link
