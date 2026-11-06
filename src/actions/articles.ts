@@ -7,6 +7,7 @@ import { extractFacts, extractTakeaways, buildExtractiveQuiz, plainText } from "
 import { requireAdmin } from "@/lib/guards";
 import { toFeedCard, FeedCard } from "@/lib/feed-card";
 import { selectDailyFeed } from "@/lib/study/daily-selection";
+import { englishTopic } from "@/lib/study/topics";
 import { sanitizeArticleHtml, textToParagraphHtml } from "@/lib/sanitize-html";
 
 const urgentTier = <T extends { dailyTier: string }>(cards: T[]) => cards.filter((c) => c.dailyTier === "urgent");
@@ -92,7 +93,8 @@ export async function getDateArchiveStatsAction(): Promise<DateArchiveStats> {
  */
 export async function getEnglishFeedAction(
   before?: string | null,
-  limit: number = 20
+  limit: number = 20,
+  topic?: string | null
 ): Promise<{ cards: FeedCard[]; next: string | null }> {
   const BATCH = 200;
   const cards: FeedCard[] = [];
@@ -109,6 +111,8 @@ export async function getEnglishFeedAction(
       for (const a of rows) {
         cursor = a.createdAt;
         if (/[ঀ-৿]/.test(a.title)) continue;
+        const storyTopic = englishTopic(a.title, a.summary);
+        if (topic && storyTopic !== topic) continue;
         if (seen.has(a.sourceUrl!)) continue; // the same story saved twice
         seen.add(a.sourceUrl!);
         cards.push(
@@ -119,6 +123,7 @@ export async function getEnglishFeedAction(
             keyTakeaways: safeParseJson(a.keyTakeaways, []),
             factTable: safeParseJson((a as any).factTable, []),
             quizQuestions: [], // English learning stories have no quiz
+            topic: storyTopic,
           })
         );
         if (cards.length >= limit) break;
@@ -189,7 +194,7 @@ export async function getArticlesByDateAction(dateKey: string, allEnglish: boole
     if (allEnglish) {
       return parsed
         .filter((a) => !/[ঀ-৿]/.test(a.title))
-        .map((a) => toFeedCard({ ...a, quizQuestions: [] }));
+        .map((a) => toFeedCard({ ...a, quizQuestions: [], topic: englishTopic(a.title, a.summary) }));
     }
     // A chosen day shows that day's জরুরি ১০ (the rest are on the section pages)
     return urgentTier(selectDailyFeed(parsed.map(toFeedCard), "all"));

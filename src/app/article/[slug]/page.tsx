@@ -6,6 +6,7 @@ import { toFeedCard } from "@/lib/feed-card";
 import { forClient } from "@/lib/study/daily-feed";
 import { extractVocabularyTableRows } from "@/lib/vocabulary-table-engine";
 import { isBengaliText } from "@/lib/bilingual";
+import { ensurePractice } from "@/lib/study/ielts-store";
 
 export const dynamic = "force-dynamic";
 
@@ -56,9 +57,20 @@ export default async function ArticleDetailPage({ params }: Props) {
   const englishVocabRows = isBengaliText(article.title)
     ? []
     : extractVocabularyTableRows(article.title, "", article.vocabulary).map((row, i) => ({ ...row, id: `vocab-${i}` }));
+  // English Learning stories: IELTS reading practice, built once from the story's own text
+  const practice = isBengaliText(article.title)
+    ? []
+    : await ensurePractice(article.id, {
+        title: article.title,
+        summary: article.summary,
+        keyTakeaways: Array.isArray(article.keyTakeaways) ? article.keyTakeaways : [],
+        factTable: Array.isArray(article.factTable) ? article.factTable : [],
+      }).catch(() => []);
+
 
   return (
     <ArticleStudyView
+      practice={practice}
       article={view}
       relatedArticles={relatedArticles}
       initialNotes={notes as never}

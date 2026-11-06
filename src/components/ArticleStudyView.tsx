@@ -10,6 +10,8 @@ import FactSheetTable from "@/components/FactSheetTable";
 import MicroQuiz from "@/components/MicroQuiz";
 import VocabularyTable from "@/components/VocabularyTable";
 import ArticleSummaryReflection from "@/components/ArticleSummaryReflection";
+import IeltsPractice from "@/components/IeltsPractice";
+import type { PracticeForClient } from "@/lib/study/ielts-store";
 import ShareStudyModal from "@/components/ShareStudyModal";
 import FocusDictionaryModal from "@/components/FocusDictionaryModal";
 import { trackArticleReadAction } from "@/actions/student";
@@ -50,6 +52,8 @@ interface Props {
   initialNotes: StudyNote[];
   student: Student | null;
   englishVocabRows: VocabularyTableRow[];
+  /** English Learning stories: IELTS reading practice (questions only; answers stay on the server) */
+  practice?: PracticeForClient[];
 }
 
 function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
@@ -64,7 +68,7 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
   );
 }
 
-export default function ArticleStudyView({ article, relatedArticles, initialNotes, student, englishVocabRows }: Props) {
+export default function ArticleStudyView({ article, relatedArticles, initialNotes, student, englishVocabRows, practice = [] }: Props) {
   const [notes, setNotes] = useState<StudyNote[]>(initialNotes);
   const [isShareOpen, setIsShareOpen] = useState(false);
   // AI lexicon (src/lib/dictionary-engine.ts): opens with the word the reader selected, if any
@@ -229,6 +233,9 @@ export default function ArticleStudyView({ article, relatedArticles, initialNote
             </dl>
           </Section>
         )}
+
+        {/* English Learning: IELTS reading practice from this story's own text */}
+        {isEnglish && <IeltsPractice items={practice} />}
 
         {/* Summary practice */}
         <ArticleSummaryReflection

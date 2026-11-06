@@ -34,6 +34,8 @@ export interface FeedCard {
   createdAtIso: string;
   category: { name: string; slug: string };
   quizQuestions: FeedQuizQuestion[];
+  /** English Learning stories: IELTS/syllabus topic label (see lib/study/topics.ts) */
+  topic?: string;
 }
 
 const STOPWORDS = new Set([
@@ -106,5 +108,6 @@ export function toFeedCard(a: any): FeedCard {
       a.createdAtIso || (a.createdAt instanceof Date ? a.createdAt.toISOString() : new Date(a.createdAt).toISOString()),
     category: { name: a.category?.name || "", slug: a.category?.slug || "" },
     quizQuestions: firstQuiz && options.length > 0 ? [{ id: firstQuiz.id, question: firstQuiz.question, options }] : [],
+    ...(a.topic ? { topic: a.topic } : {}),
   };
 }

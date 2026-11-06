@@ -103,7 +103,8 @@ export default function SocialFeedCard({
                 {article.sourceName || sourceInfo.name}
               </span>
               <span className="text-xs bg-[#f5ebeb] text-[#842323] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
-                {article.category.name}
+                {/* English Learning stories show their IELTS/syllabus topic */}
+                {(article as { topic?: string }).topic || article.category.name}
               </span>
               {/* Big national/international news of the day, shown even outside the syllabus */}
               {(article as { isTrending?: boolean }).isTrending && (

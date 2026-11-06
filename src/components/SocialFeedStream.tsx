@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useAppMode } from "@/context/LanguageContext";
 import { isBengaliText } from "@/lib/bilingual";
+import { ENGLISH_TOPICS } from "@/lib/study/topics";
 import { getArticlesByDateAction, getEnglishFeedAction, DateArchiveStats } from "@/actions/articles";
 import Link from "next/link";
 
@@ -51,11 +52,16 @@ export default function SocialFeedStream({
   const [enFeed, setEnFeed] = useState<any[]>([]);
   const [enNext, setEnNext] = useState<string | null | undefined>(undefined); // undefined = not loaded yet, null = end
   const [enLoading, setEnLoading] = useState(false);
+  // Topic filter (IELTS/syllabus topics); null = all topics
+  const [enTopic, setEnTopic] = useState<string | null>(null);
+  const enTopicRef = useRef<string | null>(null);
   const loadEnglish = async () => {
     if (enLoading || enNext === null) return;
     setEnLoading(true);
+    const forTopic = enTopicRef.current;
     try {
-      const page = await getEnglishFeedAction(enNext ?? null);
+      const page = await getEnglishFeedAction(enNext ?? null, 20, forTopic);
+      if (enTopicRef.current !== forTopic) return; // the reader switched topic meanwhile
       setEnFeed((prev) => {
         const ids = new Set(prev.map((a) => a.id));
         return [...prev, ...page.cards.filter((a) => !ids.has(a.id))];
@@ -70,8 +76,15 @@ export default function SocialFeedStream({
   const isEnglishAll = isEnglishMode && selectedDate === "all";
   useEffect(() => {
     if (isEnglishAll && enNext === undefined) loadEnglish();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- load once when English mode opens
-  }, [isEnglishAll]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load when English mode opens or the topic changes
+  }, [isEnglishAll, enTopic, enNext]);
+  const chooseTopic = (t: string | null) => {
+    enTopicRef.current = t;
+    setEnTopic(t);
+    setEnFeed([]);
+    setEnLoading(false);
+    setEnNext(undefined);
+  };
 
   // Switching mode starts from the full feed of that mode (a chosen date belongs to the other mode)
   const [lastMode, setLastMode] = useState(isEnglishMode);
@@ -102,8 +115,9 @@ export default function SocialFeedStream({
 
   // Filter by platform mode and selected archive date
   const filteredArticles = useMemo(() => {
-    if (isEnglishAll) return enFeed; // already newest first
+    if (isEnglishAll) return enFeed; // already newest first (and filtered by topic on the server)
     let list = feedArticles;
+    if (isEnglishMode && enTopic) list = list.filter((a) => a.topic === enTopic);
 
     // 1. Date filter (past 7 days or all)
     if (selectedDate !== "all") {
@@ -136,7 +150,7 @@ export default function SocialFeedStream({
       const timeB = new Date(b.createdAtIso || b.createdAt).getTime() || 0;
       return timeB - timeA;
     });
-  }, [feedArticles, isEnglishMode, selectedDate, isEnglishAll, enFeed]);
+  }, [feedArticles, isEnglishMode, selectedDate, isEnglishAll, enFeed, enTopic]);
 
   // Render the feed in pages so phones don't mount 150 cards and 100+ images at once
   const PAGE_SIZE = 10;
@@ -149,8 +163,8 @@ export default function SocialFeedStream({
   };
 
   // Start from the top page again whenever the filter changes
-  const [lastFilterKey, setLastFilterKey] = useState(`${selectedDate}|${isEnglishMode}`);
-  const filterKey = `${selectedDate}|${isEnglishMode}`;
+  const [lastFilterKey, setLastFilterKey] = useState(`${selectedDate}|${isEnglishMode}|${enTopic}`);
+  const filterKey = `${selectedDate}|${isEnglishMode}|${enTopic}`;
   if (filterKey !== lastFilterKey) {
     setLastFilterKey(filterKey);
     setVisibleCount(PAGE_SIZE);
@@ -199,9 +213,31 @@ export default function SocialFeedStream({
         isLoading={isLoadingDate}
       />
 
+      {/* English Learning: topic filter */}
+      {isEnglishMode && (
+        <div className="flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label="Filter by topic">
+          {[null, ...ENGLISH_TOPICS].map((t) => (
+            <button
+              key={t ?? "all"}
+              type="button"
+              role="tab"
+              aria-selected={enTopic === t}
+              onClick={() => chooseTopic(t)}
+              className={`px-3 py-1 rounded-full text-xs whitespace-nowrap border transition ${
+                enTopic === t
+                  ? "bg-[#1e40af] text-white border-[#1e40af]"
+                  : "bg-white text-[#343a46] border-[#ded8cb] hover:bg-[#eef2fb]"
+              }`}
+            >
+              {t ?? "All topics"}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* 4. Main Social Newsfeed Stream */}
       <div className="space-y-3 sm:space-y-4">
-        {isLoadingDate || (isEnglishAll && enLoading && enFeed.length === 0) ? (
+        {isLoadingDate || (isEnglishAll && (enLoading || enNext === undefined) && enFeed.length === 0) ? (
           <div className="p-10 text-center bg-white border border-[#ded8cb] rounded-2xl space-y-3 animate-fade-in">
             <Loader2 className="w-8 h-8 text-[#842323] animate-spin mx-auto" />
             <h4 className="text-sm font-bold text-[#1c1d21]">
@@ -215,8 +251,10 @@ export default function SocialFeedStream({
           <>
             {isEnglishAll && (
               <div className="px-1 pt-1">
-                <h2 className="font-serif font-bold text-lg text-[#1e40af]">Latest English news</h2>
-                <p className="text-xs text-[#717887]">Every English story we have collected, newest first.</p>
+                <h2 className="font-serif font-bold text-lg text-[#1e40af]">{enTopic ? `${enTopic}: latest English news` : "Latest English news"}</h2>
+                <p className="text-xs text-[#717887]">
+                  {enTopic ? `Every English story on ${enTopic.toLowerCase()}, newest first.` : "Every English story we have collected, newest first."}
+                </p>
               </div>
             )}
             {filteredArticles.slice(0, visibleCount).map((article, index, shown) => {
@@ -277,7 +315,9 @@ export default function SocialFeedStream({
               {selectedDate !== "all"
                 ? `${selectedDate} তারিখে কোনো প্রতিবেদন পাওয়া যায়নি`
                 : isEnglishMode
-                ? "No English learning articles found for this date"
+                ? enTopic
+                  ? `No ${enTopic} stories yet`
+                  : "No English learning articles found for this date"
                 : "এই ফিল্টারে বর্তমানে কোনো বাংলা প্রতিবেদন পাওয়া যায়নি"}
             </h4>
             <p className="text-xs text-[#717887]">

@@ -49,6 +49,16 @@ export interface CrawlLogEntry {
   status: "SUCCESS" | "WARNING" | "FAILED";
 }
 
+/** An editor-written page summary we can show: long enough, not cut off, not just the headline. */
+export function isUsableAuthorSummary(summary: string, title: string): boolean {
+  const s = (summary || "").trim();
+  if (s.length < 40 || s.length > 400) return false;
+  if (/(\.\.\.|…)$/.test(s)) return false; // cut off by the site
+  if (s.toLowerCase() === (title || "").trim().toLowerCase()) return false;
+  if (/^(read|click|subscribe|follow|sign up|get the latest)\b/i.test(s)) return false; // site promotion, not a summary
+  return true;
+}
+
 export interface SpiderOptions {
   targetDate?: string; // Format: "YYYY-MM-DD" (defaults to today)
   language?: "bn" | "en" | "all";
@@ -465,7 +475,7 @@ function identifyPortalConfig(url: string) {
 export async function fetchAndParseArticlePage(
   url?: string,
   fallbackRawHtml?: string
-): Promise<{ cleanContent: string; headline?: string; imageUrl?: string }> {
+): Promise<{ cleanContent: string; headline?: string; imageUrl?: string; authorSummary?: string }> {
   if (!url || !isPublicHttpUrl(url)) {
     return parseHtmlContent(fallbackRawHtml || "");
   }
@@ -494,6 +504,16 @@ export async function fetchAndParseArticlePage(
 
     const html = await res.text();
     const $ = cheerio.load(html);
+
+    // The summary the newspaper's editors wrote for the story (read before scrubbing <head>)
+    const authorSummary = (
+      $("meta[name='description']").attr("content") ||
+      $("meta[property='og:description']").attr("content") ||
+      $("meta[name='twitter:description']").attr("content") ||
+      ""
+    )
+      .replace(/\s+/g, " ")
+      .trim();
 
     // Scrub dynamic scripts, styles, frames, headers, footers, navs
     $("script, style, iframe, noscript, header, footer, nav, .ads, .social-share").remove();
@@ -576,6 +596,7 @@ export async function fetchAndParseArticlePage(
         cleanContent: paragraphs.join("\n"),
         headline,
         imageUrl: firstImg,
+        authorSummary,
       };
     }
   } catch (err: any) {
@@ -1007,9 +1028,11 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
         // ensuring articles have complete 6-15 paragraphs rather than 2-line RSS teasers.
         let cleanContent = "";
         let imageUrl: string | undefined;
+        let authorSummary = "";
 
         if (item.link) {
           const pageParsed = await fetchAndParseArticlePage(item.link, rawContent);
+          authorSummary = (pageParsed as { authorSummary?: string }).authorSummary || "";
           if (pageParsed.cleanContent && pageParsed.cleanContent.length > (rawContent.length || 0)) {
             cleanContent = pageParsed.cleanContent;
             imageUrl = pageParsed.imageUrl;
@@ -1051,7 +1074,12 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
         }
 
         // Never publisher chrome such as "আরও পড়ুন..."; falls back to the story's first paragraph
-        const summary = pickSummary(item.contentSnippet || "", cleaned.paragraphs);
+        // English stories use the summary the newspaper's editors wrote (page description),
+        // when it is a real, complete summary; otherwise the story's own opening text
+        const summary =
+          !isBengaliText(title) && isUsableAuthorSummary(authorSummary, title)
+            ? authorSummary
+            : pickSummary(item.contentSnippet || "", cleaned.paragraphs);
 
         // Study material is quoted from the article itself (src/lib/study/extractive.ts)
         const takeaways = extractTakeaways(title, summary, bodyText);
