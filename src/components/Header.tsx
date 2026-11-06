@@ -129,31 +129,24 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session, activ
     };
   }, []);
 
-  const [currentDate, setCurrentDate] = useState("বুধবার, ২৮ অক্টোবর ২০২৬");
+  // Today's date in Bangladesh, the same on the server and in the browser
+  const todayText = (english: boolean) => {
+    try {
+      return new Date().toLocaleDateString(english ? "en-US" : "bn-BD", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        timeZone: "Asia/Dhaka",
+      });
+    } catch {
+      return "";
+    }
+  };
+  const [currentDate, setCurrentDate] = useState(() => todayText(false));
 
   useEffect(() => {
-    try {
-      const now = new Date();
-      if (isEnglishMode) {
-        const formatted = now.toLocaleDateString("en-US", {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        });
-        setCurrentDate(formatted);
-      } else {
-        const formatted = now.toLocaleDateString("bn-BD", {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        });
-        setCurrentDate(formatted);
-      }
-    } catch {
-      // Keep initial
-    }
+    setCurrentDate(todayText(isEnglishMode)); // eslint-disable-line react-hooks/set-state-in-effect
   }, [isEnglishMode]);
 
   const primaryCategories = categories.slice(0, 5);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, XCircle, BookOpenCheck } from "lucide-react";
+import { CheckCircle2, XCircle, BookOpenCheck, ExternalLink } from "lucide-react";
 import { checkPracticeAnswerAction } from "@/actions/practice";
 import type { PracticeForClient } from "@/lib/study/ielts-store";
 
@@ -15,7 +15,18 @@ const range = (from: number, to: number) => (from === to ? `Question ${from}` : 
  * sentence completion, all from the story's summary and key points shown above.
  * Answers are checked on the server.
  */
-export default function IeltsPractice({ items }: { items: PracticeForClient[] }) {
+export default function IeltsPractice({
+  items,
+  passage = [],
+  sourceName,
+  sourceUrl,
+}: {
+  items: PracticeForClient[];
+  /** The passage the questions come from: the author's summary and key points shown on this page */
+  passage?: string[];
+  sourceName?: string | null;
+  sourceUrl?: string | null;
+}) {
   if (!items.length) return null;
   const mcqs = items.filter((i) => i.kind === "mcq");
   const blanks = items.filter((i) => i.kind === "blank");
@@ -27,10 +38,27 @@ export default function IeltsPractice({ items }: { items: PracticeForClient[] })
           <BookOpenCheck className="w-5 h-5 text-[#1e40af]" />
           IELTS Reading practice
         </h2>
-        <p className="text-sm text-[#68707f] mt-0.5">
-          Answer from the summary and key points above. Every answer is in that text.
-        </p>
+        <p className="text-sm text-[#68707f] mt-0.5">Read the passage, then answer the questions. Every answer is in the passage.</p>
       </div>
+
+      {passage.length > 0 && (
+        <figure className="rounded-xl border border-[#d6dcea] bg-[#f6f8fc] p-4 space-y-3">
+          <figcaption className="text-xs font-bold uppercase tracking-wide text-[#1e40af]">Reading passage</figcaption>
+          <p className="text-[15px] leading-relaxed text-[#1c1d21]">{passage.join(" ")}</p>
+          {sourceName && (
+            <p className="text-xs text-[#68707f] flex flex-wrap items-center gap-x-2">
+              <span>
+                From the summary and key points of a report by <span className="font-semibold">{sourceName}</span>.
+              </span>
+              {sourceUrl && (
+                <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[#1e40af] font-semibold hover:underline">
+                  Read the full story <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+            </p>
+          )}
+        </figure>
+      )}
 
       {mcqs.length > 0 && (
         <div className="space-y-3">

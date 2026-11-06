@@ -11,6 +11,7 @@ import MicroQuiz from "@/components/MicroQuiz";
 import VocabularyTable from "@/components/VocabularyTable";
 import ArticleSummaryReflection from "@/components/ArticleSummaryReflection";
 import IeltsPractice from "@/components/IeltsPractice";
+import { passageSentences } from "@/lib/study/ielts-practice";
 import type { PracticeForClient } from "@/lib/study/ielts-store";
 import WritingTask from "@/components/WritingTask";
 import type { WritingView } from "@/actions/writing";
@@ -239,7 +240,14 @@ export default function ArticleStudyView({ article, relatedArticles, initialNote
         )}
 
         {/* English Learning: IELTS reading practice from this story's own text */}
-        {isEnglish && <IeltsPractice items={practice} />}
+        {isEnglish && (
+          <IeltsPractice
+            items={practice}
+            passage={passageSentences({ title: article.title, summary: article.summary, keyTakeaways: article.keyTakeaways, factTable: article.factTable })}
+            sourceName={article.sourceName}
+            sourceUrl={article.sourceUrl}
+          />
+        )}
 
         {/* English Learning: short argumentative writing, reviewed by hand */}
         {isEnglish && writing && (

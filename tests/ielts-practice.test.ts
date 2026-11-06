@@ -50,7 +50,11 @@ describe("IELTS reading practice", () => {
       others
     ).find((i) => i.kind === "mcq" && i.question.includes("_____"));
     expect(day).toBeDefined();
-    if (day && day.kind === "mcq") for (const o of day.options) expect(Number(o)).toBeGreaterThanOrEqual(1), expect(Number(o)).toBeLessThanOrEqual(31);
+    if (day && day.kind === "mcq")
+      for (const o of day.options) {
+        expect(Number(o)).toBeGreaterThanOrEqual(1);
+        expect(Number(o)).toBeLessThanOrEqual(31);
+      }
   });
 
   it("takes wrong statements only from other stories on other subjects", () => {
