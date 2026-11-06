@@ -76,7 +76,7 @@ export async function getMyWritingsAction(articleSlug?: string): Promise<Writing
   const student = await getSessionStudent();
   if (!student) return [];
   const rows = await prisma.writingSubmission.findMany({
-    where: { studentId: student.id, ...(articleSlug ? { articleSlug } : {}) },
+    where: { studentId: student.id, examId: null, ...(articleSlug ? { articleSlug } : {}) },
     orderBy: { createdAt: "desc" },
     take: 100,
   });
@@ -90,12 +90,12 @@ export async function getMyWritingsAction(articleSlug?: string): Promise<Writing
 export async function listWritingsForReviewAction(status: "pending" | "reviewed" = "pending") {
   await requireAdmin();
   const rows = await prisma.writingSubmission.findMany({
-    where: { status },
+    where: { status, examId: null }, // weekly exam writing is marked in the exam's own review
     orderBy: { createdAt: status === "pending" ? "asc" : "desc" },
     take: 100,
     include: { student: { select: { name: true, email: true } } },
   });
-  const pending = await prisma.writingSubmission.count({ where: { status: "pending" } });
+  const pending = await prisma.writingSubmission.count({ where: { status: "pending", examId: null } });
   return {
     pending,
     items: rows.map((w) => ({ ...toView(w), studentName: w.student.name || w.student.email || "Student" })),

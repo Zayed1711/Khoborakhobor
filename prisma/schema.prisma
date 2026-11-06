@@ -12,25 +12,25 @@ generator client {
 // 1. Student Identity & Exam Preparation Goals
 // -------------------------------------------------------------
 model Student {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  name          String
-  passwordHash  String
-  phone         String?   // Contact phone number
-  role          String    @default("student") // student, admin, moderator
-  status        String    @default("active")  // active, suspended, pending
-  bio           String?   // Academic bio / administrative remarks
-  avatar        String?
-  targetTrack   String    @default("BCS_GOVT") // BCS_GOVT, ADMISSION, GENERAL_KNOWLEDGE, RESEARCH
-  institution   String?   // University / College name
-  streakDays    Int       @default(1)
-  lastActive    DateTime  @default(now())
-  
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  phone        String? // Contact phone number
+  role         String   @default("student") // student, admin, moderator
+  status       String   @default("active") // active, suspended, pending
+  bio          String? // Academic bio / administrative remarks
+  avatar       String?
+  targetTrack  String   @default("BCS_GOVT") // BCS_GOVT, ADMISSION, GENERAL_KNOWLEDGE, RESEARCH
+  institution  String? // University / College name
+  streakDays   Int      @default(1)
+  lastActive   DateTime @default(now())
+
   // Activity counters for marketing & conversion analytics
-  articlesRead  Int       @default(0)
-  wordsLookedUp Int       @default(0)
-  quizzesTaken  Int       @default(0)
-  notesSaved    Int       @default(0)
+  articlesRead  Int @default(0)
+  wordsLookedUp Int @default(0)
+  quizzesTaken  Int @default(0)
+  notesSaved    Int @default(0)
 
   notes         StudyNote[]
   savedArticles SavedArticle[]
@@ -38,58 +38,59 @@ model Student {
   wordBank      SavedWord[]
   readHistory   ArticleRead[]
   writings      WritingSubmission[]
+  examAttempts  ExamAttempt[]
   telemetry     StudyTelemetry?
 
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // -------------------------------------------------------------
 // 2. Curated Editorial News & Study Material
 // -------------------------------------------------------------
 model Category {
-  id          String    @id @default(cuid())
-  name        String
-  slug        String    @unique
-  color       String?
-  articles    Article[]
-  createdAt   DateTime  @default(now())
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  color     String?
+  articles  Article[]
+  createdAt DateTime  @default(now())
 }
 
 model Article {
-  id            String    @id @default(cuid())
-  slug          String    @unique
+  id            String  @id @default(cuid())
+  slug          String  @unique
   title         String
   summary       String
-  content       String    // Rich semantic HTML
-  keyTakeaways  String?   // JSON array of high-yield exam takeaways
-  examTags      String?   // Comma-separated: "BCS, Admission, Economics, Science"
+  content       String // Rich semantic HTML
+  keyTakeaways  String? // JSON array of high-yield exam takeaways
+  examTags      String? // Comma-separated: "BCS, Admission, Economics, Science"
   featuredImage String
   imageCaption  String?
-  sourceName    String?   // Official publisher name: e.g. "প্রথম আলো", "The Daily Star"
-  sourceUrl     String?   // Outbound URL for full journalistic field coverage
-  factTable     String?   // JSON array of FactTableRow: [{ parameter, value, relevance }]
+  sourceName    String? // Official publisher name: e.g. "প্রথম আলো", "The Daily Star"
+  sourceUrl     String? // Outbound URL for full journalistic field coverage
+  factTable     String? // JSON array of FactTableRow: [{ parameter, value, relevance }]
   publishedAt   String
   readTime      String
-  isBreaking    Boolean   @default(false)
-  isLead        Boolean   @default(false)
-  isCapsule     Boolean   @default(false) // Daily 5-min briefing feature
-  dailyPick     Boolean   @default(false) // Kept in its day's best 30 by the crawler; leaves only when displaced
+  isBreaking    Boolean @default(false)
+  isLead        Boolean @default(false)
+  isCapsule     Boolean @default(false) // Daily 5-min briefing feature
+  dailyPick     Boolean @default(false) // Kept in its day's best 30 by the crawler; leaves only when displaced
 
   // Content integrity: where the body text came from. Never show generated text as reporting.
   //   scraped      = text taken from the publisher
   //   summary_only = publisher text could not be fetched; only the real summary is kept
   //   edited       = written or edited by our editors in the desk
-  contentOrigin String    @default("scraped")
+  contentOrigin String       @default("scraped")
   // Real translation of an English story, filled only from an approved StudyDraft
   titleBn       String?
   summaryBn     String?
   contentBn     String?
   studyDrafts   StudyDraft[]
-  
-  categoryId    String
-  category      Category  @relation(fields: [categoryId], references: [id])
-  
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
   vocabulary    VocabularyTerm[]
   quizQuestions QuizQuestion[]
   savedBy       SavedArticle[]
@@ -97,33 +98,33 @@ model Article {
   readHistory   ArticleRead[]
   writings      WritingSubmission[]
 
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // -------------------------------------------------------------
 // 3. Smart Vocabulary & Concept Explainer
 // -------------------------------------------------------------
 model VocabularyTerm {
-  id          String    @id @default(cuid())
-  term        String    // e.g. "মুদ্রানীতি", "সার্বভৌম বন্ড", "কার্বন ক্রেডিট"
-  definition  String    // Plain-language conceptual explanation
-  context     String?   // How it was used in this article
-  articleId   String
-  article     Article   @relation(fields: [articleId], references: [id], onDelete: Cascade)
-  savedBy     SavedWord[]
+  id         String      @id @default(cuid())
+  term       String // e.g. "মুদ্রানীতি", "সার্বভৌম বন্ড", "কার্বন ক্রেডিট"
+  definition String // Plain-language conceptual explanation
+  context    String? // How it was used in this article
+  articleId  String
+  article    Article     @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  savedBy    SavedWord[]
 
-  createdAt   DateTime  @default(now())
+  createdAt DateTime @default(now())
 }
 
 model SavedWord {
-  id          String         @id @default(cuid())
-  studentId   String
-  student     Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  termId      String
-  term        VocabularyTerm @relation(fields: [termId], references: [id], onDelete: Cascade)
-  mastered    Boolean        @default(false)
-  createdAt   DateTime       @default(now())
+  id        String         @id @default(cuid())
+  studentId String
+  student   Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  termId    String
+  term      VocabularyTerm @relation(fields: [termId], references: [id], onDelete: Cascade)
+  mastered  Boolean        @default(false)
+  createdAt DateTime       @default(now())
 
   @@unique([studentId, termId])
 }
@@ -132,67 +133,67 @@ model SavedWord {
 // 4. Active Recall: Comprehension Micro-Quiz
 // -------------------------------------------------------------
 model QuizQuestion {
-  id            String    @id @default(cuid())
-  articleId     String
-  article       Article   @relation(fields: [articleId], references: [id], onDelete: Cascade)
-  question      String    // e.g. "মেট্রোরেলের বর্ধিত সময়সূচি কোন দিন থেকে কার্যকর হচ্ছে?"
-  options       String    // JSON array of 4 multiple-choice options
-  correctOption Int       // 0, 1, 2, or 3
-  explanation   String?   // Why this is the correct answer
+  id             String  @id @default(cuid())
+  articleId      String
+  article        Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  question       String // e.g. "মেট্রোরেলের বর্ধিত সময়সূচি কোন দিন থেকে কার্যকর হচ্ছে?"
+  options        String // JSON array of 4 multiple-choice options
+  correctOption  Int // 0, 1, 2, or 3
+  explanation    String? // Why this is the correct answer
   // extracted = built from a sentence in the article; generated = from an approved StudyDraft
-  origin        String    @default("extracted")
-  sourceSentence String?  // The article sentence that proves the answer
-  
-  attempts      QuizAttempt[]
+  origin         String  @default("extracted")
+  sourceSentence String? // The article sentence that proves the answer
+
+  attempts QuizAttempt[]
 }
 
 model QuizAttempt {
-  id          String       @id @default(cuid())
-  studentId   String
-  student     Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  questionId  String
-  question    QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  id           String       @id @default(cuid())
+  studentId    String
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  questionId   String
+  question     QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
   chosenOption Int
-  isCorrect   Boolean
-  createdAt   DateTime     @default(now())
+  isCorrect    Boolean
+  createdAt    DateTime     @default(now())
 }
 
 // -------------------------------------------------------------
 // 5. Cloud-Synced Study Notebook & Saved Articles
 // -------------------------------------------------------------
 model SavedArticle {
-  id          String    @id @default(cuid())
-  studentId   String
-  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  articleId   String
-  article     Article   @relation(fields: [articleId], references: [id], onDelete: Cascade)
-  tag         String    @default("GENERAL") // e.g. "REVISION", "ESSAY_RESEARCH"
-  createdAt   DateTime  @default(now())
+  id        String   @id @default(cuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  articleId String
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  tag       String   @default("GENERAL") // e.g. "REVISION", "ESSAY_RESEARCH"
+  createdAt DateTime @default(now())
 
   @@unique([studentId, articleId])
 }
 
 model StudyNote {
-  id          String    @id @default(cuid())
-  studentId   String
-  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  articleId   String
-  article     Article   @relation(fields: [articleId], references: [id], onDelete: Cascade)
-  quoteText   String    // The highlighted excerpt from the article
-  memo        String?   // Personal notes or reflections written by the student
-  createdAt   DateTime  @default(now())
+  id        String   @id @default(cuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  articleId String
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  quoteText String // The highlighted excerpt from the article
+  memo      String? // Personal notes or reflections written by the student
+  createdAt DateTime @default(now())
 }
 
 // -------------------------------------------------------------
 // 6. User Activity History & Conversion Tracking
 // -------------------------------------------------------------
 model ArticleRead {
-  id          String    @id @default(cuid())
-  studentId   String
-  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  articleId   String
-  article     Article   @relation(fields: [articleId], references: [id], onDelete: Cascade)
-  createdAt   DateTime  @default(now())
+  id        String   @id @default(cuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  articleId String
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 
   @@unique([studentId, articleId])
 }
@@ -248,22 +249,21 @@ model NewsletterSubscriber {
   createdAt DateTime @default(now())
 }
 
-
 // -------------------------------------------------------------
 // 10. Generated study material awaiting editorial review
 // -------------------------------------------------------------
 // Optional Claude-generated quiz / takeaways / translation. Nothing here is shown to
 // students until an admin approves it; approval copies it onto the article.
 model StudyDraft {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   articleId  String
-  article    Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
-  kind       String   // "study_pack" (quiz + takeaways) or "translation"
-  payload    String   // JSON
+  article    Article   @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  kind       String // "study_pack" (quiz + takeaways) or "translation"
+  payload    String // JSON
   model      String
-  status     String   @default("pending") // pending, approved, rejected
+  status     String    @default("pending") // pending, approved, rejected
   reviewNote String?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
   reviewedAt DateTime?
 
   @@index([status])
@@ -275,9 +275,9 @@ model StudyDraft {
 // day's list is never changed, so students' revision notes stay the same.
 model DailyNote {
   id        String   @id @default(cuid())
-  day       String   // YYYY-MM-DD, Bangladesh time
-  lang      String   // "bn" (job/BCS mode) or "en"
-  items     String   // JSON: [{ rank, slug, title, point, sourceName, category }]
+  day       String // YYYY-MM-DD, Bangladesh time
+  lang      String // "bn" (job/BCS mode) or "en"
+  items     String // JSON: [{ rank, slug, title, point, sourceName, category }]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -288,7 +288,7 @@ model DailyNote {
 // fetch and save them again on its next run.
 model SkippedStory {
   url       String   @id
-  day       String   // YYYY-MM-DD, Bangladesh time
+  day       String // YYYY-MM-DD, Bangladesh time
   createdAt DateTime @default(now())
 
   @@index([day])
@@ -298,23 +298,28 @@ model SkippedStory {
 // (by hand, until an AI reviewer is added). The story's title and the prompt are kept
 // with the writing, so it stays readable even if the story is later removed.
 model WritingSubmission {
-  id           String    @id @default(cuid())
-  studentId    String
-  student      Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  articleId    String?
-  article      Article?  @relation(fields: [articleId], references: [id], onDelete: SetNull)
-  articleSlug  String
-  articleTitle String
-  topic        String
-  prompt       String
-  text         String
-  wordCount    Int
-  status       String    @default("pending") // pending | reviewed
-  feedback     String?
-  band         Float?    // optional IELTS-style band, 1–9
-  reviewedAt   DateTime?
-  createdAt    DateTime  @default(now())
+  id             String    @id @default(cuid())
+  studentId      String
+  student        Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  articleId      String?
+  article        Article?  @relation(fields: [articleId], references: [id], onDelete: SetNull)
+  articleSlug    String
+  articleTitle   String
+  topic          String
+  prompt         String
+  text           String
+  wordCount      Int
+  status         String    @default("pending") // pending | reviewed
+  feedback       String?
+  band           Float? // optional IELTS-style band, 1–9
+  reviewedAt     DateTime?
+  // Weekly exam writing: the exam and task it answers, and the marks given (out of the task's marks)
+  examId         String?
+  examQuestionId String?
+  marks          Float?
+  createdAt      DateTime  @default(now())
 
+  @@unique([examQuestionId, studentId])
   @@index([status, createdAt])
   @@index([studentId])
 }
@@ -330,6 +335,7 @@ model WeeklyExam {
   updatedAt DateTime @updatedAt
 
   questions ExamQuestion[]
+  attempts  ExamAttempt[]
 }
 
 model ExamQuestion {
@@ -349,4 +355,36 @@ model ExamQuestion {
   createdAt   DateTime   @default(now())
 
   @@index([examId, section, position])
+}
+
+// One student's sitting of a weekly exam (one attempt each)
+model ExamAttempt {
+  id             String     @id @default(cuid())
+  examId         String
+  exam           WeeklyExam @relation(fields: [examId], references: [id], onDelete: Cascade)
+  studentId      String
+  student        Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  startedAt      DateTime   @default(now())
+  deadline       DateTime // start + 40 minutes, but never after the exam closes
+  submittedAt    DateTime?
+  timeTakenSec   Int?
+  correct        Int        @default(0)
+  wrong          Int        @default(0)
+  objectiveScore Float      @default(0) // correct − 0.5 × wrong
+  negative       Float      @default(0) // 0.5 × wrong
+
+  answers ExamAnswer[]
+
+  @@unique([examId, studentId])
+}
+
+model ExamAnswer {
+  id         String      @id @default(cuid())
+  attemptId  String
+  attempt    ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId String
+  answer     String
+  updatedAt  DateTime    @updatedAt
+
+  @@unique([attemptId, questionId])
 }

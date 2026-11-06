@@ -4,8 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { 
   Home, Zap, Bookmark, Layers, Award, UserCheck, 
-  Shield, LogOut, Flame, Sparkles, ShieldCheck, Compass 
-} from "lucide-react";
+  Shield, LogOut, Flame, Sparkles, ShieldCheck, Compass, CalendarClock } from "lucide-react";
 import { logoutAction, UserSession } from "@/actions/auth";
 import { useAppMode } from "@/context/LanguageContext";
 
@@ -28,6 +27,7 @@ export default function LeftNavSidebar({ session }: LeftNavSidebarProps) {
     ? [
         { label: "Home Feed", href: "/", icon: Home },
         { label: "5-Min Capsule", href: "/capsule", icon: Zap, badge: "Quick" },
+        { label: "Weekly Exam", href: "/exam", icon: CalendarClock, badge: "Fri" },
         { label: "Word Bank Deck", href: "/saved?tab=flashcards", icon: Layers, badge: "Vocab" },
         { label: "Study Notebook", href: "/saved", icon: Bookmark },
         { label: "Quiz & Recall", href: "/saved?tab=analytics", icon: Award },
@@ -35,6 +35,7 @@ export default function LeftNavSidebar({ session }: LeftNavSidebarProps) {
     : [
         { label: "হোম ফিড", href: "/", icon: Home },
         { label: "৫-মিনিট ক্যাপসুল", href: "/capsule", icon: Zap, badge: "দ্রুত" },
+        { label: "সাপ্তাহিক পরীক্ষা", href: "/exam", icon: CalendarClock, badge: "শুক্র" },
         { label: "স্টাডি নোটবুক", href: "/saved", icon: Bookmark },
         { label: "ভোকাবুলারি ডেক", href: "/saved?tab=flashcards", icon: Layers },
         { label: "কুইজ ও অ্যানালিটিক্স", href: "/saved?tab=analytics", icon: Award },

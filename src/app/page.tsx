@@ -10,6 +10,8 @@ import { getTrendingHashtagsAction } from "@/actions/search";
 import { prisma } from "@/lib/prisma";
 import { forClient, getKeyNotes, getTodaySelection, urgentOnly } from "@/lib/study/daily-feed";
 import type { KeyNoteDay } from "@/lib/study/key-notes";
+import ExamBanner from "@/components/exam/ExamBanner";
+import { getExamSummaryAction } from "@/actions/exam";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +61,7 @@ export default async function Home() {
   const feedCards = forClient(urgentOnly(selection.cards));
   const capsuleArticles = forClient(selection.cards.filter((a) => a.isCapsule));
   const trendingHashtags = await getTrendingHashtagsAction();
+  const examSummary = await getExamSummaryAction().catch(() => null);
 
   return (
     <div className="min-h-screen bg-[#fbf9f5] flex flex-col font-sans pb-16 md:pb-0">
@@ -72,6 +75,7 @@ export default async function Home() {
 
         {/* Center Column: Social Media Newsfeed Stream */}
         <div className="flex-1 max-w-2xl min-w-0 w-full">
+          <ExamBanner summary={examSummary} />
           <SocialFeedStream
             articles={feedCards}
             capsuleArticles={capsuleArticles}

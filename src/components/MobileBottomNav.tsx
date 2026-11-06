@@ -20,14 +20,14 @@ export default function MobileBottomNav() {
     ? [
         { label: "Home", href: "/", icon: Home },
         { label: "Capsule", href: "/capsule", icon: Zap },
-        { label: "Quiz Recall", href: "/saved?tab=analytics", icon: Award },
+        { label: "Exam", href: "/exam", icon: Award },
         { label: "Notebook", href: "/saved", icon: Bookmark },
         { label: "Profile", href: "/login", icon: UserCheck },
       ]
     : [
         { label: "হোম", href: "/", icon: Home },
         { label: "ক্যাপসুল", href: "/capsule", icon: Zap },
-        { label: "কুইজ রিকল", href: "/saved?tab=analytics", icon: Award },
+        { label: "পরীক্ষা", href: "/exam", icon: Award },
         { label: "নোটবুক", href: "/saved", icon: Bookmark },
         { label: "প্রোফাইল", href: "/login", icon: UserCheck },
       ];
