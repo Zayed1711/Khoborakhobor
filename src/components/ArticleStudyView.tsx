@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ExternalLink, Quote, Share2, BookOpen, Languages } from "lucide-react";
+import { ArrowLeft, ExternalLink, Quote, Share2, BookOpen } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MobileBottomNav from "@/components/MobileBottomNav";
@@ -161,16 +161,6 @@ export default function ArticleStudyView({ article, relatedArticles, initialNote
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
             <button
               type="button"
-              // Keep a text selection alive when the button is pressed
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => openLexicon()}
-              className="inline-flex items-center gap-1.5 text-[#525a68] hover:text-[#842323]"
-            >
-              <Languages className="w-4 h-4" />
-              অভিধান
-            </button>
-            <button
-              type="button"
               onClick={() => setIsShareOpen(true)}
               className="inline-flex items-center gap-1.5 text-[#525a68] hover:text-[#842323]"
             >
@@ -178,7 +168,6 @@ export default function ArticleStudyView({ article, relatedArticles, initialNote
               শেয়ার করুন
             </button>
           </div>
-          <p className="text-xs text-[#8a909b]">কোনো শব্দ সিলেক্ট করে “অভিধান” চাপলে তার অর্থ দেখাবে।</p>
         </header>
 
         {/* Key points, quoted */}

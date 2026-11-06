@@ -4,12 +4,11 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { 
   Flame, Sparkles, TrendingUp, HelpCircle, 
-  CheckCircle2, XCircle, ArrowRight, ShieldCheck, BookOpen, GraduationCap 
+  CheckCircle2, XCircle, ArrowRight, ShieldCheck, GraduationCap 
 } from "lucide-react";
 import ThemeSwitcher from "./ThemeSwitcher";
 import ProAuthGateModal from "./ProAuthGateModal";
 import KeyNotesPanel from "./KeyNotesPanel";
-import { openDictionary } from "./DictionaryHost";
 import type { KeyNoteDay } from "@/lib/study/key-notes";
 import { getCurrentSession } from "@/actions/auth";
 import { useAppMode } from "@/context/LanguageContext";
@@ -70,34 +69,6 @@ export default function RightStudyRail({
 
   return (
     <aside className="w-72 xl:w-80 shrink-0 hidden min-[1140px]:flex flex-col gap-4 sticky top-[185px] h-[calc(100vh-12.5rem)] overflow-y-auto overflow-x-hidden py-2 pr-1 pl-0.5 select-none">
-      {/* Dictionary: look up any English or Bengali word */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          const input = e.currentTarget.elements.namedItem("word") as HTMLInputElement;
-          openDictionary(input.value.trim());
-          input.value = "";
-        }}
-        className="shrink-0 p-3 rounded-2xl border border-[#d6dcea] bg-white shadow-2xs space-y-2 select-text"
-      >
-        <p className="text-sm font-bold text-[#17191d] flex items-center gap-1.5">
-          <BookOpen className="w-4 h-4 text-[#1e40af]" />
-          {isEnglishMode ? "Dictionary" : "অভিধান"}
-        </p>
-        <div className="flex gap-1.5">
-          <input
-            name="word"
-            maxLength={40}
-            placeholder={isEnglishMode ? "Look up a word…" : "যেকোনো শব্দ খুঁজুন…"}
-            aria-label={isEnglishMode ? "Look up a word" : "শব্দ খুঁজুন"}
-            className="flex-1 min-w-0 rounded-lg border border-[#d6dcea] px-2.5 py-1.5 text-sm outline-none focus:border-[#1e40af]"
-          />
-          <button type="submit" className="px-3 py-1.5 rounded-lg bg-[#1e40af] text-white text-xs font-semibold">
-            {isEnglishMode ? "Search" : "খুঁজুন"}
-          </button>
-        </div>
-      </form>
-
       {/* 1. Daily Study Streak Card */}
       <div className={`shrink-0 p-3 sm:p-3.5 rounded-2xl shadow-2xs space-y-1.5 border transition-all ${
         isEnglishMode
