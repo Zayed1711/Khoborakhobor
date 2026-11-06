@@ -43,3 +43,11 @@ describe("merit list", () => {
     expect(list[0].total).toBe(38);
   });
 });
+
+describe("True/False scoring", () => {
+  it("scores like the other choice questions", () => {
+    const q = [{ id: "t", kind: "tf", answer: "FALSE", marks: 1 }];
+    expect(scoreObjective(q, { t: "FALSE" }).objectiveScore).toBe(1);
+    expect(scoreObjective(q, { t: "TRUE" }).objectiveScore).toBe(-0.5);
+  });
+});

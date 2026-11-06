@@ -51,3 +51,19 @@ describe("weekly exam rules", () => {
     expect(questionProblems({ section: "gk", kind: "tfng", question: "x", options: [], answer: "TRUE", marks: 1 })[0]).toMatch(/cannot have/);
   });
 });
+
+describe("question types per section", () => {
+  it("every objective section can use MCQ, True/False and fill in the blank", () => {
+    for (const section of ["gk", "grammar", "english1", "ielts"]) {
+      expect(questionProblems({ section, kind: "tf", question: "Dhaka is the capital.", options: [], answer: "TRUE", marks: 1 })).toEqual([]);
+      expect(questionProblems({ section, kind: "blank", question: "The capital is _____.", options: [], answer: "Dhaka", marks: 1 })).toEqual([]);
+    }
+  });
+  it("Not Given only where there is a passage", () => {
+    expect(questionProblems({ section: "gk", kind: "tfng", question: "x", options: [], answer: "TRUE", marks: 1 })[0]).toMatch(/cannot have/);
+    expect(questionProblems({ section: "english1", kind: "tfng", question: "x", options: [], answer: "NOT GIVEN", marks: 1 })).toEqual([]);
+  });
+  it("True/False needs TRUE or FALSE", () => {
+    expect(questionProblems({ section: "gk", kind: "tf", question: "x", options: [], answer: "NOT GIVEN", marks: 1 })).toContain("Choose TRUE or FALSE.");
+  });
+});

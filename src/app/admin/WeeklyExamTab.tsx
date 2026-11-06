@@ -32,7 +32,7 @@ import {
   type QuestionInput,
   type SourceNote,
 } from "@/actions/exam-admin";
-import { EXAM_MINUTES, NEGATIVE_MARK, SECTIONS, TFNG, TOTAL_MARKS, sectionMarks, type QuestionKind, type SectionId } from "@/lib/exam/rules";
+import { EXAM_MINUTES, NEGATIVE_MARK, SECTIONS, TOTAL_MARKS, fixedChoices, sectionMarks, type QuestionKind, type SectionId } from "@/lib/exam/rules";
 import type { KeyNoteDay } from "@/lib/study/key-notes";
 import ExamMarking from "./ExamMarking";
 
@@ -40,6 +40,7 @@ type Notify = (type: "success" | "error" | "info", msg: string) => void;
 
 const KIND_LABEL: Record<QuestionKind, string> = {
   mcq: "Multiple choice",
+  tf: "True / False",
   tfng: "True / False / Not Given",
   blank: "Fill in the blank",
   writing: "Writing task",
@@ -170,7 +171,7 @@ function blankDraft(section: SectionId, sourceNote: SourceNote | null = null): Q
     kind: sec.kinds[0],
     question: "",
     options: ["", "", "", ""],
-    answer: sec.kinds[0] === "tfng" ? "TRUE" : "",
+    answer: fixedChoices(sec.kinds[0]).length ? "TRUE" : "",
     explanation: sourceNote?.point || "",
     imagePath: null,
     sourceNote,
@@ -575,7 +576,7 @@ function QuestionCard({
           ))}
         </ol>
       )}
-      {(q.kind === "tfng" || q.kind === "blank") && <p className="ml-5 text-emerald-300 font-semibold">Answer: {q.answer}</p>}
+      {(q.kind === "tf" || q.kind === "tfng" || q.kind === "blank") && <p className="ml-5 text-emerald-300 font-semibold">Answer: {q.answer}</p>}
       {q.imagePath && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={`/api/exam-image/${q.imagePath}`} alt="Chart for this task" className="ml-5 max-h-56 rounded border border-[#212936] bg-white" />
@@ -656,7 +657,7 @@ function QuestionEditor({
           {sec.kinds.map((k) => (
             <button
               key={k}
-              onClick={() => set({ kind: k, answer: k === "tfng" ? "TRUE" : k === "mcq" ? "" : d.kind === "blank" ? d.answer : "" })}
+              onClick={() => set({ kind: k, answer: fixedChoices(k).length ? "TRUE" : k === "blank" && d.kind === "blank" ? d.answer : "" })}
               className={`px-2.5 py-1 rounded-md border text-xs ${d.kind === k ? "border-[#f5c66b] text-[#f5c66b]" : "border-[#212936] text-[#8e9aa8]"}`}
             >
               {KIND_LABEL[k]}
@@ -667,7 +668,7 @@ function QuestionEditor({
 
       <label className="block space-y-1">
         <span className="text-xs text-[#8e9aa8]">
-          {sec.writing ? "Task (what the student must write about)" : d.kind === "blank" ? "Sentence — put _____ where the answer goes" : d.kind === "tfng" ? "Statement" : "Question"}
+          {sec.writing ? "Task (what the student must write about)" : d.kind === "blank" ? "Sentence — put _____ where the answer goes" : d.kind === "tfng" || d.kind === "tf" ? "Statement" : "Question"}
         </span>
         <textarea value={d.question} onChange={(e) => set({ question: e.target.value })} rows={sec.writing ? 4 : 2} className={input} />
       </label>
@@ -697,9 +698,9 @@ function QuestionEditor({
         </div>
       )}
 
-      {d.kind === "tfng" && (
+      {fixedChoices(d.kind).length > 0 && (
         <div className="flex gap-3">
-          {TFNG.map((t) => (
+          {fixedChoices(d.kind).map((t) => (
             <label key={t} className="flex items-center gap-1.5 text-white">
               <input type="radio" name="tfng" checked={d.answer === t} onChange={() => set({ answer: t })} className="accent-[#f5c66b]" />
               {t}

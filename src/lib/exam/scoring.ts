@@ -14,7 +14,7 @@ export const normaliseTyped = (t: string) => (t || "").toLowerCase().replace(/[^
 export function isRight(q: ScoredQuestion, given: string | undefined): boolean | null {
   const g = (given ?? "").trim();
   if (!g) return null;
-  if (q.kind === "mcq" || q.kind === "tfng") return g === q.answer;
+  if (q.kind === "mcq" || q.kind === "tf" || q.kind === "tfng") return g === q.answer;
   if (q.kind === "blank") {
     const n = normaliseTyped(g);
     return acceptedAnswers(q.answer).some((a) => normaliseTyped(a) === n);

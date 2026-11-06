@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Clock, Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
 import { saveExamAnswerAction, submitExamAction, type Paper, type PaperQuestion } from "@/actions/exam";
-import { TFNG } from "@/lib/exam/rules";
+import { fixedChoices } from "@/lib/exam/rules";
 import { wordCount } from "@/lib/study/writing-prompts";
 
 type SaveState = "saved" | "saving" | "error";
@@ -217,7 +217,7 @@ function QuestionBlock({
         <img src={q.imageUrl} alt="Chart for this task" className="max-h-80 rounded-lg border border-[#ded8cb]" />
       )}
       {q.kind === "mcq" && <div className="grid gap-2">{q.options.map((o, i) => choice(String(i), o, i))}</div>}
-      {q.kind === "tfng" && <div className="flex flex-wrap gap-2">{TFNG.map((t) => choice(t, t))}</div>}
+      {fixedChoices(q.kind).length > 0 && <div className="flex flex-wrap gap-2">{fixedChoices(q.kind).map((t) => choice(t, t))}</div>}
       {q.kind === "blank" && (
         <input
           value={value}

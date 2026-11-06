@@ -7,7 +7,7 @@
  */
 
 export type SectionId = "gk" | "grammar" | "english1" | "ielts" | "writing" | "chart";
-export type QuestionKind = "mcq" | "tfng" | "blank" | "writing";
+export type QuestionKind = "mcq" | "tf" | "tfng" | "blank" | "writing";
 
 export interface SectionDef {
   id: SectionId;
@@ -23,10 +23,10 @@ export interface SectionDef {
 }
 
 export const SECTIONS: SectionDef[] = [
-  { id: "gk", label: "General Knowledge", marks: 10, kinds: ["mcq"], passage: "none" },
-  { id: "grammar", label: "English Grammar", marks: 10, kinds: ["mcq", "blank"], passage: "none" },
-  { id: "english1", label: "English 1st Paper", marks: 10, kinds: ["mcq", "blank"], passage: "optional" },
-  { id: "ielts", label: "IELTS Reading", marks: 10, kinds: ["mcq", "tfng", "blank"], passage: "required" },
+  { id: "gk", label: "General Knowledge", marks: 10, kinds: ["mcq", "tf", "blank"], passage: "none" },
+  { id: "grammar", label: "English Grammar", marks: 10, kinds: ["mcq", "tf", "blank"], passage: "none" },
+  { id: "english1", label: "English 1st Paper", marks: 10, kinds: ["mcq", "tf", "tfng", "blank"], passage: "optional" },
+  { id: "ielts", label: "IELTS Reading", marks: 10, kinds: ["mcq", "tfng", "tf", "blank"], passage: "required" },
   { id: "writing", label: "Argumentative Writing", marks: 5, kinds: ["writing"], passage: "none", writing: true },
   { id: "chart", label: "IELTS Bar Chart Description", marks: 5, kinds: ["writing"], passage: "none", writing: true, image: true },
 ];
@@ -37,6 +37,9 @@ export const NEGATIVE_MARK = 0.5;
 export const OPEN_HOUR = 7; // 7 am, Dhaka
 export const CLOSE_HOUR = 12; // 12 pm, Dhaka
 export const TFNG = ["TRUE", "FALSE", "NOT GIVEN"] as const;
+export const TF = ["TRUE", "FALSE"] as const;
+/** The fixed choices of a True/False or True/False/Not Given question */
+export const fixedChoices = (kind: string): readonly string[] => (kind === "tfng" ? TFNG : kind === "tf" ? TF : []);
 
 export const sectionById = (id: string) => SECTIONS.find((s) => s.id === id);
 
@@ -112,6 +115,7 @@ export function questionProblems(q: QuestionLike): string[] {
     if (!/^[0-3]$/.test(q.answer)) p.push("Mark the correct option.");
   }
   if (q.kind === "tfng" && !TFNG.includes(q.answer as (typeof TFNG)[number])) p.push("Choose TRUE, FALSE or NOT GIVEN.");
+  if (q.kind === "tf" && !TF.includes(q.answer as (typeof TF)[number])) p.push("Choose TRUE or FALSE.");
   if (q.kind === "blank") {
     if (!q.question.includes("_____")) p.push("Put _____ where the answer goes.");
     if (!acceptedAnswers(q.answer).length) p.push("Give the accepted answer.");
