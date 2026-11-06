@@ -7,7 +7,8 @@
 #
 # Checks: the site and its database answer, news is fresh, both PM2 processes are up,
 # last night's backup exists, the disk is not filling up, and (once a day) the content
-# integrity check passes.
+# integrity check passes. On Thursday 9 pm (Dhaka) it reminds you if Friday's weekly exam
+# is not scheduled, and on Friday 12 pm it tells you how much exam writing is waiting.
 #
 # Telegram settings are read from the app's .env:
 #   TELEGRAM_BOT_TOKEN=...   (from @BotFather)
@@ -73,6 +74,32 @@ Content check: $integrity
 Disk used: $disk, database $dbsize
 Open problems right now: $problems"
   exit 0
+fi
+
+# ---------------------------------------------------------------- weekly exam reminders
+# Dhaka time (UTC+6). The hourly run that falls in 21:00-21:59 on Thursday checks that
+# Friday's exam is scheduled; the one in 12:00-12:59 on Friday reports writing to mark.
+dhaka_dow=$(TZ=Asia/Dhaka date +%u)   # 4 = Thursday, 5 = Friday
+dhaka_hour=$(TZ=Asia/Dhaka date +%H)
+if [ "$dhaka_dow" = "4" ] && [ "$dhaka_hour" = "21" ]; then
+  tomorrow=$(TZ=Asia/Dhaka date -d tomorrow +%F)
+  scheduled=$(q "SELECT COUNT(*) FROM WeeklyExam WHERE day = '$tomorrow' AND status = 'scheduled';")
+  drafts=$(q "SELECT COUNT(*) FROM WeeklyExam WHERE day = '$tomorrow' AND status = 'draft';")
+  if [ "$scheduled" = "0" ] && [ "$drafts" != "?" ]; then
+    if [ "${drafts:-0}" -gt 0 ]; then
+      send "REMINDER: tomorrow's weekly exam ($tomorrow) is still a draft. Finish it and press Schedule in Admin > Weekly exam before 7:00 am, or it will not open."
+    else
+      send "REMINDER: no weekly exam is set up for tomorrow ($tomorrow). Create and schedule it in Admin > Weekly exam before 7:00 am, or students will see 'No exam this week'."
+    fi
+  fi
+fi
+if [ "$dhaka_dow" = "5" ] && [ "$dhaka_hour" = "12" ]; then
+  today=$(TZ=Asia/Dhaka date +%F)
+  to_mark=$(q "SELECT COUNT(*) FROM WritingSubmission w JOIN WeeklyExam e ON e.id = w.examId WHERE e.day = '$today' AND w.status = 'pending';")
+  sat=$(q "SELECT COUNT(*) FROM ExamAttempt a JOIN WeeklyExam e ON e.id = a.examId WHERE e.day = '$today';")
+  if [ "$sat" != "?" ] && [ "${sat:-0}" -gt 0 ]; then
+    send "Weekly exam closed: $sat students sat it. $to_mark writing answers are waiting for your marks so far (Admin > Weekly exam). Until they are marked, the merit list is provisional."
+  fi
 fi
 
 # ---------------------------------------------------------------- hourly checks

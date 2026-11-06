@@ -25,3 +25,21 @@ describe("weekly exam scoring", () => {
     expect(scoreObjective(qs, {})).toEqual({ correct: 0, wrong: 0, negative: 0, objectiveScore: 0 });
   });
 });
+
+import { rankMerit } from "@/lib/exam/scoring";
+
+describe("merit list", () => {
+  const row = (name: string, objectiveScore: number, writingMarks: number, timeTakenSec: number, negative = 0) => ({ studentId: name, name, objectiveScore, writingMarks, timeTakenSec, negative });
+
+  it("ranks by total, then less time, then fewer negative marks", () => {
+    const list = rankMerit([
+      row("Rahim", 30, 6, 1800, 2), // 36, slowest of the 36s
+      row("Karim", 34, 4, 2000, 1), // 38
+      row("Sadia", 32, 4, 1500, 2), // 36, faster than Rahim
+      row("Nila", 33, 3, 1500, 1), // 36, same time as Sadia, fewer negatives
+    ]);
+    expect(list.map((r) => r.name)).toEqual(["Karim", "Nila", "Sadia", "Rahim"]);
+    expect(list.map((r) => r.rank)).toEqual([1, 2, 3, 4]);
+    expect(list[0].total).toBe(38);
+  });
+});

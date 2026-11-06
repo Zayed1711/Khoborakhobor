@@ -38,3 +38,29 @@ export function scoreObjective(questions: ScoredQuestion[], answers: Record<stri
   const negative = wrong * NEGATIVE_MARK;
   return { correct, wrong, negative, objectiveScore: correct - negative };
 }
+
+export interface MeritInput {
+  studentId: string;
+  name: string;
+  objectiveScore: number;
+  writingMarks: number;
+  negative: number;
+  timeTakenSec: number;
+}
+
+export interface MeritRow extends MeritInput {
+  rank: number;
+  total: number;
+}
+
+/**
+ * The merit list: highest total first. On equal marks, the student who took less
+ * time ranks higher; if that is equal too, the one with fewer negative marks.
+ */
+export function rankMerit(rows: MeritInput[]): MeritRow[] {
+  const round = (n: number) => Math.round(n * 100) / 100;
+  return rows
+    .map((r) => ({ ...r, total: round(r.objectiveScore + r.writingMarks) }))
+    .sort((a, b) => b.total - a.total || a.timeTakenSec - b.timeTakenSec || a.negative - b.negative || a.name.localeCompare(b.name))
+    .map((r, i) => ({ ...r, rank: i + 1 }));
+}

@@ -31,7 +31,7 @@ function fmtLeft(ms: number) {
 }
 
 /** The weekly exam page: what is coming, the start screen, the exam itself, and "submitted". */
-export default function ExamHub({ initial }: { initial: ExamSummary | null }) {
+export default function ExamHub({ initial, past = [] }: { initial: ExamSummary | null; past?: { id: string; title: string; day: string }[] }) {
   const [paper, setPaper] = useState<Paper | null>(null);
   const [done, setDone] = useState(initial?.myState === "submitted");
   const [busy, setBusy] = useState(false);
@@ -68,9 +68,15 @@ export default function ExamHub({ initial }: { initial: ExamSummary | null }) {
           <p className="text-lg font-semibold text-emerald-800 flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5" /> Your exam is submitted.
           </p>
-          <p className="text-sm text-[#525a68] mt-1">
-            Results, correct answers and the merit list appear after the exam closes at 12:00 pm. Writing marks are added once they are checked.
-          </p>
+          {initial?.phase === "closed" ? (
+            <Link href={`/exam/results/${initial.id}`} className="inline-block mt-3 px-5 py-2.5 rounded-lg bg-[#842323] text-white font-semibold">
+              See your result and the merit list
+            </Link>
+          ) : (
+            <p className="text-sm text-[#525a68] mt-1">
+              Results, correct answers and the merit list appear after the exam closes at 12:00 pm. Writing marks are added once they are checked.
+            </p>
+          )}
         </Card>
       ) : (
         <Card>
@@ -78,7 +84,11 @@ export default function ExamHub({ initial }: { initial: ExamSummary | null }) {
           <h2 className="text-xl font-bold text-[#17191d] mt-1">{initial.title}</h2>
           <Rules />
           {initial.phase === "scheduled" && <Opens summary={initial} />}
-          {initial.phase === "closed" && <p className="mt-4 text-sm text-[#525a68]">This exam has closed. Results will appear here.</p>}
+          {initial.phase === "closed" && (
+            <Link href={`/exam/results/${initial.id}`} className="inline-block mt-5 px-5 py-2.5 rounded-lg bg-[#842323] text-white font-semibold">
+              See results and the merit list
+            </Link>
+          )}
           {initial.phase === "live" && (
             <div className="mt-5 space-y-3">
               {initial.myState === "guest" ? (
@@ -103,6 +113,24 @@ export default function ExamHub({ initial }: { initial: ExamSummary | null }) {
             </div>
           )}
         </Card>
+      )}
+
+      {past.filter((p) => p.id !== initial?.id).length > 0 && (
+        <section className="space-y-2">
+          <h2 className="font-serif text-lg font-bold text-[#17191d]">Past results</h2>
+          <ul className="grid gap-2">
+            {past
+              .filter((p) => p.id !== initial?.id)
+              .map((p) => (
+                <li key={p.id}>
+                  <Link href={`/exam/results/${p.id}`} className="flex items-center justify-between rounded-xl border border-[#ded8cb] bg-white px-4 py-3 text-sm hover:border-[#842323]">
+                    <span className="font-semibold text-[#17191d]">{p.title}</span>
+                    <span className="text-[#842323] text-xs">Merit list →</span>
+                  </Link>
+                </li>
+              ))}
+          </ul>
+        </section>
       )}
     </div>
   );

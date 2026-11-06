@@ -34,6 +34,7 @@ import {
 } from "@/actions/exam-admin";
 import { EXAM_MINUTES, NEGATIVE_MARK, SECTIONS, TFNG, TOTAL_MARKS, sectionMarks, type QuestionKind, type SectionId } from "@/lib/exam/rules";
 import type { KeyNoteDay } from "@/lib/study/key-notes";
+import ExamMarking from "./ExamMarking";
 
 type Notify = (type: "success" | "error" | "info", msg: string) => void;
 
@@ -319,6 +320,9 @@ function ExamBuilder({ id, onBack, notify }: { id: string; onBack: () => void; n
           )
         )}
       </div>
+
+      {/* After it opens: marking and the merit list */}
+      {locked && <ExamMarking examId={exam.id} notify={notify} />}
 
       <div className="grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-4 items-start">
         {/* Left: source material */}
