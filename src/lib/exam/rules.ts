@@ -43,6 +43,12 @@ export const fixedChoices = (kind: string): readonly string[] => (kind === "tfng
 
 export const sectionById = (id: string) => SECTIONS.find((s) => s.id === id);
 
+/** Reading passages an exam can hold: English 1st paper, and up to two for IELTS Reading (like a real paper). */
+export const PASSAGE_KEYS = ["english1", "ielts", "ielts2"] as const;
+export type PassageKey = (typeof PASSAGE_KEYS)[number];
+/** The passage a question is read against ("ielts2" for IELTS passage 2). */
+export const passageKey = (section: string, passageNo = 1): string => (section === "ielts" && passageNo === 2 ? "ielts2" : section);
+
 /** Dhaka is UTC+6 all year (no daylight saving). */
 const DHAKA_OFFSET_H = 6;
 
@@ -93,6 +99,7 @@ export interface QuestionLike {
   answer: string;
   marks: number;
   imagePath?: string | null;
+  passageNo?: number;
 }
 
 /** Marks filled per section. */
@@ -136,7 +143,7 @@ export function acceptedAnswers(answer: string): string[] {
  * Everything that stops an exam from being scheduled. An exam can only go out
  * complete: every section filled to exactly its marks, passages present, no bad question.
  */
-export function examProblems(questions: QuestionLike[], passages: Partial<Record<SectionId, string>>): string[] {
+export function examProblems(questions: QuestionLike[], passages: Partial<Record<string, string>>): string[] {
   const p: string[] = [];
   const filled = sectionMarks(questions);
   for (const s of SECTIONS) {
@@ -145,6 +152,11 @@ export function examProblems(questions: QuestionLike[], passages: Partial<Record
     if (s.passage === "required" && !(passages[s.id] || "").trim()) p.push(`${s.label}: add the reading passage.`);
     if (s.writing && questions.filter((q) => q.section === s.id).length > 1) p.push(`${s.label}: only one task.`);
   }
+  // IELTS passage 2 is optional, but its text and its questions go together
+  const onSecond = questions.filter((q) => q.section === "ielts" && q.passageNo === 2).length;
+  const hasSecond = !!(passages.ielts2 || "").trim();
+  if (onSecond && !hasSecond) p.push("IELTS Reading: add passage 2, or move its questions to passage 1.");
+  if (hasSecond && !onSecond) p.push("IELTS Reading: passage 2 has no questions yet.");
   const seen: Record<string, number> = {};
   for (const q of questions) {
     const n = (seen[q.section] = (seen[q.section] || 0) + 1);

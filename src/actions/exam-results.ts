@@ -29,6 +29,7 @@ export interface PublicMeritRow {
 export interface ReviewItem {
   n: number;
   section: SectionId;
+  passageNo: number;
   kind: string;
   question: string;
   options: string[];
@@ -59,7 +60,7 @@ export interface ExamResults {
     writingPending: boolean;
     timeTakenSec: number;
     review: ReviewItem[];
-    passages: Partial<Record<SectionId, string>>;
+    passages: Partial<Record<string, string>>;
   };
 }
 
@@ -124,7 +125,7 @@ export async function getExamResultsAction(examId: string): Promise<ExamResults 
     ]);
     const given = Object.fromEntries(answers.map((a) => [a.questionId, a.answer]));
     const order = Object.fromEntries(SECTIONS.map((s, i) => [s.id, i]));
-    const qs = [...exam.questions].sort((a, b) => order[a.section] - order[b.section] || a.position - b.position);
+    const qs = [...exam.questions].sort((a, b) => order[a.section] - order[b.section] || a.passageNo - b.passageNo || a.position - b.position);
     const review: ReviewItem[] = qs.map((q, i) => {
       const options = parse<string[]>(q.options, []);
       const my = given[q.id] || "";
@@ -134,6 +135,7 @@ export async function getExamResultsAction(examId: string): Promise<ExamResults 
       return {
         n: i + 1,
         section: q.section as SectionId,
+        passageNo: q.passageNo,
         kind: q.kind,
         question: q.question,
         options,

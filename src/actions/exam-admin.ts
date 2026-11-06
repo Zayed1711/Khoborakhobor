@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/guards";
 import { getKeyNotes } from "@/lib/study/daily-feed";
 import type { KeyNoteDay } from "@/lib/study/key-notes";
 import {
+  PASSAGE_KEYS,
   SECTIONS,
   examPhase,
   examProblems,
@@ -29,6 +30,7 @@ export interface AdminExamQuestion {
   marks: number;
   imagePath: string | null;
   sourceNote: SourceNote | null;
+  passageNo: number;
 }
 
 export interface SourceNote {
@@ -44,7 +46,7 @@ export interface AdminExam {
   title: string;
   status: string;
   phase: ExamPhase;
-  passages: Partial<Record<SectionId, string>>;
+  passages: Partial<Record<string, string>>;
   questions: AdminExamQuestion[];
   problems: string[];
 }
@@ -85,9 +87,10 @@ function toAdmin(row: NonNullable<Row>): AdminExam {
       marks: q.marks,
       imagePath: q.imagePath,
       sourceNote: parse<SourceNote | null>(q.sourceNote, null),
+      passageNo: q.passageNo,
     }))
-    .sort((a, b) => ORDER[a.section] - ORDER[b.section] || a.position - b.position);
-  const passages = parse<Partial<Record<SectionId, string>>>(row.passages, {});
+    .sort((a, b) => ORDER[a.section] - ORDER[b.section] || a.passageNo - b.passageNo || a.position - b.position);
+  const passages = parse<Partial<Record<string, string>>>(row.passages, {});
   return {
     id: row.id,
     day: row.day,
@@ -163,14 +166,14 @@ export async function getExamSourcesAction(): Promise<{ bn: KeyNoteDay[]; en: Ke
   return { bn, en, stories };
 }
 
-export async function saveExamMetaAction(id: string, data: { title?: string; passages?: Partial<Record<SectionId, string>> }) {
+export async function saveExamMetaAction(id: string, data: { title?: string; passages?: Partial<Record<string, string>> }) {
   await requireAdmin();
   await editable(id);
   const passages = data.passages
     ? JSON.stringify(
         Object.fromEntries(
           Object.entries(data.passages)
-            .filter(([k]) => sectionById(k)?.passage !== "none")
+            .filter(([k]) => (PASSAGE_KEYS as readonly string[]).includes(k))
             .map(([k, v]) => [k, String(v || "").slice(0, 12000)])
         )
       )
@@ -192,6 +195,7 @@ export interface QuestionInput {
   explanation?: string;
   imagePath?: string | null;
   sourceNote?: SourceNote | null;
+  passageNo?: number;
 }
 
 export async function saveQuestionAction(examId: string, input: QuestionInput) {
@@ -208,6 +212,7 @@ export async function saveQuestionAction(examId: string, input: QuestionInput) {
     answer: sec.writing ? "" : String(input.answer ?? "").trim().slice(0, 200),
     marks: sec.writing ? sec.marks : 1,
     imagePath: sec.image ? input.imagePath || null : null,
+    passageNo: sec.id === "ielts" && input.passageNo === 2 ? 2 : 1,
   };
   const problems = questionProblems(q);
   if (problems.length) return { ok: false as const, message: problems.join(" ") };
@@ -247,7 +252,7 @@ export async function moveQuestionAction(examId: string, questionId: string, dir
   await editable(examId);
   const q = await prisma.examQuestion.findFirst({ where: { id: questionId, examId } });
   if (!q) return { ok: false as const };
-  const list = await prisma.examQuestion.findMany({ where: { examId, section: q.section }, orderBy: [{ position: "asc" }, { createdAt: "asc" }] });
+  const list = await prisma.examQuestion.findMany({ where: { examId, section: q.section, passageNo: q.passageNo }, orderBy: [{ position: "asc" }, { createdAt: "asc" }] });
   const i = list.findIndex((x) => x.id === q.id);
   const j = i + dir;
   if (j < 0 || j >= list.length) return { ok: true as const };

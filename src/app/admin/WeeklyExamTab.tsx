@@ -164,6 +164,23 @@ interface Editing {
   draft: QuestionInput;
 }
 
+const PASSAGE_TARGETS = [
+  { key: "english1", label: "English 1st Paper passage" },
+  { key: "ielts", label: "IELTS passage 1" },
+  { key: "ielts2", label: "IELTS passage 2" },
+];
+
+/** The passages a section holds: none, one, or (IELTS Reading) two, each with its own questions. */
+function passageGroups(section: SectionId, passage: string): { no: number; key: string | null; label: string }[] {
+  if (section === "ielts")
+    return [
+      { no: 1, key: "ielts", label: "Passage 1 (required)" },
+      { no: 2, key: "ielts2", label: "Passage 2 (optional, like a real IELTS paper)" },
+    ];
+  if (passage === "none") return [{ no: 1, key: null, label: "" }];
+  return [{ no: 1, key: section, label: passage === "required" ? "Reading passage (required)" : "Reading passage (optional)" }];
+}
+
 function blankDraft(section: SectionId, sourceNote: SourceNote | null = null): QuestionInput {
   const sec = SECTIONS.find((s) => s.id === section)!;
   return {
@@ -239,8 +256,9 @@ function ExamBuilder({ id, onBack, notify }: { id: string; onBack: () => void; n
     setEditing({ section, draft: blankDraft(section, note) });
   };
 
-  const usePassage = async (section: SectionId, story: EnglishStory) => {
-    await run(() => saveExamMetaAction(exam.id, { passages: { ...exam.passages, [section]: story.text } }), `Passage set for ${SECTIONS.find((s) => s.id === section)!.label}.`);
+  const usePassage = async (key: string, story: EnglishStory) => {
+    const label = PASSAGE_TARGETS.find((t) => t.key === key)?.label || "the section";
+    await run(() => saveExamMetaAction(exam.id, { passages: { ...exam.passages, [key]: story.text } }), `Passage set: ${label}.`);
   };
 
   return (
@@ -351,29 +369,44 @@ function ExamBuilder({ id, onBack, notify }: { id: string; onBack: () => void; n
                   )}
                 </div>
 
-                {sec.passage !== "none" && (
-                  <PassageBox
-                    key={exam.passages[sec.id] || ""}
-                    label={sec.passage === "required" ? "Reading passage (required)" : "Reading passage (optional)"}
-                    value={exam.passages[sec.id] || ""}
-                    locked={locked}
-                    onSave={(text) => run(() => saveExamMetaAction(exam.id, { passages: { ...exam.passages, [sec.id]: text } }), "Passage saved.")}
-                  />
-                )}
-
-                {qs.map((q, i) => (
-                  <QuestionCard
-                    key={q.id}
-                    q={q}
-                    n={i + 1}
-                    locked={locked || busy}
-                    first={i === 0}
-                    last={i === qs.length - 1}
-                    onEdit={() => setEditing({ section: sec.id, draft: { ...q } })}
-                    onMove={(d) => run(() => moveQuestionAction(exam.id, q.id, d))}
-                    onDelete={() => confirm("Delete this question?") && run(() => deleteQuestionAction(exam.id, q.id))}
-                  />
-                ))}
+                {passageGroups(sec.id, sec.passage).map((g, gi, groups) => {
+                  const group = qs.filter((q) => sec.id !== "ielts" || q.passageNo === g.no);
+                  const offset = groups.slice(0, gi).reduce((n, x) => n + qs.filter((q) => q.passageNo === x.no).length, 0);
+                  return (
+                    <div key={g.no} className={groups.length > 1 ? "space-y-3 rounded-lg border border-[#212936] p-3" : "space-y-3"}>
+                      {g.key && (
+                        <PassageBox
+                          key={exam.passages[g.key] || ""}
+                          label={g.label}
+                          value={exam.passages[g.key] || ""}
+                          locked={locked}
+                          onSave={(text) => run(() => saveExamMetaAction(exam.id, { passages: { ...exam.passages, [g.key!]: text } }), "Passage saved.")}
+                        />
+                      )}
+                      {group.map((q, i) => (
+                        <QuestionCard
+                          key={q.id}
+                          q={q}
+                          n={offset + i + 1}
+                          locked={locked || busy}
+                          first={i === 0}
+                          last={i === group.length - 1}
+                          onEdit={() => setEditing({ section: sec.id, draft: { ...q } })}
+                          onMove={(d) => run(() => moveQuestionAction(exam.id, q.id, d))}
+                          onDelete={() => confirm("Delete this question?") && run(() => deleteQuestionAction(exam.id, q.id))}
+                        />
+                      ))}
+                      {groups.length > 1 && !locked && !full && (
+                        <button
+                          onClick={() => setEditing({ section: sec.id, draft: { ...blankDraft(sec.id), passageNo: g.no } })}
+                          className="text-xs px-2.5 py-1 rounded-lg border border-[#f5c66b]/60 text-[#f5c66b] hover:bg-[#f5c66b]/10"
+                        >
+                          <Plus className="w-3.5 h-3.5 inline -mt-0.5" /> Add question to passage {g.no}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
 
                 {editing?.section === sec.id && (
                   <div ref={editorRef}>
@@ -412,7 +445,7 @@ function SourcePanel({
   sources: { bn: KeyNoteDay[]; en: KeyNoteDay[]; stories: EnglishStory[] } | null;
   locked: boolean;
   onUseNote: (section: SectionId, note: SourceNote) => void;
-  onUsePassage: (section: SectionId, story: EnglishStory) => void;
+  onUsePassage: (key: string, story: EnglishStory) => void;
 }) {
   const [tab, setTab] = useState<"bn" | "en" | "stories">("bn");
   const objective = SECTIONS.filter((s) => !s.writing);
@@ -450,10 +483,10 @@ function SourcePanel({
               <p className="whitespace-pre-wrap text-[#c8d0da] mt-2 leading-relaxed">{s.text}</p>
               {!locked && (
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {SECTIONS.filter((x) => x.passage !== "none").map((x) => (
-                    <button key={x.id} onClick={() => onUsePassage(x.id, s)} className="text-xs px-2 py-1 rounded-md border border-[#f5c66b]/60 text-[#f5c66b]">
+                  {PASSAGE_TARGETS.map((t) => (
+                    <button key={t.key} onClick={() => onUsePassage(t.key, s)} className="text-xs px-2 py-1 rounded-md border border-[#f5c66b]/60 text-[#f5c66b]">
                       <FileText className="w-3 h-3 inline -mt-0.5 mr-1" />
-                      Use as {x.label} passage
+                      Use as {t.label}
                     </button>
                   ))}
                 </div>
@@ -649,6 +682,21 @@ function QuestionEditor({
           <button onClick={() => set({ sourceNote: null })} className="ml-2 text-[#8e9aa8] hover:text-white underline">
             remove
           </button>
+        </div>
+      )}
+
+      {sec.id === "ielts" && (
+        <div className="flex items-center gap-2 text-xs">
+          <span className="text-[#8e9aa8]">Question on:</span>
+          {[1, 2].map((no) => (
+            <button
+              key={no}
+              onClick={() => set({ passageNo: no })}
+              className={`px-2.5 py-1 rounded-md border ${(d.passageNo ?? 1) === no ? "border-[#f5c66b] text-[#f5c66b]" : "border-[#212936] text-[#8e9aa8]"}`}
+            >
+              Passage {no}
+            </button>
+          ))}
         </div>
       )}
 

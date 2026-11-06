@@ -120,15 +120,23 @@ export default function ExamResultsView({ r, loggedIn }: { r: ExamResults; logge
             return (
               <div key={s.id} className="space-y-3">
                 <h3 className="font-semibold text-[#17191d]">{s.label}</h3>
-                {me.passages[s.id] && (
-                  <details className="rounded-xl border border-[#ded8cb] bg-[#faf8f4] p-3 text-sm">
-                    <summary className="cursor-pointer text-[#525a68]">Reading passage</summary>
-                    <p className="mt-2 whitespace-pre-wrap leading-relaxed">{me.passages[s.id]}</p>
-                  </details>
-                )}
-                {items.map((it) => (
-                  <ReviewCard key={it.n} it={it} />
-                ))}
+                {(s.id === "ielts" && me.passages.ielts2 ? [1, 2] : [0]).map((no) => {
+                  const text = no === 2 ? me.passages.ielts2 : me.passages[s.id];
+                  const group = no === 0 ? items : items.filter((x) => x.passageNo === no);
+                  return (
+                    <div key={no} className="space-y-3">
+                      {text && (
+                        <details className="rounded-xl border border-[#ded8cb] bg-[#faf8f4] p-3 text-sm">
+                          <summary className="cursor-pointer text-[#525a68]">{no ? `Reading passage ${no}` : "Reading passage"}</summary>
+                          <p className="mt-2 whitespace-pre-wrap leading-relaxed">{text}</p>
+                        </details>
+                      )}
+                      {group.map((it) => (
+                        <ReviewCard key={it.n} it={it} />
+                      ))}
+                    </div>
+                  );
+                })}
               </div>
             );
           })}

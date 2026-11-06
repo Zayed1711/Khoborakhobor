@@ -131,12 +131,23 @@ export default function ExamRunner({ paper, onSubmitted }: { paper: Paper; onSub
           <h2 className="font-serif text-xl font-bold text-[#17191d]">
             {s.label} <span className="text-sm font-normal text-[#68707f]">· {s.marks} marks</span>
           </h2>
-          {s.passage && (
-            <div className="rounded-xl border border-[#ded8cb] bg-[#faf8f4] p-4 text-[15px] leading-relaxed text-[#1c1d21] whitespace-pre-wrap">{s.passage}</div>
-          )}
-          {s.questions.map((q) => (
-            <QuestionBlock key={q.id} q={q} n={number[q.id]} value={answers[q.id] || ""} state={saveState[q.id]} onAnswer={answer} disabled={submitting} />
-          ))}
+          {(s.passage2 ? [1, 2] : [0]).map((no) => {
+            const text = no === 2 ? s.passage2 : s.passage;
+            const qs = no === 0 ? s.questions : s.questions.filter((q) => q.passageNo === no);
+            return (
+              <div key={no} className="space-y-3">
+                {text && (
+                  <div className="rounded-xl border border-[#ded8cb] bg-[#faf8f4] p-4 space-y-2">
+                    {no > 0 && <p className="text-xs font-bold uppercase tracking-wide text-[#842323]">Reading passage {no}</p>}
+                    <p className="text-[15px] leading-relaxed text-[#1c1d21] whitespace-pre-wrap">{text}</p>
+                  </div>
+                )}
+                {qs.map((q) => (
+                  <QuestionBlock key={q.id} q={q} n={number[q.id]} value={answers[q.id] || ""} state={saveState[q.id]} onAnswer={answer} disabled={submitting} />
+                ))}
+              </div>
+            );
+          })}
         </section>
       ))}
 

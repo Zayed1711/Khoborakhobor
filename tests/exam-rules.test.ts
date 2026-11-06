@@ -67,3 +67,17 @@ describe("question types per section", () => {
     expect(questionProblems({ section: "gk", kind: "tf", question: "x", options: [], answer: "NOT GIVEN", marks: 1 })).toContain("Choose TRUE or FALSE.");
   });
 });
+
+describe("IELTS second passage", () => {
+  const withSecond = () => fullExam().map((q, i) => (q.section === "ielts" && i % 2 ? { ...q, passageNo: 2 } : q));
+  it("questions on passage 2 need passage 2's text", () => {
+    expect(examProblems(withSecond(), { ielts: "First." })).toContain("IELTS Reading: add passage 2, or move its questions to passage 1.");
+    expect(examProblems(withSecond(), { ielts: "First.", ielts2: "Second." })).toEqual([]);
+  });
+  it("passage 2's text needs at least one question", () => {
+    expect(examProblems(fullExam(), { ielts: "First.", ielts2: "Second." })).toContain("IELTS Reading: passage 2 has no questions yet.");
+  });
+  it("passage 2 is optional", () => {
+    expect(examProblems(fullExam(), { ielts: "First." })).toEqual([]);
+  });
+});

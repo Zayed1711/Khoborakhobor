@@ -352,6 +352,7 @@ model ExamQuestion {
   marks       Float      @default(1)
   imagePath   String? // uploaded chart image file name
   sourceNote  String? // JSON: the key note it was made from { day, slug, title, point }
+  passageNo   Int        @default(1) // IELTS Reading: passage 1 or 2
   createdAt   DateTime   @default(now())
 
   @@index([examId, section, position])

@@ -30,6 +30,7 @@ export interface PaperQuestion {
   options: string[];
   imageUrl: string | null;
   marks: number;
+  passageNo: number;
 }
 
 export interface Paper {
@@ -37,7 +38,7 @@ export interface Paper {
   title: string;
   deadline: string;
   serverNow: string;
-  sections: { id: SectionId; label: string; marks: number; passage: string; questions: PaperQuestion[] }[];
+  sections: { id: SectionId; label: string; marks: number; passage: string; passage2: string; questions: PaperQuestion[] }[];
   answers: Record<string, string>;
 }
 
@@ -119,15 +120,16 @@ export async function startExamAction(examId: string): Promise<{ ok: true; paper
     }
   }
 
-  const passages = parse<Partial<Record<SectionId, string>>>(exam.passages, {});
+  const passages = parse<Partial<Record<string, string>>>(exam.passages, {});
   const sections = SECTIONS.map((s) => ({
     id: s.id,
     label: s.label,
     marks: s.marks,
     passage: passages[s.id] || "",
+    passage2: s.id === "ielts" ? passages.ielts2 || "" : "",
     questions: exam.questions
       .filter((q) => q.section === s.id)
-      .sort((a, b) => a.position - b.position)
+      .sort((a, b) => a.passageNo - b.passageNo || a.position - b.position)
       .map((q) => ({
         id: q.id,
         kind: q.kind,
@@ -135,6 +137,7 @@ export async function startExamAction(examId: string): Promise<{ ok: true; paper
         options: parse<string[]>(q.options, []),
         imageUrl: q.imagePath ? imageUrl(q.imagePath) : null,
         marks: q.marks,
+        passageNo: q.passageNo,
       })),
   })).filter((s) => s.questions.length);
 
