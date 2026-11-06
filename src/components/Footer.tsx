@@ -46,10 +46,10 @@ export default function Footer() {
   };
 
   return (
-    <footer className="mt-20 border-t border-[#d8d2c4] bg-[#2a303c] text-[#cbd3de]">
+    <footer className="relative z-10 mt-20 border-t border-[#d8d2c4] bg-[#2a303c] text-[#cbd3de]">
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
-          <div className="md:col-span-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-x-8 gap-y-10">
+          <div className="sm:col-span-2 lg:col-span-3">
             <div className="mb-3">
               <KhoborLogo variant="horizontal" size="sm" theme="dark" showTagline={true} />
             </div>
@@ -62,7 +62,7 @@ export default function Footer() {
             </p>
           </div>
 
-          <div>
+          <div className="lg:col-span-2">
             <h3 className="text-xs font-bold uppercase tracking-wider text-[#d0d7e0] mb-3">
               বিভাগসমূহ
             </h3>
@@ -77,7 +77,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          <div>
+          <div className="lg:col-span-2">
             <h3 className="text-xs font-bold uppercase tracking-wider text-[#d0d7e0] mb-3">
               নীতিমালা ও তথ্যাবলি
             </h3>
@@ -105,7 +105,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          <div>
+          <div className="lg:col-span-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-[#d0d7e0] mb-3">
               সাপ্তাহিক সারসংক্ষেপ
             </h3>
@@ -120,12 +120,12 @@ export default function Footer() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="ইমেইল ঠিকানা..."
-                  className="bg-[#1e232c] border border-[#3b4352] text-xs text-white px-3 py-2 rounded focus:outline-none focus:border-[#7a2020] flex-1"
+                  className="bg-[#1e232c] border border-[#3b4352] text-xs text-white px-3 py-2 rounded focus:outline-none focus:border-[#7a2020] flex-1 min-w-0"
                 />
                 <button
                   type="submit"
                   disabled={status === "loading"}
-                  className="bg-[#7a2020] hover:bg-[#631818] disabled:opacity-50 text-white text-xs font-semibold px-3 py-2 rounded transition flex items-center gap-1 cursor-pointer"
+                  className="bg-[#7a2020] hover:bg-[#631818] disabled:opacity-50 text-white text-xs font-semibold px-3 py-2 rounded transition flex items-center gap-1 cursor-pointer shrink-0 whitespace-nowrap"
                 >
                   {status === "loading" && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>যুক্ত হোন</span>
@@ -143,14 +143,16 @@ export default function Footer() {
             </form>
           </div>
 
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#d0d7e0] mb-3">যোগাযোগ (Contact us)</h3>
-            <p className="text-xs text-[#9aa4b2] mb-3">প্রশ্ন, পরামর্শ বা সমস্যা? আমাদের ফেসবুক পেজে বার্তা পাঠান।</p>
+          <div className="lg:col-span-2">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#d0d7e0] mb-3">যোগাযোগ</h3>
+            <p className="text-xs text-[#9aa4b2] mb-3 leading-relaxed">প্রশ্ন, পরামর্শ বা সমস্যা? আমাদের ফেসবুক পেজে বার্তা পাঠান।</p>
             <FacebookButton label="ফেসবুক পেজ" />
-            <div className="mt-5">
-              <StudyPartner variant="footer" />
-            </div>
           </div>
+        </div>
+
+        {/* Study partner */}
+        <div className="mt-10 flex justify-center">
+          <StudyPartner variant="footer" />
         </div>
 
         {/* Legal, Trademark & Fair-Use Educational Disclaimer */}

@@ -13,10 +13,11 @@ export default function StudyPartner({ variant = "panel", english = false }: { v
 
   if (variant === "footer") {
     return (
-      <a {...common} className="inline-flex items-center gap-2 text-xs text-[#9aa4b2] hover:text-white transition">
-        <img src={STUDY_PARTNER.logo} alt="" width={28} height={28} className="w-7 h-7 rounded-full bg-white" />
-        <span>
-          {label}: <strong className="text-[#d0d7e0]">{STUDY_PARTNER.name}</strong>
+      <a {...common} className="inline-flex items-center gap-3 rounded-full border border-[#3b4352] bg-[#1e232c] pl-1.5 pr-4 py-1.5 text-sm text-[#cbd3de] hover:border-[#f5c66b] hover:text-white transition">
+        <img src={STUDY_PARTNER.logo} alt="" width={40} height={40} className="w-10 h-10 rounded-full bg-white shrink-0" />
+        <span className="leading-tight">
+          <span className="block text-[11px] uppercase tracking-wider text-[#9aa4b2]">{label}</span>
+          <strong className="block text-white">{STUDY_PARTNER.name}</strong>
         </span>
       </a>
     );
@@ -35,17 +36,19 @@ export default function StudyPartner({ variant = "panel", english = false }: { v
   }
 
   return (
-    <a {...common} className="group block rounded-xl border border-[#ded8cb] bg-white p-3 text-center shadow-2xs hover:border-[#1e3a8a] transition">
-      <span className="block text-[11px] font-bold uppercase tracking-wider text-[#842323] mb-2">{label}</span>
+    <a {...common} className="group flex items-center gap-3 rounded-xl border border-[#ded8cb] bg-white p-2.5 shadow-2xs hover:border-[#1e3a8a] transition">
       <img
         src={STUDY_PARTNER.logo}
         alt={STUDY_PARTNER.name}
-        width={128}
-        height={128}
-        className="w-32 h-32 mx-auto rounded-full group-hover:scale-[1.03] transition-transform"
+        width={64}
+        height={64}
+        className="w-16 h-16 rounded-full shrink-0 group-hover:scale-[1.04] transition-transform"
       />
-      <span className="block mt-2 text-xs font-semibold text-[#17191d]">{STUDY_PARTNER.name}</span>
-      <span className="block text-[11px] text-[#68707f]">{english ? "Visit their Facebook page" : "ফেসবুক পেজ দেখুন"}</span>
+      <span className="min-w-0 leading-tight">
+        <span className="block text-[11px] font-bold uppercase tracking-wider text-[#842323]">{label}</span>
+        <span className="block mt-0.5 text-sm font-semibold text-[#17191d]">{STUDY_PARTNER.name}</span>
+        <span className="block mt-0.5 text-[11px] text-[#68707f]">{english ? "Facebook page →" : "ফেসবুক পেজ →"}</span>
+      </span>
     </a>
   );
 }

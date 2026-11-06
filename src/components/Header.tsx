@@ -497,15 +497,16 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session, activ
         {!isEnglishMode && (
         <nav className="border-t border-[#ece7dc] bg-[#faf8f4] hidden md:block">
           <div className="max-w-7xl mx-auto px-4 sm:px-8 py-2 flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 lg:gap-2 min-w-0">
               <Link
                 href="/"
                 aria-current={current === "home" ? "page" : undefined}
-                className={chipClass(current === "home", "px-4 font-bold")}
+                className={chipClass(current === "home", "px-3 lg:px-4 font-bold")}
               >
                 {isEnglishMode ? "Home" : "প্রচ্ছদ"}
               </Link>
-              {primaryCategories.map((cat) => {
+              {/* Below 1024px sections 4-5 move into "more", so the row never runs off the screen */}
+              {primaryCategories.map((cat, i) => {
                 const displayName = isEnglishMode
                   ? ENGLISH_CATEGORY_NAMES[cat.slug] || cat.name
                   : cat.name;
@@ -515,7 +516,7 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session, activ
                     key={cat.id}
                     href={`/category/${cat.slug}`}
                     aria-current={current === cat.slug ? currentKind : undefined}
-                    className={chipClass(current === cat.slug, "px-3.5 font-medium")}
+                    className={chipClass(current === cat.slug, `px-2.5 lg:px-3.5 font-medium ${i >= 3 ? "hidden lg:inline-block" : ""}`)}
                   >
                     {displayName}
                   </Link>
@@ -550,7 +551,7 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session, activ
 
                   {isMoreMenuOpen && (
                     <div className="absolute left-0 mt-2 w-52 bg-white border border-[#ded8cc] rounded-lg shadow-xl py-2 z-50 text-xs animate-fade-in">
-                      {extraCategories.map((cat) => {
+                      {[...primaryCategories.slice(3), ...extraCategories].map((cat) => {
                         const displayName = isEnglishMode
                           ? ENGLISH_CATEGORY_NAMES[cat.slug] || cat.name
                           : cat.name;
@@ -561,7 +562,7 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session, activ
                             href={`/category/${cat.slug}`}
                             onClick={() => setIsMoreMenuOpen(false)}
                             aria-current={current === cat.slug ? currentKind : undefined}
-                            className={`block px-4 py-2 font-medium transition ${
+                            className={`${primaryCategories.indexOf(cat) >= 3 ? "lg:hidden " : ""}block px-4 py-2 font-medium transition ${
                               current === cat.slug
                                 ? isEnglishMode ? "bg-blue-50 text-[#1e40af] font-bold" : "bg-[#f5ebeb] text-[#842323] font-bold"
                                 : "hover:bg-[#f6f2e9] text-[#2d333f]"
