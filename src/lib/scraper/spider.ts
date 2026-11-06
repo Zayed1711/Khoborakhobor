@@ -9,6 +9,7 @@ import { revalidatePath } from "next/cache";
 import { evaluateExamRelevance } from "@/lib/scraper/examFilter";
 import { keepDailyBest, recentlySkippedUrls } from "@/lib/scraper/daily-cap";
 import { dhakaDay } from "@/lib/study/key-notes";
+import { extractPassage, passageToJson } from "@/lib/study/passage";
 import { extractVocabularyTableRows } from "@/lib/vocabulary-table-engine";
 import { cleanArticleBody, extractFacts, extractTakeaways, buildExtractiveQuiz, pickSummary } from "@/lib/study/extractive";
 
@@ -1134,6 +1135,9 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
               // Link-out model: the publisher's full text is read to build the study
               // material above but is not stored or republished.
               content: "",
+              // English stories keep only their reading passage: the opening 80-150 words,
+              // shown on the page with a link to the full story
+              passage: /[ঀ-৿]/.test(title) ? null : passageToJson(extractPassage(cleanContent)),
               keyTakeaways: JSON.stringify(takeaways),
               factTable: JSON.stringify(factTable),
               sourceName: source.name,

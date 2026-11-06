@@ -82,6 +82,9 @@ model Article {
   //   summary_only = publisher text could not be fetched; only the real summary is kept
   //   edited       = written or edited by our editors in the desk
   contentOrigin String       @default("scraped")
+  // English stories: the reading passage, a part of the article (80-150 words), as JSON
+  // paragraphs of sentences. The only publisher text kept; the full article is not stored.
+  passage       String?
   // Real translation of an English story, filled only from an approved StudyDraft
   titleBn       String?
   summaryBn     String?

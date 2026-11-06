@@ -7,7 +7,8 @@
  * run-together paragraph), missing spaces after full stops are restored, and
  * publisher chrome, bylines and quotes with no speaker are left out.
  */
-import { htmlToParagraphs, isBoilerplate } from "@/lib/study/extractive";
+// Relative import, so the server scripts (scripts/backfill_passages.js) can load this file too
+import { htmlToParagraphs, isBoilerplate } from "./extractive";
 
 export const PASSAGE_MIN_WORDS = 80;
 export const PASSAGE_MAX_WORDS = 150;
@@ -57,37 +58,46 @@ function unusable(s: string): boolean {
  * missing or too short.
  */
 export function extractPassage(contentHtml: string): string[][] {
+  return passageFromParagraphs(htmlToParagraphs(contentHtml || ""), 40);
+}
+
+/**
+ * The same cleaning and cutting for any list of paragraphs: the article's own
+ * paragraphs, or (when the article text is missing) the summary and key points.
+ * Empty when fewer than `minWords` usable words remain.
+ */
+export function passageFromParagraphs(source: string[], minWords = 40): string[][] {
   const seen = new Set<string>();
   const paragraphs: string[][] = [];
   let total = 0;
-  let stopped = false;
 
-  for (const para of htmlToParagraphs(contentHtml || "")) {
-    if (stopped) break;
+  for (const para of source) {
+    if (total >= PASSAGE_MIN_WORDS) break;
     const kept: string[] = [];
-    for (const s of sentencesOf(para)) {
+    for (const s of sentencesOf(para || "")) {
       const key = norm(s);
       if (!key || seen.has(key)) continue;
       seen.add(key);
       if (unusable(s)) continue;
       const w = words(s);
-      if (total + w > PASSAGE_MAX_WORDS) {
-        stopped = true;
-        break;
-      }
+      if (total + w > PASSAGE_MAX_WORDS) break;
       kept.push(s);
       total += w;
-      if (total >= PASSAGE_MIN_WORDS) {
-        // Enough: finish here unless the next sentence of this paragraph also fits
-        continue;
-      }
     }
     if (kept.length) paragraphs.push(kept);
-    if (total >= PASSAGE_MIN_WORDS) stopped = true;
   }
-  // A run-together lead paragraph repeats the next ones: remove paragraphs that are
-  // made only of sentences found again later (already removed by `seen`, so nothing to do)
-  return total >= 40 ? paragraphs : [];
+  return total >= minWords ? paragraphs : [];
+}
+
+/** Stored form of a passage (Article.passage) and back. */
+export const passageToJson = (p: string[][]) => (p.length ? JSON.stringify(p) : null);
+export function passageFromJson(json: string | null | undefined): string[][] {
+  try {
+    const v = JSON.parse(json || "null");
+    return Array.isArray(v) && v.every((x) => Array.isArray(x) && x.every((y) => typeof y === "string")) ? v : [];
+  } catch {
+    return [];
+  }
 }
 
 /** Flat list of the passage's sentences (what the questions are built from). */

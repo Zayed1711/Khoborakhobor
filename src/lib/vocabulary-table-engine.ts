@@ -612,19 +612,6 @@ export function extractVocabularyTableRows(
     }
   }
 
-  // 3. Fallback: If fewer than 4 words matched, populate with top academic essentials
-  if (rows.length < 4) {
-    const fallbacks = ["inflation", "resilience", "accountability", "sovereignty", "deficit", "diplomacy", "sustainable"];
-    for (const fb of fallbacks) {
-      if (!addedWords.has(fb) && CURATED_VOCAB_BANK[fb]) {
-        rows.push({
-          id: `vocab-${fb}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-          ...CURATED_VOCAB_BANK[fb],
-        });
-        if (rows.length >= 5) break;
-      }
-    }
-  }
-
+  // No fixed fallback words: a word is listed only when the story uses it
   return rows;
 }

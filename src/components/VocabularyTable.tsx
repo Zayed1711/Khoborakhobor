@@ -130,14 +130,14 @@ export default function VocabularyTable({
 
     rows.forEach((r, idx) => {
       text += `${idx + 1}. ${r.word} [উচ্চারণ: ${r.banglaPhonetic}] (${r.partOfSpeech})\n`;
-      text += `   • বাংলা অর্থ: ${r.banglaMeaning}\n`;
+      if (r.banglaMeaning) text += `   • বাংলা অর্থ: ${r.banglaMeaning}\n`;
       text += `   • English: ${r.englishDefinition}\n`;
       if (r.synonyms && r.synonyms.length > 0) {
         text += `   • Synonyms: ${r.synonyms.join(", ")}\n`;
       }
-      text += `   • বাস্তব বাক্যে নতুন প্রয়োগ:\n`;
+      text += `   • প্রতিবেদনে ব্যবহার (In the story):\n`;
       text += `     "${r.freshExampleEn}"\n`;
-      text += `     (${r.freshExampleBn})\n\n`;
+      text += r.freshExampleBn ? `     (${r.freshExampleBn})\n\n` : "\n";
     });
 
     text += `--------------------------------------------------\n`;
@@ -167,7 +167,7 @@ export default function VocabularyTable({
                 </span>
               </div>
               <p className="text-xs text-[#64748b] mt-0.5">
-                প্রতিবেদনের উচ্চ-ফলনশীল শব্দার্থ, সিলেবল উচ্চারণ ও বাস্তব বাক্যে নতুন প্রয়োগ
+                এই প্রতিবেদন থেকে বাছাই করা শব্দ: অর্থ, উচ্চারণ ও প্রতিবেদনে ব্যবহার
               </p>
             </div>
           </div>
@@ -250,7 +250,7 @@ export default function VocabularyTable({
               <tr className="bg-[#f8fafc] border-b border-[#e2e8f0] text-xs font-bold text-[#475569] uppercase tracking-wider font-mono">
                 <th className="py-3 px-4 w-[28%]">১. শব্দ ও উচ্চারণ (Word & Phonics)</th>
                 <th className="py-3 px-4 w-[36%]">২. দ্বৈত অর্থ ও সমার্থক (Meanings)</th>
-                <th className="py-3 px-4 w-[36%]">৩. বাস্তব বাক্যে নতুন প্রয়োগ (New Example)</th>
+                <th className="py-3 px-4 w-[36%]">৩. প্রতিবেদনে ব্যবহার (In the story)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#edf2f7] text-xs">
@@ -284,7 +284,7 @@ export default function VocabularyTable({
 
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span className="bg-amber-50 text-amber-900 border border-amber-200/80 px-2 py-0.5 rounded font-mono font-medium text-xs">
-                          [{row.banglaPhonetic}]
+                          {row.banglaPhonetic ? `[${row.banglaPhonetic}]` : null}
                         </span>
                         <span className="text-xs text-[#64748b] font-medium">
                           {row.partOfSpeech}
@@ -319,9 +319,9 @@ export default function VocabularyTable({
 
                     {/* Column 2: Dual Meanings & Synonyms */}
                     <td className="py-4 px-4 align-top space-y-2">
-                      <div 
+                      <div
                         onClick={() => shouldMask && toggleReveal(row.id)}
-                        className={shouldMask ? "cursor-pointer group relative" : ""}
+                        className={`${shouldMask ? "cursor-pointer group relative" : ""} ${row.banglaMeaning ? "" : "hidden"}`}
                       >
                         <span className="text-xs font-bold uppercase tracking-wider text-blue-800 block mb-0.5">
                           বাংলা অর্থ:
@@ -361,19 +361,19 @@ export default function VocabularyTable({
                       )}
                     </td>
 
-                    {/* Column 3: Fresh Practical Example (NOT from the passage) */}
+                    {/* Column 3: the sentence from this story where the word is used */}
                     <td className="py-4 px-4 align-top">
                       <div className="p-3 bg-gradient-to-br from-[#f8fafc] to-[#f1f5f9] rounded-xl border border-[#e2e8f0] space-y-2">
                         <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-800 font-mono">
                           <Sparkles className="w-3 h-3 text-emerald-600" />
-                          <span>বাস্তব বাক্যে নতুন প্রয়োগ:</span>
+                          <span>প্রতিবেদনে ব্যবহার (In the story):</span>
                         </div>
                         <p className="text-xs text-[#0f172a] font-medium leading-relaxed">
-                          "{row.freshExampleEn}"
+                          &ldquo;<Highlighted text={row.freshExampleEn} word={row.word} />&rdquo;
                         </p>
-                        <p className="text-xs text-[#475569] leading-relaxed border-t border-slate-200/80 pt-1.5">
-                          {row.freshExampleBn}
-                        </p>
+                        {row.freshExampleBn && (
+                          <p className="text-xs text-[#475569] leading-relaxed border-t border-slate-200/80 pt-1.5">{row.freshExampleBn}</p>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -425,16 +425,16 @@ export default function VocabularyTable({
 
                   <div className="flex flex-wrap items-center gap-1.5">
                     <span className="bg-amber-50 text-amber-900 border border-amber-200 px-2 py-0.5 rounded text-xs font-mono font-medium">
-                      [{row.banglaPhonetic}]
+                      {row.banglaPhonetic ? `[${row.banglaPhonetic}]` : null}
                     </span>
                     <span className="text-xs text-[#64748b]">
                       {row.partOfSpeech}
                     </span>
                   </div>
 
-                  <div 
+                  <div
                     onClick={() => shouldMask && toggleReveal(row.id)}
-                    className={`space-y-1 ${shouldMask ? "cursor-pointer" : ""}`}
+                    className={`space-y-1 ${shouldMask ? "cursor-pointer" : ""} ${row.banglaMeaning ? "" : "hidden"}`}
                   >
                     <span className="text-xs font-bold text-blue-800 block">বাংলা অর্থ:</span>
                     {shouldMask ? (
@@ -448,21 +448,30 @@ export default function VocabularyTable({
                     )}
                   </div>
 
+                  {row.englishDefinition && (
+                    <div className="space-y-1">
+                      <span className="text-xs font-bold text-[#64748b] block font-mono">English meaning:</span>
+                      <p className="text-xs text-[#475569] leading-relaxed italic">{row.englishDefinition}</p>
+                      {row.synonyms && row.synonyms.length > 0 && <p className="text-xs text-[#64748b]">Synonyms: {row.synonyms.join(", ")}</p>}
+                    </div>
+                  )}
+
                   <div className="p-3 bg-[#f8fafc] rounded-xl border border-[#e2e8f0] space-y-1.5">
                     <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider block font-mono">
-                      বাস্তব বাক্যে নতুন প্রয়োগ:
+                      প্রতিবেদনে ব্যবহার (In the story):
                     </span>
                     <p className="text-xs text-[#0f172a] font-medium leading-relaxed">
-                      "{row.freshExampleEn}"
+                      &ldquo;<Highlighted text={row.freshExampleEn} word={row.word} />&rdquo;
                     </p>
-                    <p className="text-xs text-[#475569] leading-relaxed pt-1 border-t border-slate-200">
-                      {row.freshExampleBn}
-                    </p>
+                    {row.freshExampleBn && <p className="text-xs text-[#475569] leading-relaxed pt-1 border-t border-slate-200">{row.freshExampleBn}</p>}
                   </div>
                 </div>
               );
             })}
           </div>
+          <p className="px-4 py-2 text-[11px] text-[#94a3b8] border-t border-[#e2e8f0]">
+            Words chosen from this story. English meanings: Wiktionary (CC BY-SA), via the Free Dictionary API.
+          </p>
         </div>
       </section>
 
@@ -474,6 +483,19 @@ export default function VocabularyTable({
         customTitle="ব্যক্তিগত ওয়ার্ড ব্যাংক (Personal Word Bank)"
         customDescription="গুরুত্বপূর্ণ ইংরেজি শব্দার্থ ও উদাহরণ আপনার ক্লাউড ওয়ার্ড ব্যাংকে সংরক্ষণ করতে এবং নিয়মিত ফ্ল্যাশকার্ড রিভিশন দিতে বিনামূল্যে লগইন করুন।"
       />
+    </>
+  );
+}
+
+/** The example sentence with the word (in any form) in bold. */
+function Highlighted({ text, word }: { text: string; word: string }) {
+  const stem = word.toLowerCase().replace(/(?:e|ed|es|s|ing)$/, "").slice(0, Math.max(4, word.length - 3));
+  const safe = stem.replace(/[^a-z]/g, "");
+  if (!safe) return <>{text}</>;
+  const parts = text.split(new RegExp(`(\\b${safe}[a-z]*\\b)`, "i"));
+  return (
+    <>
+      {parts.map((p, i) => (i % 2 === 1 ? <strong key={i} className="text-emerald-800">{p}</strong> : <span key={i}>{p}</span>))}
     </>
   );
 }

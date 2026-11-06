@@ -4,11 +4,10 @@ import { getArticleStudyNotes, getActiveStudent } from "@/actions/student";
 import ArticleStudyView, { type StudyArticle } from "@/components/ArticleStudyView";
 import { toFeedCard } from "@/lib/feed-card";
 import { forClient } from "@/lib/study/daily-feed";
-import { extractVocabularyTableRows } from "@/lib/vocabulary-table-engine";
+import { ensureStoryVocabulary } from "@/lib/study/story-vocab-store";
 import { isBengaliText } from "@/lib/bilingual";
 import { ensurePractice } from "@/lib/study/ielts-store";
-import { extractPassage } from "@/lib/study/passage";
-import { passageSentences } from "@/lib/study/ielts-practice";
+import { extractPassage, passageFromJson, passageFromParagraphs } from "@/lib/study/passage";
 import { englishTopic } from "@/lib/study/topics";
 import { writingTaskFor } from "@/lib/study/writing-prompts";
 import { getMyWritingsAction } from "@/actions/writing";
@@ -55,28 +54,28 @@ export default async function ArticleDetailPage({ params }: Props) {
       question: q.question,
       options: Array.isArray(q.options) ? q.options : [],
     })),
-    vocabulary: article.vocabulary.map((v) => ({ id: v.id, term: v.term, definition: v.definition, context: v.context })),
+    // Job-mode terms only (story vocabulary rows for English stories are shown in their own table)
+    vocabulary: article.vocabulary
+      .filter((v) => !v.definition.startsWith('{"v":"story-vocab'))
+      .map((v) => ({ id: v.id, term: v.term, definition: v.definition, context: v.context })),
   };
 
-  // English vocabulary rows come from the saved terms and the curated word bank only
-  const englishVocabRows = isBengaliText(article.title)
-    ? []
-    : extractVocabularyTableRows(article.title, "", article.vocabulary).map((row, i) => ({ ...row, id: `vocab-${i}` }));
   // English Learning stories: the reading passage (a part of the original article, 80–150
   // words) and IELTS practice built only from it. When the article text is missing, the
   // summary and key points stand in. Only the passage is sent to the browser, not the article.
   const isEnglishStory = !isBengaliText(article.title);
-  let passage: string[][] = isEnglishStory ? extractPassage(article.content || "") : [];
-  if (isEnglishStory && !passage.length) {
-    const fallback = passageSentences({
-      title: article.title,
-      summary: article.summary,
-      keyTakeaways: Array.isArray(article.keyTakeaways) ? article.keyTakeaways : [],
-      factTable: Array.isArray(article.factTable) ? article.factTable : [],
-    });
-    passage = fallback.length ? [fallback] : [];
+  const keyPoints = Array.isArray(article.keyTakeaways) ? (article.keyTakeaways as string[]) : [];
+  // 1. the excerpt saved when the story was crawled, 2. the article text (older stories),
+  // 3. the summary and key points, cleaned the same way
+  let passage: string[][] = [];
+  if (isEnglishStory) {
+    passage = passageFromJson(article.passage);
+    if (!passage.length) passage = extractPassage(article.content || "");
+    if (!passage.length) passage = passageFromParagraphs([article.summary, ...keyPoints], 20);
   }
   const practice = isEnglishStory ? await ensurePractice(article.id, passage.flat(), article.title).catch(() => []) : [];
+  // English vocabulary: five less common words from this story's passage, with the sentence they are used in
+  const englishVocabRows = isEnglishStory ? await ensureStoryVocabulary(article.id, passage.flat(), article.title).catch(() => []) : [];
   // English Learning stories: a short IELTS Task 2 style writing task, reviewed by hand
   // The task follows the story's core theme (football → popularity of football), found from its own words
   const task = isEnglishStory
