@@ -55,3 +55,6 @@ next-env.d.ts
 ops-local/
 __pycache__/
 *.pyc
+
+# uploaded exam images (local)
+/data/uploads/

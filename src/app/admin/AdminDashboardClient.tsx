@@ -51,9 +51,11 @@ import {
   HelpCircle,
   GraduationCap,
   PenLine,
+  CalendarClock,
 } from "lucide-react";
 import UserManagementTab from "./UserManagementTab";
 import WritingReviewTab from "./WritingReviewTab";
+import WeeklyExamTab from "./WeeklyExamTab";
 import { getEnToBnPhonetics } from "@/lib/phonetics/en-to-bn";
 
 const CATEGORIES = [
@@ -71,7 +73,7 @@ const CATEGORIES = [
 
 export default function AdminDashboardClient() {
 
-  const [activeTab, setActiveTab] = useState<"spider" | "users" | "writing" | "sources" | "history" | "articles" | "scheduler">("spider");
+  const [activeTab, setActiveTab] = useState<"spider" | "users" | "exam" | "writing" | "sources" | "history" | "articles" | "scheduler">("spider");
 
   // Cron / Scheduler state
   const [copiedVercel, setCopiedVercel] = useState(false);
@@ -174,6 +176,7 @@ export default function AdminDashboardClient() {
       if (
         tabParam === "users" ||
         tabParam === "writing" ||
+        tabParam === "exam" ||
         tabParam === "spider" ||
         tabParam === "sources" ||
         tabParam === "history" ||
@@ -535,6 +538,18 @@ export default function AdminDashboardClient() {
           </button>
 
           <button
+            onClick={() => setActiveTab("exam")}
+            className={`px-4 py-2.5 rounded-t-lg transition flex items-center gap-2 border-b-2 font-semibold ${
+              activeTab === "exam"
+                ? "bg-[#141b24] text-[#f5c66b] border-[#f5c66b]"
+                : "text-[#8e9aa8] hover:text-white border-transparent hover:bg-[#141b24]/50"
+            }`}
+          >
+            <CalendarClock className="w-4 h-4" />
+            <span>Weekly exam</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab("writing")}
             className={`px-4 py-2.5 rounded-t-lg transition flex items-center gap-2 border-b-2 font-semibold ${
               activeTab === "writing"
@@ -600,6 +615,9 @@ export default function AdminDashboardClient() {
 
         {/* TAB: WRITING REVIEWS (by hand) */}
         {activeTab === "writing" && <WritingReviewTab showNotify={showNotify} />}
+
+        {/* TAB: WEEKLY EXAM BUILDER */}
+        {activeTab === "exam" && <WeeklyExamTab showNotify={showNotify} />}
 
         {/* TAB 1: SPIDER CONTROL CENTER */}
         {activeTab === "spider" && (

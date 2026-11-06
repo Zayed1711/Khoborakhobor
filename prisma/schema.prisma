@@ -318,3 +318,35 @@ model WritingSubmission {
   @@index([status, createdAt])
   @@index([studentId])
 }
+
+// Weekly exam: written by the admin on Thursday, held Friday 7 am – 12 pm (Dhaka)
+model WeeklyExam {
+  id        String   @id @default(cuid())
+  day       String   @unique // YYYY-MM-DD (a Friday, Dhaka time)
+  title     String
+  status    String   @default("draft") // draft | scheduled (live/closed follow from the time)
+  passages  String   @default("{}") // JSON: { english1?: string, ielts?: string }
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  questions ExamQuestion[]
+}
+
+model ExamQuestion {
+  id          String     @id @default(cuid())
+  examId      String
+  exam        WeeklyExam @relation(fields: [examId], references: [id], onDelete: Cascade)
+  section     String // gk | grammar | english1 | ielts | writing | chart
+  kind        String // mcq | tfng | blank | writing
+  position    Int        @default(0)
+  question    String
+  options     String     @default("[]") // JSON array (mcq)
+  answer      String     @default("") // mcq: "0".."3"; tfng: TRUE/FALSE/NOT GIVEN; blank: "word / other"
+  explanation String?
+  marks       Float      @default(1)
+  imagePath   String? // uploaded chart image file name
+  sourceNote  String? // JSON: the key note it was made from { day, slug, title, point }
+  createdAt   DateTime   @default(now())
+
+  @@index([examId, section, position])
+}

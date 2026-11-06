@@ -1,0 +1,53 @@
+import { describe, expect, it } from "vitest";
+import { examPhase, examProblems, examWindow, isFriday, nextExamFriday, questionProblems, TOTAL_MARKS, type QuestionLike } from "@/lib/exam/rules";
+
+const mcq = (section: string, i = 0): QuestionLike => ({ section, kind: "mcq", question: `Q${i}?`, options: ["a", "b", "c", "d"], answer: "1", marks: 1 });
+
+function fullExam(): QuestionLike[] {
+  const qs: QuestionLike[] = [];
+  for (const s of ["gk", "grammar", "english1", "ielts"]) for (let i = 0; i < 10; i++) qs.push(mcq(s, i));
+  qs.push({ section: "writing", kind: "writing", question: "Discuss.", options: [], answer: "", marks: 5 });
+  qs.push({ section: "chart", kind: "writing", question: "Describe the chart.", options: [], answer: "", marks: 5, imagePath: "abc.png" });
+  return qs;
+}
+
+describe("weekly exam rules", () => {
+  it("is 50 marks", () => expect(TOTAL_MARKS).toBe(50));
+
+  it("opens 7 am and closes 12 pm Dhaka time (UTC+6)", () => {
+    const w = examWindow("2026-11-13");
+    expect(w.opensAt.toISOString()).toBe("2026-11-13T01:00:00.000Z");
+    expect(w.closesAt.toISOString()).toBe("2026-11-13T06:00:00.000Z");
+  });
+
+  it("finds the next Friday that has not opened yet", () => {
+    expect(nextExamFriday(Date.parse("2026-11-12T16:00:00Z"))).toBe("2026-11-13"); // Thu 10 pm Dhaka
+    expect(nextExamFriday(Date.parse("2026-11-13T02:00:00Z"))).toBe("2026-11-20"); // Fri 8 am Dhaka: this one is open
+    expect(isFriday("2026-11-13")).toBe(true);
+    expect(isFriday("2026-11-12")).toBe(false);
+  });
+
+  it("phases follow the clock once scheduled", () => {
+    expect(examPhase("draft", "2026-11-13", Date.parse("2026-11-13T02:00:00Z"))).toBe("draft");
+    expect(examPhase("scheduled", "2026-11-13", Date.parse("2026-11-13T00:59:00Z"))).toBe("scheduled");
+    expect(examPhase("scheduled", "2026-11-13", Date.parse("2026-11-13T01:00:00Z"))).toBe("live");
+    expect(examPhase("scheduled", "2026-11-13", Date.parse("2026-11-13T06:00:00Z"))).toBe("closed");
+  });
+
+  it("a complete exam has no problems; missing marks, passage or image are reported", () => {
+    expect(examProblems(fullExam(), { ielts: "A passage." })).toEqual([]);
+    expect(examProblems(fullExam(), {})).toContain("IELTS Reading: add the reading passage.");
+    const short = fullExam().filter((q, i) => i !== 0);
+    expect(examProblems(short, { ielts: "x" })).toContain("General Knowledge: 9 of 10 marks filled.");
+    const noImage = fullExam().map((q) => (q.section === "chart" ? { ...q, imagePath: null } : q));
+    expect(examProblems(noImage, { ielts: "x" }).some((p) => p.includes("Upload the chart image"))).toBe(true);
+  });
+
+  it("checks each question type", () => {
+    expect(questionProblems({ ...mcq("gk"), options: ["a", "a", "c", "d"] })).toContain("Two options are the same.");
+    expect(questionProblems({ ...mcq("gk"), answer: "" })).toContain("Mark the correct option.");
+    expect(questionProblems({ section: "ielts", kind: "tfng", question: "Statement", options: [], answer: "MAYBE", marks: 1 })).toContain("Choose TRUE, FALSE or NOT GIVEN.");
+    expect(questionProblems({ section: "grammar", kind: "blank", question: "He go home.", options: [], answer: "goes", marks: 1 })).toContain("Put _____ where the answer goes.");
+    expect(questionProblems({ section: "gk", kind: "tfng", question: "x", options: [], answer: "TRUE", marks: 1 })[0]).toMatch(/cannot have/);
+  });
+});
