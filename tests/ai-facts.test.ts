@@ -197,3 +197,23 @@ describe("generateFacts cascade", () => {
     expect(out.calls).toBe(0);
   });
 });
+
+describe("key points picked by sentence number", () => {
+  const sentences = ["প্রথম বাক্যটি সম্পূর্ণ এবং নিজে থেকেই অর্থবহ।", "দ্বিতীয় বাক্যটিও নিজে থেকে বোঝা যায় এমন।", "তৃতীয় বাক্য, সেই একই বিষয়ে তিনি বলেন।"];
+  it("returns the article's exact sentences in reading order", () => {
+    const r = checkFacts({ ...goodBn, keyQuotes: [2, 1] }, BN_ARTICLE, "bn", sentences);
+    expect(r.facts?.keyQuotes).toEqual([sentences[0], sentences[1]]);
+  });
+  it("ignores numbers out of range or repeated, and at most 3", () => {
+    const r = checkFacts({ ...goodBn, keyQuotes: [9, 1, 1, 0, 3, 2, 2] }, BN_ARTICLE, "bn", sentences);
+    expect(r.facts?.keyQuotes).toEqual([sentences[0], sentences[1], sentences[2]]);
+    expect(checkFacts({ ...goodBn, keyQuotes: [9, 0, 3, 3] }, BN_ARTICLE, "bn", sentences).facts?.keyQuotes).toEqual([sentences[2]]);
+    expect(checkFacts({ ...goodBn }, BN_ARTICLE, "bn", sentences).facts?.keyQuotes).toEqual([]);
+  });
+  it("sends the article as numbered sentences", async () => {
+    let user = "";
+    await generateFacts({ title: BN_TITLE, body: (BN_BODY + " ").repeat(3) }, { busyWaitMs: 0, models: ["m"], call: async (o) => { user = o.user; return { ok: true, text: JSON.stringify(goodBn), tokensIn: 1, tokensOut: 1 }; } });
+    expect(user).toMatch(/\[1\] /);
+    expect(user).toMatch(/\[2\] /);
+  });
+});

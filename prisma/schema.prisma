@@ -425,6 +425,7 @@ model ArticleFacts {
   whenText   String?
   whereText  String?
   numbers    String? // JSON [{ label, value }]
+  keyQuotes  String? // JSON string[]: key points picked from the article's own sentences
   gkCategory String?
   examScore  Int?
   problems   String? // why the checks failed, for the admin

@@ -149,12 +149,72 @@ export function cleanArticleBody(html: string): { html: string; removed: number;
 
 const BN_DIGITS = "০১২৩৪৫৬৭৮৯";
 
+/**
+ * True when every opened quotation is closed. Curly ‘ ’ and “ ” are counted as pairs
+ * (an extra ’ is an English apostrophe, so only unclosed openings count), straight "
+ * must come in pairs.
+ */
+export function quotesBalanced(s: string): boolean {
+  const n = (re: RegExp) => (s.match(re) || []).length;
+  return n(/‘/g) <= n(/’/g) && n(/“/g) <= n(/”/g) && n(/"/g) % 2 === 0;
+}
+
 export function splitSentences(text: string): string[] {
-  return text
+  const pieces = text
     .replace(/\s+/g, " ")
     .split(/(?<=[।!?])\s+|(?<=[a-z0-9)"”’]\.)\s+(?=[A-Z"“‘ঀ-৿])/)
     .map((s) => s.trim())
-    .filter((s) => s.length >= 25 && s.length <= 320);
+    .filter(Boolean);
+  // A full stop inside a quotation (‘সেটা ২০১০ সাল।’ তিনি লেখেন…) does not end the
+  // sentence: join pieces until the quotation is closed
+  const out: string[] = [];
+  let buf = "";
+  for (const p of pieces) {
+    buf = buf ? `${buf} ${p}` : p;
+    if (quotesBalanced(buf) || buf.length > 600) {
+      out.push(buf);
+      buf = "";
+    }
+  }
+  if (buf) out.push(buf);
+  // A sentence whose quotation never closes reads as broken: never quote it
+  return out.filter((s) => s.length >= 25 && s.length <= 320 && quotesBalanced(s));
+}
+
+// Words that point back to an earlier sentence ("this ship", "he", "therefore"): a key
+// point that starts with one cannot be understood on its own
+const BN_LEADS = ["এই", "এ", "সেই", "সে", "ওই", "তেমন", "সুতরাং", "তবে", "এদিকে", "এর", "তাই", "ফলে", "অন্যদিকে", "তিনি", "তাঁরা", "তারা", "তাঁর", "তার", "তাঁদের", "তাদের", "এবার", "এছাড়া", "এ ছাড়া", "পাশাপাশি", "একই সঙ্গে", "এরপর", "এরপরও", "এসব", "এগুলো", "এটি", "এটা", "সেটি", "সেটা", "কিন্তু", "আর", "অথচ"];
+const EN_LEADS = ["he", "she", "it", "they", "this", "that", "these", "those", "so", "however", "also", "but", "and", "meanwhile", "then", "thus", "therefore", "his", "her", "their", "its"];
+
+/** True when a sentence makes sense without the one before it. */
+export function standsAlone(sentence: string): boolean {
+  const s = (sentence || "").normalize("NFC").replace(/^[\s"'“”‘’(]+/, "").trim();
+  if (!s) return false;
+  const first = s.split(/[\s,;:।]+/)[0].toLowerCase();
+  const firstTwo = s.split(/\s+/).slice(0, 2).join(" ");
+  if (/[ঀ-৿]/.test(s)) {
+    if (BN_LEADS.includes(first) || BN_LEADS.includes(firstTwo)) return false;
+    // "... পেয়েছেন তিনি।" / "এ কথা বলেন" : the subject or topic is in another sentence
+    if (/\s(তিনি|তাঁরা|তারা)[।!?]?$/.test(s) || /(এ|এই|এসব|এমন|সে) (কথা|তথ্য) (বল|জানা)/.test(s)) return false;
+    return true;
+  }
+  if (EN_LEADS.includes(first.replace(/[^a-z]/g, ""))) return false;
+  if (/\bsaid (this|so)\.?$/i.test(s) || /\b(this|that)\.$/i.test(s)) return false;
+  return true;
+}
+
+/**
+ * Quoted study material shown with a story: drop fact rows that repeat a key point
+ * (fewer copied lines from one report) and any line with an unclosed quotation.
+ */
+export function tidyQuotes<F extends { relevance?: string }>(keyTakeaways: string[], factTable: F[]): { keyTakeaways: string[]; factTable: F[] } {
+  const norm = (s: string) => (s || "").replace(/\s+/g, " ").trim();
+  const points = keyTakeaways.filter((t) => quotesBalanced(t));
+  const seen = new Set(points.map(norm));
+  const whole = factTable.filter((r) => quotesBalanced(norm(r.relevance || "")));
+  const fresh = whole.filter((r) => !seen.has(norm(r.relevance || "")));
+  // Older stories picked facts from the key-point sentences: keep the sheet rather than empty it
+  return { keyTakeaways: points, factTable: fresh.length ? fresh : whole };
 }
 
 /**
@@ -237,14 +297,17 @@ function words(s: string): string[] {
 // ---------------------------------------------------------------------------
 
 /** Up to 4 rows, each a quantity or date quoted from an article sentence. */
-export function extractFacts(title: string, bodyText: string): FactRow[] {
+export function extractFacts(title: string, bodyText: string, avoid: string[] = []): FactRow[] {
   const isBn = /[ঀ-৿]/.test(title);
   const rows: FactRow[] = [];
   const usedValues = new Set<string>();
   const sentences = splitSentences(bodyText);
+  // Sentences already shown as key points are not quoted a second time
+  const skip = new Set(avoid.map((s) => s.replace(/\s+/g, " ").trim()));
 
   for (const s of sentences) {
     if (rows.length >= 4) break;
+    if (skip.has(s)) continue;
     const date = datesIn(s)[0];
     const qty = quantitiesIn(s)[0];
     const value = qty || date;
@@ -280,6 +343,7 @@ export function extractTakeaways(title: string, summary: string, bodyText: strin
     if (s.length < 50) score -= 1;
     if (summaryKey && s.replace(/\s+/g, "").startsWith(summaryKey)) score -= 3; // already shown as summary
     if (/[?？]$/.test(s)) score -= 1;
+    if (!standsAlone(s)) score -= 5; // needs the sentence before it to make sense
     return { s, i, score };
   });
 

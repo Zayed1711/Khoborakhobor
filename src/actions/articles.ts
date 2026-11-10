@@ -3,10 +3,12 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { shuffleQuizOptions } from "@/lib/quiz/shuffle";
-import { extractFacts, extractTakeaways, buildExtractiveQuiz, plainText } from "@/lib/study/extractive";
+import { extractFacts, extractTakeaways, buildExtractiveQuiz, plainText, tidyQuotes } from "@/lib/study/extractive";
 import { requireAdmin } from "@/lib/guards";
 import { toFeedCard, FeedCard } from "@/lib/feed-card";
-import { AI_FACTS_SELECT, aiSummaryOf, factCardOf } from "@/lib/study/ai-facts-view";
+import { AI_FACTS_SELECT, aiSummaryOf, factCardOf, aiKeyQuotesOf } from "@/lib/study/ai-facts-view";
+import { viewerCanReadStories } from "@/lib/story-access";
+import { guestCard, publisherName } from "@/lib/feed-card";
 import { selectDailyFeed } from "@/lib/study/daily-selection";
 import { englishTopic } from "@/lib/study/topics";
 import { sanitizeArticleHtml, textToParagraphHtml } from "@/lib/sanitize-html";
@@ -99,6 +101,16 @@ export async function getEnglishFeedAction(
   limit: number = 20,
   topic?: string | null
 ): Promise<{ cards: FeedCard[]; next: string | null }> {
+  const page = await englishFeedPage(before, limit, topic);
+  // Login wall: visitors get headlines only
+  return (await viewerCanReadStories()) ? page : { ...page, cards: page.cards.map(guestCard) };
+}
+
+async function englishFeedPage(
+  before: string | null | undefined,
+  limit: number,
+  topic: string | null | undefined
+): Promise<{ cards: FeedCard[]; next: string | null }> {
   const BATCH = 200;
   const cards: FeedCard[] = [];
   const seen = new Set<string>();
@@ -124,7 +136,7 @@ export async function getEnglishFeedAction(
             content: "",
             aiSummary: aiSummaryOf(a.aiFacts),
             createdAtIso: a.createdAt.toISOString(),
-            keyTakeaways: safeParseJson(a.keyTakeaways, []),
+            keyTakeaways: aiKeyQuotesOf(a.aiFacts) ?? safeParseJson(a.keyTakeaways, []),
             factTable: safeParseJson((a as any).factTable, []),
             quizQuestions: [], // English learning stories have no quiz
             topic: storyTopic,
@@ -146,6 +158,12 @@ export async function getEnglishFeedAction(
 }
 
 export async function getArticlesByDateAction(dateKey: string, allEnglish: boolean = false): Promise<FeedCard[]> {
+  const cards = await articlesByDate(dateKey, allEnglish);
+  // Login wall: visitors get headlines only
+  return (await viewerCanReadStories()) ? cards : cards.map(guestCard);
+}
+
+async function articlesByDate(dateKey: string, allEnglish: boolean): Promise<FeedCard[]> {
   try {
     if (!dateKey || dateKey === "all") {
       return urgentTier(selectDailyFeed((await getPublishedArticles(250)).map(toFeedCard), "latest"));
@@ -181,7 +199,7 @@ export async function getArticlesByDateAction(dateKey: string, allEnglish: boole
       content: "",
       aiSummary: aiSummaryOf(a.aiFacts),
       createdAtIso: a.createdAt instanceof Date ? a.createdAt.toISOString() : new Date(a.createdAt).toISOString(),
-      keyTakeaways: safeParseJson(a.keyTakeaways, []),
+      keyTakeaways: aiKeyQuotesOf(a.aiFacts) ?? safeParseJson(a.keyTakeaways, []),
       factTable: safeParseJson((a as any).factTable, []),
       examTagsList: a.examTags ? a.examTags.split(",").map((t) => t.trim()) : [],
       quizQuestions: a.quizQuestions.map((q) => ({
@@ -232,7 +250,7 @@ export async function getPublishedArticles(limit: number = 150) {
       content: "",
       aiSummary: aiSummaryOf(a.aiFacts),
       createdAtIso: a.createdAt instanceof Date ? a.createdAt.toISOString() : new Date(a.createdAt).toISOString(),
-      keyTakeaways: safeParseJson(a.keyTakeaways, []),
+      keyTakeaways: aiKeyQuotesOf(a.aiFacts) ?? safeParseJson(a.keyTakeaways, []),
       factTable: safeParseJson((a as any).factTable, []),
       examTagsList: a.examTags ? a.examTags.split(",").map((t) => t.trim()) : [],
       quizQuestions: a.quizQuestions.map((q) => ({
@@ -292,8 +310,10 @@ export async function getArticleBySlug(rawSlug: string) {
       content: "",
       aiSummary: aiSummaryOf(article.aiFacts),
       factCard: factCardOf(article.aiFacts),
-      keyTakeaways: safeParseJson(article.keyTakeaways, []),
-      factTable: safeParseJson((article as any).factTable, []),
+      // Publisher name without the feed label; no fact row repeating a key point,
+      // no line with an unclosed quotation
+      sourceName: article.sourceName ? publisherName(article.sourceName) : null,
+      ...tidyQuotes(aiKeyQuotesOf(article.aiFacts) ?? safeParseJson<string[]>(article.keyTakeaways, []), safeParseJson<any[]>((article as any).factTable, [])),
       examTagsList: article.examTags ? article.examTags.split(",").map((t) => t.trim()) : [],
       quizQuestions: article.quizQuestions.map((q) => ({
         ...q,

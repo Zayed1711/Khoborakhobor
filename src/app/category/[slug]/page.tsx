@@ -7,6 +7,8 @@ import MobileBottomNav from "@/components/MobileBottomNav";
 import { prisma } from "@/lib/prisma";
 import { forClient, getKeyNotes, getSectionSelection } from "@/lib/study/daily-feed";
 import { getCurrentSession } from "@/actions/auth";
+import { canReadStories } from "@/lib/story-access";
+import { guestCard } from "@/lib/feed-card";
 import { getTrendingHashtagsAction } from "@/actions/search";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -32,8 +34,11 @@ export default async function CategoryPage({ params }: Props) {
   }
 
   // Only this section's stories from the daily selections (at most 30 stories a day site-wide)
-  const categoryArticles = forClient(await getSectionSelection(slug));
-  const keyNotes = await getKeyNotes("bn").catch(() => []);
+  // Login wall: visitors get headlines only (src/lib/story-access.ts)
+  const reader = canReadStories(session);
+  const sectionCards = forClient(await getSectionSelection(slug));
+  const categoryArticles = reader ? sectionCards : sectionCards.map(guestCard);
+  const keyNotes = reader ? await getKeyNotes("bn").catch(() => []) : [];
   const allCategories = await prisma.category.findMany({
     orderBy: { createdAt: "asc" },
   });
@@ -108,6 +113,7 @@ export default async function CategoryPage({ params }: Props) {
           streakDays={session.student?.streakDays || 0}
           initialTrending={trendingHashtags}
           keyNotes={keyNotes}
+          keyNotesLocked={!reader}
         />
       </main>
 

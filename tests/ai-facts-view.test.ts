@@ -46,3 +46,15 @@ describe("what the site shows from AI facts", () => {
     expect(factCardOf({ ...row, who: "[]", what: "", whereText: "", numbers: "not json" })).toBeNull();
   });
 });
+
+import { aiKeyQuotesOf } from "@/lib/study/ai-facts-view";
+describe("AI-picked key points on the site", () => {
+  it("used only when on, passed, and at least two", () => {
+    const r = { ...row, keyQuotes: JSON.stringify(["এক।", "দুই।"]) };
+    expect(aiKeyQuotesOf(r)).toBeNull();
+    process.env.AI_FACTS = "on";
+    expect(aiKeyQuotesOf(r)).toEqual(["এক।", "দুই।"]);
+    expect(aiKeyQuotesOf({ ...row, keyQuotes: JSON.stringify(["এক।"]) })).toBeNull();
+    expect(aiKeyQuotesOf({ ...r, status: "failed" })).toBeNull();
+  });
+});

@@ -8,6 +8,7 @@
  * fails the story keeps the summary it already has. Students never see an unchecked answer.
  */
 import { callGeminiJson, type GeminiResult } from "../ai/gemini";
+import { splitSentences, quotesBalanced, standsAlone } from "./extractive";
 
 export const GK_CATEGORIES = [
   "Bangladesh Affairs",
@@ -37,6 +38,8 @@ export type StoryFacts = {
   numbers: FactNumber[];
   gkCategory: GkCategory;
   examScore: number | null;
+  /** Key points: up to 3 of the article's own sentences, picked by number, that make sense on their own */
+  keyQuotes: string[];
 };
 export type Lang = "bn" | "en";
 
@@ -116,7 +119,7 @@ export type CheckResult = { ok: boolean; problems: string[]; facts: StoryFacts |
  * Check an AI answer against the article. Problems in the summary reject the whole answer;
  * a fact-card field that fails is dropped (and noted) instead.
  */
-export function checkFacts(raw: unknown, article: { title: string; body: string }, lang: Lang): CheckResult {
+export function checkFacts(raw: unknown, article: { title: string; body: string }, lang: Lang, sentences: string[] = []): CheckResult {
   const problems: string[] = [];
   if (!raw || typeof raw !== "object") return { ok: false, problems: ["answer is not an object"], facts: null };
   const r = raw as Record<string, unknown>;
@@ -192,7 +195,20 @@ export function checkFacts(raw: unknown, article: { title: string; body: string 
   const score = typeof r.examScore === "number" ? Math.round(r.examScore) : Number.NaN;
   const examScore = score >= 1 && score <= 10 ? score : null;
 
-  return { ok: true, problems, facts: { summary, who: whoKept, what, when, where, numbers, gkCategory, examScore } };
+  // Key points are the article's own sentences, chosen by their number: verbatim by construction
+  const picks = (Array.isArray(r.keyQuotes) ? r.keyQuotes : [])
+    .map((n) => (typeof n === "number" ? Math.round(n) : Number.NaN))
+    .filter((n, i, all) => Number.isInteger(n) && n >= 1 && n <= sentences.length && all.indexOf(n) === i)
+    // A pick that leans on an earlier sentence ("this", "he", "therefore") is skipped; spares fill in
+    .filter((n) => quotesBalanced(sentences[n - 1]) && standsAlone(sentences[n - 1]))
+    .slice(0, 3)
+    .sort((a, b) => a - b);
+  const keyQuotes = picks.map((n) => sentences[n - 1]);
+  if (Array.isArray(r.keyQuotes) && r.keyQuotes.length && keyQuotes.length < Math.min(3, r.keyQuotes.length)) {
+    problems.push("dropped key-point numbers that were out of range or repeated");
+  }
+
+  return { ok: true, problems, facts: { summary, who: whoKept, what, when, where, numbers, gkCategory, examScore, keyQuotes } };
 }
 
 // ---------------------------------------------------------------------------
@@ -217,6 +233,7 @@ export function systemPrompt(lang: Lang): string {
     "where: the main place(s) as written in the article, or empty.",
     "numbers: up to 4 important figures, each with a short label; value must contain the figure as written.",
     "gkCategory: the best category from the allowed list.",
+    "keyQuotes: the NUMBERS of up to 4 article sentences (best first) most useful for exam revision that make complete sense on their own: they name the people and things (not just 'he', 'this', 'the same'), and they are about the main event of the headline, not background about a different time or event. Never pick a sentence that starts with a word pointing back (this, that, he, she, so, however; এই, সেই, তিনি, সুতরাং, তবে). Fewer if fewer qualify.",
     "examScore: 1-10, how likely this is to be asked in a BCS, bank or admission exam. 9-10: national budget or policy, laws, international agreements, appointments to top posts, awards, records and firsts. 5-8: notable national or international events with lasting facts. 3-6: history features, human-interest and explainer stories. 1-4: local crime, accidents, entertainment, opinion.",
   ].join("\n");
 }
@@ -235,8 +252,9 @@ export const RESPONSE_SCHEMA = {
     },
     gkCategory: { type: "STRING", enum: [...GK_CATEGORIES] },
     examScore: { type: "INTEGER" },
+    keyQuotes: { type: "ARRAY", items: { type: "INTEGER" } },
   },
-  required: ["summary", "who", "what", "when", "where", "numbers", "gkCategory", "examScore"],
+  required: ["summary", "who", "what", "when", "where", "numbers", "gkCategory", "examScore", "keyQuotes"],
 };
 
 // ---------------------------------------------------------------------------
@@ -276,7 +294,9 @@ export async function generateFacts(
     out.problems.push("article text too short");
     return out;
   }
-  const user = `Title: ${article.title}\n\nArticle:\n${body}`;
+  // The article as numbered sentences, so key points can be picked by number (exact text)
+  const sentences = splitSentences(body);
+  const user = `Title: ${article.title}\n\nArticle (numbered sentences):\n${sentences.map((s, i) => `[${i + 1}] ${s}`).join("\n")}`;
 
   // After a copied summary, the next model is told to rewrite in its own words
   let hint = "";
@@ -312,7 +332,7 @@ export async function generateFacts(
       continue;
     }
     // The checks run on the full article text, not the trimmed copy sent to the AI
-    const checked = checkFacts(parsed, article, lang);
+    const checked = checkFacts(parsed, article, lang, sentences);
     if (checked.ok && checked.facts) {
       return { ...out, status: "ok", model, facts: checked.facts, problems: [...out.problems, ...checked.problems] };
     }

@@ -22,6 +22,8 @@ interface RightStudyRailProps {
   streakDays?: number;
   /** Daily key notes (job/BCS mode); English mode will show vocabulary here */
   keyNotes?: KeyNoteDay[];
+  /** Visitor without an account: key notes show a log-in box */
+  keyNotesLocked?: boolean;
   initialTrending?: TrendingHashtagsData;
 }
 
@@ -46,6 +48,7 @@ export default function RightStudyRail({
   streakDays = 14,
   initialTrending,
   keyNotes = [],
+  keyNotesLocked = false,
 }: RightStudyRailProps) {
   const { isEnglishMode } = useAppMode();
   const [isProGateOpen, setIsProGateOpen] = useState(false);
@@ -100,7 +103,7 @@ export default function RightStudyRail({
       </div>
 
       {/* 2. Daily key notes: one quoted point from each of the day's ten (job/BCS mode) */}
-      {!isEnglishMode && <KeyNotesPanel days={keyNotes} className="shrink-0" />}
+      {!isEnglishMode && <KeyNotesPanel days={keyNotes} locked={keyNotesLocked} className="shrink-0" />}
 
       {/* 3. Trending Topics & Hashtags (Interactive Search Filter) */}
       <div className="shrink-0 p-4 bg-white border border-[#ded8cb] rounded-2xl shadow-2xs space-y-2.5">

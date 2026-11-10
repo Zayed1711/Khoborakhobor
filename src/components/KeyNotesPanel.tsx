@@ -10,20 +10,45 @@ interface KeyNotesPanelProps {
   /** Phones: starts collapsed so the ten stories stay at the top */
   collapsible?: boolean;
   className?: string;
+  /** Visitor without an account: a "log in to see" box instead of the notes */
+  locked?: boolean;
 }
 
 const HEADING = "দৈনিক মূল নোট";
+
+function LockedNotes({ className }: { className: string }) {
+  return (
+    <section className={`bg-white border border-[#ded8cb] rounded-2xl shadow-2xs p-4 space-y-3 ${className}`} aria-label={HEADING}>
+      <span className="flex items-center gap-2">
+        <NotebookPen className="w-4 h-4 text-[#842323] shrink-0" />
+        <span>
+          <span className="block text-sm font-bold text-[#1c1d21]">{HEADING}</span>
+          <span className="block text-xs text-[#717887]">জরুরি ১০ খবরের মূল তথ্য, প্রতিদিন</span>
+        </span>
+      </span>
+      <p className="text-sm text-[#525a68]">লগইন করে প্রতিদিনের জরুরি ১০ খবরের মূল তথ্য দেখুন ও সপ্তাহজুড়ে রিভিশন দিন।</p>
+      <button
+        type="button"
+        onClick={() => window.dispatchEvent(new CustomEvent("khobor_open_auth_gate", { detail: { feature: "notebook" } }))}
+        className="w-full px-3 py-2 rounded-lg bg-[#842323] text-white text-sm font-semibold hover:bg-[#6e1d1d]"
+      >
+        লগইন / নিবন্ধন
+      </button>
+    </section>
+  );
+}
 
 /**
  * One quoted point from each of the day's জরুরি ১০ stories, for active recall and
  * weekend revision. Students can copy a day or download the whole week.
  */
-export default function KeyNotesPanel({ days, collapsible = false, className = "" }: KeyNotesPanelProps) {
+export default function KeyNotesPanel({ days, collapsible = false, className = "", locked = false }: KeyNotesPanelProps) {
   const withNotes = useMemo(() => days.filter((d) => d.items.length > 0), [days]);
   const [selected, setSelected] = useState(withNotes[0]?.day ?? "");
   const [open, setOpen] = useState(!collapsible);
   const [copied, setCopied] = useState(false);
 
+  if (locked) return <LockedNotes className={className} />;
   if (!withNotes.length) return null;
   const today = days[0]?.day;
   const yesterday = days[1]?.day;

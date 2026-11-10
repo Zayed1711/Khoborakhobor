@@ -24,6 +24,8 @@ interface SocialFeedStreamProps {
   archiveStats?: DateArchiveStats | null;
   /** Daily key notes for phones and tablets (the desktop side panel shows the same) */
   keyNotes?: KeyNoteDay[];
+  /** Visitor without an account: key notes show a log-in box */
+  keyNotesLocked?: boolean;
 }
 
 export default function SocialFeedStream({
@@ -34,6 +36,7 @@ export default function SocialFeedStream({
   streakDays = 0,
   archiveStats,
   keyNotes = [],
+  keyNotesLocked = false,
 }: SocialFeedStreamProps) {
   const { setMode, isEnglishMode } = useAppMode();
   const [selectedDate, setSelectedDate] = useState("all");
@@ -201,7 +204,7 @@ export default function SocialFeedStream({
       <CapsuleStoryPills capsuleArticles={filteredCapsules} />
 
       {/* 2. Daily key notes on phones and tablets, collapsed so the ten stay on top (job/BCS mode) */}
-      {!isEnglishMode && <KeyNotesPanel days={keyNotes} collapsible className="xl:hidden" />}
+      {!isEnglishMode && <KeyNotesPanel days={keyNotes} locked={keyNotesLocked} collapsible className="xl:hidden" />}
 
       {/* 3. Date Selection Dropdown Menu (With dynamic on-demand date loader) */}
       <DateArchiveDropdown

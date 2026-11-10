@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import KhoborLogo from "@/components/KhoborLogo";
 
-export type ProGateFeature = "dictionary" | "quiz" | "notebook";
+export type ProGateFeature = "dictionary" | "quiz" | "notebook" | "story";
 
 interface ProAuthGateModalProps {
   isOpen: boolean;
@@ -18,6 +18,8 @@ interface ProAuthGateModalProps {
   feature?: ProGateFeature;
   customTitle?: string;
   customDescription?: string;
+  /** Where to land after login/sign-up (default: this page) */
+  redirectTo?: string;
 }
 
 const FEATURE_META: Record<ProGateFeature, { title: string; subtitle: string; icon: any }> = {
@@ -30,6 +32,11 @@ const FEATURE_META: Record<ProGateFeature, { title: string; subtitle: string; ic
     title: "অ্যাক্টিভ রিকল মাইক্রো-কুইজ (Active Recall Quiz)",
     subtitle: "প্রতিদিনের সংবাদের ওপর ভিত্তি করে তৈরি প্রশ্নোত্তরে অংশ নিয়ে আত্মমূল্যায়ন ও র্যাংকিং দেখতে সাইন ইন করুন।",
     icon: HelpCircle,
+  },
+  story: {
+    title: "পুরো খবর পড়তে লগইন করুন",
+    subtitle: "বিনামূল্যে অ্যাকাউন্ট খুলে প্রতিটি খবরের সারসংক্ষেপ, মূল কথা, তথ্য সারণি ও অভিধান ব্যবহার করুন। লগইনের পর সরাসরি এই খবরে ফিরে আসবেন।",
+    icon: BookOpen,
   },
   notebook: {
     title: "ক্লাউড স্টাডি নোটবুক ও হাইলাইটার (Study Notebook)",
@@ -44,6 +51,7 @@ export default function ProAuthGateModal({
   feature = "dictionary",
   customTitle,
   customDescription,
+  redirectTo,
 }: ProAuthGateModalProps) {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
@@ -67,7 +75,9 @@ export default function ProAuthGateModal({
 
   const meta = FEATURE_META[feature] || FEATURE_META.dictionary;
   const FeatureIcon = meta.icon;
-  const redirectTarget = encodeURIComponent(pathname || "/");
+  // Only same-site paths, never a full address
+  const safeRedirect = redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : pathname || "/";
+  const redirectTarget = encodeURIComponent(safeRedirect);
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/65 backdrop-blur-md animate-in fade-in duration-200">

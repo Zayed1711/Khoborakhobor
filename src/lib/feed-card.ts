@@ -6,6 +6,13 @@
  * submitQuizAnswerAction instead of shipping `correctOption` to every browser.
  */
 
+import { tidyQuotes } from "@/lib/study/extractive";
+
+/** The newspaper's name without a feed label: "প্রথম আলো (শীর্ষ সংবাদ ও জাতীয়)" -> "প্রথম আলো" */
+export function publisherName(name: string): string {
+  return (name || "").replace(/s*[(（][^)）]*[)）]s*$/, "").trim() || name;
+}
+
 export interface FeedQuizQuestion {
   id: string;
   question: string;
@@ -38,6 +45,8 @@ export interface FeedCard {
   quizQuestions: FeedQuizQuestion[];
   /** English Learning stories: IELTS/syllabus topic label (see lib/study/topics.ts) */
   topic?: string;
+  /** Visitor without an account: headline only (see guestCard) */
+  locked?: boolean;
 }
 
 const STOPWORDS = new Set([
@@ -85,6 +94,8 @@ export function toFeedCard(a: any): FeedCard {
     }
   }
 
+  const tidy = tidyQuotes<FeedCard["factTable"][number]>(Array.isArray(a.keyTakeaways) ? a.keyTakeaways : [], Array.isArray(a.factTable) ? a.factTable : []);
+
   return {
     id: a.id,
     slug: a.slug,
@@ -93,12 +104,12 @@ export function toFeedCard(a: any): FeedCard {
     aiSummary: a.aiSummary ?? null,
     titleBn: a.titleBn ?? null,
     summaryBn: a.summaryBn ?? null,
-    keyTakeaways: Array.isArray(a.keyTakeaways) ? a.keyTakeaways : [],
+    keyTakeaways: tidy.keyTakeaways,
     // Rows are quoted from the story when it is scraped (src/lib/study/extractive.ts)
-    factTable: (Array.isArray(a.factTable) ? a.factTable : []).filter(
+    factTable: tidy.factTable.filter(
       (row: { value?: string; relevance?: string }) => typeof row?.value === "string" && Boolean(row.relevance)
     ),
-    sourceName: a.sourceName ?? null,
+    sourceName: a.sourceName ? publisherName(a.sourceName) : null,
     sourceUrl: a.sourceUrl ?? null,
     examTags: a.examTags ?? null,
     featuredImage: a.featuredImage,
@@ -112,5 +123,27 @@ export function toFeedCard(a: any): FeedCard {
     category: { name: a.category?.name || "", slug: a.category?.slug || "" },
     quizQuestions: firstQuiz && options.length > 0 ? [{ id: firstQuiz.id, question: firstQuiz.question, options }] : [],
     ...(a.topic ? { topic: a.topic } : {}),
+  };
+}
+
+/**
+ * What a visitor without an account may see of a story: the headline, source, section
+ * and date only. Summary, picture, facts, key points and the publisher link are removed
+ * on the server, so they never reach the browser. `locked` makes the card show a
+ * "log in to read" prompt instead.
+ */
+export function guestCard<T extends Partial<FeedCard>>(c: T): T & { locked: true } {
+  return {
+    ...c,
+    summary: "",
+    aiSummary: null,
+    summaryBn: null,
+    keyTakeaways: [],
+    factTable: [],
+    featuredImage: "",
+    sourceUrl: null,
+    examTags: null,
+    quizQuestions: [],
+    locked: true,
   };
 }

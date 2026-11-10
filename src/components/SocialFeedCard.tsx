@@ -6,7 +6,7 @@ import {
   Sparkles, Bookmark, 
   Share2, Check, ArrowRight, ShieldCheck, Clock, 
   ExternalLink, ChevronDown, 
-  Lightbulb, BookOpen, Layers, Globe
+  Lightbulb, BookOpen, Layers, Globe, Lock
 } from "lucide-react";
 import ShareStudyModal from "./ShareStudyModal";
 import { toggleSaveArticleAction } from "@/actions/student";
@@ -21,6 +21,8 @@ interface SocialFeedCardProps {
     slug: string;
     title: string;
     summary: string;
+    /** Visitor without an account: headline only, opening asks to log in */
+    locked?: boolean;
     titleBn?: string | null;
     summaryBn?: string | null;
     aiSummary?: string | null;
@@ -80,6 +82,10 @@ export default function SocialFeedCard({
     : article.aiSummary || article.summary;
 
   const sourceInfo = getNewspaperSourceInfo(article.imageCaption, article.title);
+
+  // Login wall: the login prompt, landing back on this story afterwards
+  const askToLogin = () =>
+    window.dispatchEvent(new CustomEvent("khobor_open_auth_gate", { detail: { feature: "story", redirect: `/article/${article.slug}` } }));
 
   // The bookmark saves the story to the student's notebook (Saved stories)
   useEffect(() => {
@@ -210,6 +216,27 @@ export default function SocialFeedCard({
           </div>
         )}
 
+        {article.locked ? (
+          <>
+            <button type="button" onClick={askToLogin} className="block group text-left w-full">
+              <h2 className="text-lg sm:text-xl font-bold font-serif leading-snug text-[#17191d] group-hover:text-[#842323] transition-colors">
+                {displayTitle}
+              </h2>
+            </button>
+            <button
+              type="button"
+              onClick={askToLogin}
+              className="w-full flex items-center justify-between gap-3 rounded-xl border border-dashed border-[#d8c9a8] bg-[#fbf8f1] px-3.5 py-2.5 text-left hover:bg-[#f6efe1] transition"
+            >
+              <span className="flex items-center gap-2 text-sm text-[#525a68]">
+                <Lock className="w-4 h-4 text-[#842323] shrink-0" />
+                {isEnglish ? "Log in to read the story and its study notes" : "পুরো খবর ও স্টাডি নোট পড়তে লগইন করুন"}
+              </span>
+              <span className="shrink-0 text-xs font-bold text-[#842323]">{isEnglish ? "Log in" : "লগইন"}</span>
+            </button>
+          </>
+        ) : (
+        <>
         <Link href={`/article/${article.slug}`} className="block group">
           <h2 className="text-lg sm:text-xl font-bold font-serif leading-snug text-[#17191d] group-hover:text-[#842323] transition-colors">
             {displayTitle}
@@ -271,10 +298,13 @@ export default function SocialFeedCard({
             </ul>
           </div>
         )}
+        </>
+        )}
 
       </div>
 
       {/* 5. Social Action Bar (1-row responsive layout on mobile, spacious on desktop) */}
+      {!article.locked && (
       <div className="px-3 sm:px-5 py-2.5 bg-[#faf8f4] border-t border-[#ece7dc] flex items-center justify-between gap-1 sm:gap-2 text-xs text-[#525964]">
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           {/* Key Takeaways Toggle */}
@@ -330,6 +360,7 @@ export default function SocialFeedCard({
           </Link>
         </div>
       </div>
+      )}
 
       {/* Social Excerpt Share Modal */}
       <ShareStudyModal

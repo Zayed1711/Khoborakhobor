@@ -13,6 +13,8 @@ import type { KeyNoteDay } from "@/lib/study/key-notes";
 import ExamBanner from "@/components/exam/ExamBanner";
 import { EarlyBirdBanner } from "@/components/EarlyBird";
 import { getExamSummaryAction } from "@/actions/exam";
+import { canReadStories } from "@/lib/story-access";
+import { guestCard } from "@/lib/feed-card";
 
 export const dynamic = "force-dynamic";
 
@@ -59,8 +61,12 @@ export default async function Home() {
 
   // The client receives slim feed cards: no bodies, vocabulary or quizzes. Quizzes live
   // only at the end of a story (job mode); there is no daily quiz.
-  const feedCards = forClient(urgentOnly(selection.cards));
-  const capsuleArticles = forClient(selection.cards.filter((a) => a.isCapsule));
+  // Login wall: visitors get headlines only, cut down on the server (src/lib/story-access.ts)
+  const reader = canReadStories(session);
+  const forViewer = <T extends Parameters<typeof guestCard>[0]>(cards: T[]) => (reader ? cards : cards.map(guestCard));
+  const feedCards = forViewer(forClient(urgentOnly(selection.cards)));
+  const capsuleArticles = forViewer(forClient(selection.cards.filter((a) => a.isCapsule)));
+  if (!reader) keyNotes = [];
   const trendingHashtags = await getTrendingHashtagsAction();
   const examSummary = await getExamSummaryAction().catch(() => null);
 
@@ -86,6 +92,7 @@ export default async function Home() {
             streakDays={session.student?.streakDays || 0}
             archiveStats={archiveStats}
             keyNotes={keyNotes}
+            keyNotesLocked={!reader}
           />
         </div>
 
@@ -94,6 +101,7 @@ export default async function Home() {
           streakDays={session.student?.streakDays || 0}
           initialTrending={trendingHashtags}
           keyNotes={keyNotes}
+          keyNotesLocked={!reader}
         />
       </main>
 

@@ -1,3 +1,6 @@
+import type { Metadata } from "next";
+import StoryLoginWall from "@/components/StoryLoginWall";
+import { viewerCanReadStories } from "@/lib/story-access";
 import { notFound } from "next/navigation";
 import { getArticleBySlug, getPublishedArticles } from "@/actions/articles";
 import { getArticleStudyNotes, getActiveStudent } from "@/actions/student";
@@ -18,12 +21,43 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
+// Search engines and link previews (Facebook, WhatsApp) get the headline and the
+// publisher's one-line summary, even though reading the story needs an account.
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const a = await getArticleBySlug(slug);
+  if (!a) return {};
+  const description = (a.summary || "").replace(/\s+/g, " ").trim().slice(0, 200);
+  const image = /^https?:\/\//.test(a.featuredImage || "") ? [a.featuredImage] : undefined;
+  return {
+    title: `${a.title} | খবরাখবর`,
+    description,
+    alternates: { canonical: `/article/${a.slug}` },
+    openGraph: { title: a.title, description, type: "article", images: image, siteName: "খবরাখবর" },
+    twitter: { card: image ? "summary_large_image" : "summary", title: a.title, description, images: image },
+  };
+}
+
 export default async function ArticleDetailPage({ params }: Props) {
   const { slug } = await params;
   const article = await getArticleBySlug(slug);
 
   if (!article) {
     return notFound();
+  }
+
+  // Login wall: visitors see only the headline and a way to log in
+  if (!(await viewerCanReadStories())) {
+    return (
+      <StoryLoginWall
+        slug={article.slug}
+        title={article.title}
+        sourceName={article.sourceName}
+        publishedAt={article.publishedAt}
+        category={{ name: article.category.name, slug: article.category.slug }}
+        english={!isBengaliText(article.title)}
+      />
+    );
   }
 
   const [recent, student] = await Promise.all([getPublishedArticles(4), getActiveStudent()]);

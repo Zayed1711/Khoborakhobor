@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { viewerCanReadStories } from "@/lib/story-access";
 
 export interface SearchResultItem {
   id: string;
@@ -31,7 +32,13 @@ function toBnDigits(num: number | string): string {
 /**
  * Smart, resilient article search supporting hashtags, digits fallback and tokenization.
  */
+/** Login wall: visitors get headlines only in search results */
 export async function searchArticlesAction(query: string): Promise<SearchResultItem[]> {
+  const results = await searchAll(query);
+  return (await viewerCanReadStories()) ? results : results.map((r) => ({ ...r, summary: "" }));
+}
+
+async function searchAll(query: string): Promise<SearchResultItem[]> {
   if (!query || !query.trim()) return [];
 
   try {

@@ -108,6 +108,7 @@ export async function runAiFacts(stories: PendingStory[], opts: { pauseMs?: numb
           whenText: f?.when || null,
           whereText: f?.where || null,
           numbers: f ? JSON.stringify(f.numbers) : null,
+          keyQuotes: f?.keyQuotes?.length ? JSON.stringify(f.keyQuotes) : null,
           gkCategory: f?.gkCategory ?? null,
           examScore: f?.examScore ?? null,
           problems: out.problems.length ? out.problems.join(" | ").slice(0, 2000) : null,

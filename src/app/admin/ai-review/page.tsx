@@ -82,6 +82,7 @@ export default async function AiReviewPage({ searchParams }: { searchParams: Pro
                 <dt className="text-[#68707f]">When / where</dt><dd>{r.whenText || "—"} / {r.whereText || "—"}</dd>
                 <dt className="text-[#68707f]">Figures</dt><dd>{list(r.numbers).join(" · ") || "—"}</dd>
                 <dt className="text-[#68707f]">Category / score</dt><dd>{r.gkCategory || "—"} / {r.examScore ?? "—"}</dd>
+                <dt className="text-[#68707f]">Key points (quoted)</dt><dd>{list(r.keyQuotes).length ? list(r.keyQuotes).map((q, i) => <p key={i} className="mb-1">“{q}”</p>) : "—"}</dd>
               </dl>
             )}
             {r.problems && <p className="text-xs text-[#8a5a00] bg-[#fff8e6] rounded-lg p-2 break-words">{r.problems}</p>}

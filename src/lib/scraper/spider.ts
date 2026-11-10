@@ -9,10 +9,11 @@ import { revalidatePath } from "next/cache";
 import { evaluateExamRelevance } from "@/lib/scraper/examFilter";
 import { keepDailyBest, recentlySkippedUrls } from "@/lib/scraper/daily-cap";
 import { aiMode, runAiFacts, type PendingStory } from "@/lib/study/ai-facts-store";
+import { publisherName } from "@/lib/feed-card";
 import { dhakaDay } from "@/lib/study/key-notes";
 import { extractPassage, passageToJson } from "@/lib/study/passage";
 import { extractVocabularyTableRows } from "@/lib/vocabulary-table-engine";
-import { cleanArticleBody, extractFacts, extractTakeaways, buildExtractiveQuiz, pickSummary } from "@/lib/study/extractive";
+import { cleanArticleBody, extractFacts, extractTakeaways, buildExtractiveQuiz, pickSummary, tidyQuotes } from "@/lib/study/extractive";
 
 const parser = new Parser({
   headers: {
@@ -1086,8 +1087,9 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
             : pickSummary(item.contentSnippet || "", cleaned.paragraphs);
 
         // Study material is quoted from the article itself (src/lib/study/extractive.ts)
-        const takeaways = extractTakeaways(title, summary, bodyText);
-        const factTable = extractFacts(title, bodyText);
+        // Fact rows never repeat a key point, and no line with an unclosed quotation is kept
+        const pickedPoints = extractTakeaways(title, summary, bodyText);
+        const { keyTakeaways: takeaways, factTable } = tidyQuotes(pickedPoints, extractFacts(title, bodyText, pickedPoints));
         const extractiveQuiz = buildExtractiveQuiz(title, bodyText);
         const isEnglishNews = !isBengaliText(title);
         let vocabList: { term: string; definition: string; context?: string | null }[] = [];
@@ -1143,7 +1145,8 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
               passage: /[ঀ-৿]/.test(title) ? null : passageToJson(extractPassage(cleanContent)),
               keyTakeaways: JSON.stringify(takeaways),
               factTable: JSON.stringify(factTable),
-              sourceName: source.name,
+              // The publisher's name only: "প্রথম আলো (শীর্ষ সংবাদ ও জাতীয়)" names a feed and read like a section
+              sourceName: publisherName(source.name),
               sourceUrl: item.link || null,
               // The old exam-track strings were the same on most stories, so they carried no information
               examTags: null,

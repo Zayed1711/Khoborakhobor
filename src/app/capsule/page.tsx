@@ -3,6 +3,7 @@ import Footer from "@/components/Footer";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import { getDailyCapsuleArticles } from "@/actions/student";
 import { getCurrentSession } from "@/actions/auth";
+import { canReadStories } from "@/lib/story-access";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { Zap, Clock, ArrowRight, BookOpen, Sparkles, CheckCircle2 } from "lucide-react";
@@ -15,6 +16,12 @@ export default async function DailyCapsulePage() {
     prisma.category.findMany({ orderBy: { createdAt: "asc" } }),
     getCurrentSession(),
   ]);
+
+  // Login wall: visitors see the headlines only
+  const reader = canReadStories(session);
+  const capsuleList = reader
+    ? capsuleArticles
+    : capsuleArticles.map((a) => ({ ...a, summary: "", keyTakeaways: [] as string[], vocabulary: [] as typeof a.vocabulary }));
 
   const now = new Date();
   const currentDate = now.toLocaleDateString("bn-BD", {
@@ -49,7 +56,7 @@ export default async function DailyCapsulePage() {
 
         {/* Capsule Briefings List */}
         <div className="space-y-6">
-          {capsuleArticles.map((art, idx) => (
+          {capsuleList.map((art, idx) => (
             <article
               key={art.id}
               className="p-5 bg-white border border-[#e3ded4] rounded-lg shadow-2xs hover:border-[#cec6b6] transition"

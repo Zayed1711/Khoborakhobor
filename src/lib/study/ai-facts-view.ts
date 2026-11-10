@@ -13,19 +13,31 @@ export type FactRow = {
   whenText: string | null;
   whereText: string | null;
   numbers: string | null;
+  keyQuotes?: string | null;
   gkCategory: string | null;
   examScore: number | null;
 } | null | undefined;
 
 /** Prisma include for the fields the site shows */
 export const AI_FACTS_SELECT = {
-  select: { status: true, summary: true, who: true, what: true, whenText: true, whereText: true, numbers: true, gkCategory: true, examScore: true },
+  select: { status: true, summary: true, who: true, what: true, whenText: true, whereText: true, numbers: true, keyQuotes: true, gkCategory: true, examScore: true },
 } as const;
 
 const showing = (f: FactRow): f is NonNullable<FactRow> => aiMode() === "on" && !!f && f.status === "ok";
 
 export function aiSummaryOf(f: FactRow): string | null {
   return showing(f) && f.summary ? f.summary : null;
+}
+
+/**
+ * Key points the AI picked (by number) from the article's own sentences, as ones that
+ * make sense on their own. Used for "মূল কথা" when at least two were picked; the
+ * text is still the article's, word for word.
+ */
+export function aiKeyQuotesOf(f: FactRow): string[] | null {
+  if (!showing(f)) return null;
+  const q = parseList<string>(f.keyQuotes ?? null).filter((s) => typeof s === "string" && s.trim());
+  return q.length >= 2 ? q : null;
 }
 
 export type FactCard = {
