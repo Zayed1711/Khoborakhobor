@@ -23,6 +23,7 @@ interface SocialFeedCardProps {
     summary: string;
     titleBn?: string | null;
     summaryBn?: string | null;
+    aiSummary?: string | null;
     content?: string;
     keyTakeaways?: string[];
     factTable?: { parameter: string; value: string; relevance: string }[];
@@ -76,7 +77,7 @@ export default function SocialFeedCard({
   const displayTitle = showTranslation && bengaliTitle ? bengaliTitle : article.title;
   const displaySummary = showTranslation
     ? translateSummaryToBengali(article.title, article.summary, article.category?.name, article.summaryBn)
-    : article.summary;
+    : article.aiSummary || article.summary;
 
   const sourceInfo = getNewspaperSourceInfo(article.imageCaption, article.title);
 

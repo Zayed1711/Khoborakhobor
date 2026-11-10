@@ -21,14 +21,17 @@ import { trackArticleReadAction } from "@/actions/student";
 import { isBengaliText } from "@/lib/bilingual";
 import { useAppMode } from "@/context/LanguageContext";
 import type { FeedCard } from "@/lib/feed-card";
+import type { FactCard } from "@/lib/study/ai-facts-view";
+import AiFactCard from "@/components/AiFactCard";
 import type { VocabularyTableRow } from "@/lib/vocabulary-table-engine";
 import type { FactTableRow, Student, StudyNote } from "@/types";
 
 /**
  * Article page for the link-out model. We show the headline, the publisher's own
  * summary and study material quoted from the story, and send readers to the
- * publisher for the full text. Nothing here is generated: every quoted line comes
- * from the story, every quiz answer is checked on the server.
+ * publisher for the full text. Every quoted line comes from the story and every quiz
+ * answer is checked on the server. The only AI text (summary and "at a glance" card,
+ * when AI_FACTS=on) is labelled as such and checked against the story before it is saved.
  */
 
 export interface StudyArticle {
@@ -36,6 +39,10 @@ export interface StudyArticle {
   slug: string;
   title: string;
   summary: string;
+  /** Checked AI summary, shown instead of the publisher summary when present */
+  aiSummary?: string | null;
+  /** Checked AI "at a glance" card */
+  factCard?: FactCard | null;
   sourceName: string | null;
   sourceUrl: string | null;
   publishedAt: string;
@@ -136,7 +143,14 @@ export default function ArticleStudyView({ article, relatedArticles, initialNote
           <p className="text-sm text-[#68707f]">
             {sourceLabel} · {article.publishedAt}
           </p>
-          <p className="text-[17px] leading-relaxed text-[#2c323f]">{article.summary}</p>
+          <p className="text-[17px] leading-relaxed text-[#2c323f]">{article.aiSummary || article.summary}</p>
+          {article.aiSummary && (
+            <p className="text-xs text-[#8a909b]">
+              {isEnglish
+                ? "Summary written with AI; every name and figure checked against the report."
+                : "সারসংক্ষেপটি AI দিয়ে লেখা; প্রতিটি নাম ও সংখ্যা প্রতিবেদনের সঙ্গে মিলিয়ে যাচাই করা।"}
+            </p>
+          )}
 
           {/* The one main action: read the full story at the source */}
           {article.sourceUrl ? (
@@ -183,6 +197,9 @@ export default function ArticleStudyView({ article, relatedArticles, initialNote
             </ul>
           </Section>
         )}
+
+        {/* At a glance: checked AI fact card */}
+        {article.factCard && <AiFactCard card={article.factCard} english={isEnglish} />}
 
         {/* Facts */}
         {article.factTable.length > 0 && (

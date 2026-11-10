@@ -38,6 +38,8 @@ export default async function ArticleDetailPage({ params }: Props) {
     slug: article.slug,
     title: article.title,
     summary: article.summary,
+    aiSummary: article.aiSummary,
+    factCard: article.factCard,
     sourceName: article.sourceName,
     sourceUrl: article.sourceUrl,
     publishedAt: article.publishedAt,

@@ -561,6 +561,14 @@ export default function AdminDashboardClient() {
             <span>Writing reviews</span>
           </button>
 
+          <a
+            href="/admin/ai-review"
+            className="px-4 py-2.5 rounded-t-lg transition flex items-center gap-2 border-b-2 font-semibold text-[#8e9aa8] hover:text-white border-transparent hover:bg-[#141b24]/50"
+          >
+            <PenLine className="w-4 h-4" />
+            <span>AI summaries</span>
+          </a>
+
           <button
             onClick={() => setActiveTab("sources")}
             className={`px-4 py-2.5 rounded-t-lg transition flex items-center gap-2 border-b-2 font-semibold ${

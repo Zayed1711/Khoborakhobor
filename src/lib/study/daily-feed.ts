@@ -24,12 +24,16 @@ type Cached<T> = { version: string; at: number; value: Promise<T> };
 const cache = new Map<string, Cached<unknown>>();
 
 async function newsVersion(): Promise<string> {
-  const v = await prisma.article.aggregate({
-    where: { sourceUrl: { not: null } },
-    _count: { _all: true },
-    _max: { createdAt: true, updatedAt: true },
-  });
-  return `${v._count._all}|${v._max.createdAt?.getTime() ?? 0}|${v._max.updatedAt?.getTime() ?? 0}`;
+  const [v, ai] = await Promise.all([
+    prisma.article.aggregate({
+      where: { sourceUrl: { not: null } },
+      _count: { _all: true },
+      _max: { createdAt: true, updatedAt: true },
+    }),
+    // AI summaries arrive at the end of a crawl, after the stories themselves
+    prisma.articleFacts.count(),
+  ]);
+  return `${v._count._all}|${v._max.createdAt?.getTime() ?? 0}|${v._max.updatedAt?.getTime() ?? 0}|${ai}`;
 }
 
 async function reuse<T>(key: string, compute: () => Promise<T>): Promise<T> {

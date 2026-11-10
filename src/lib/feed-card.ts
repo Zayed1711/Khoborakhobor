@@ -17,6 +17,8 @@ export interface FeedCard {
   slug: string;
   title: string;
   summary: string;
+  /** Checked AI summary (src/lib/study/ai-facts-view.ts); shown instead of the summary when present */
+  aiSummary?: string | null;
   /** Real Bengali translation of an English story (only from an approved draft) */
   titleBn: string | null;
   summaryBn: string | null;
@@ -88,6 +90,7 @@ export function toFeedCard(a: any): FeedCard {
     slug: a.slug,
     title: a.title,
     summary: a.summary,
+    aiSummary: a.aiSummary ?? null,
     titleBn: a.titleBn ?? null,
     summaryBn: a.summaryBn ?? null,
     keyTakeaways: Array.isArray(a.keyTakeaways) ? a.keyTakeaways : [],

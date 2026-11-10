@@ -6,6 +6,7 @@ import { shuffleQuizOptions } from "@/lib/quiz/shuffle";
 import { extractFacts, extractTakeaways, buildExtractiveQuiz, plainText } from "@/lib/study/extractive";
 import { requireAdmin } from "@/lib/guards";
 import { toFeedCard, FeedCard } from "@/lib/feed-card";
+import { AI_FACTS_SELECT, aiSummaryOf, factCardOf } from "@/lib/study/ai-facts-view";
 import { selectDailyFeed } from "@/lib/study/daily-selection";
 import { englishTopic } from "@/lib/study/topics";
 import { sanitizeArticleHtml, textToParagraphHtml } from "@/lib/sanitize-html";
@@ -106,7 +107,7 @@ export async function getEnglishFeedAction(
     for (let round = 0; round < 6 && cards.length < limit; round++) {
       const rows = await prisma.article.findMany({
         where: { sourceUrl: { not: null }, ...(cursor ? { createdAt: { lt: cursor } } : {}) },
-        include: { category: true },
+        include: { category: true, aiFacts: AI_FACTS_SELECT },
         orderBy: { createdAt: "desc" },
         take: BATCH,
       });
@@ -121,6 +122,7 @@ export async function getEnglishFeedAction(
           toFeedCard({
             ...a,
             content: "",
+            aiSummary: aiSummaryOf(a.aiFacts),
             createdAtIso: a.createdAt.toISOString(),
             keyTakeaways: safeParseJson(a.keyTakeaways, []),
             factTable: safeParseJson((a as any).factTable, []),
@@ -163,6 +165,7 @@ export async function getArticlesByDateAction(dateKey: string, allEnglish: boole
       },
       include: {
         category: true,
+        aiFacts: AI_FACTS_SELECT,
         // No vocabulary: feed cards never show it (the story page loads its own)
         quizQuestions: { where: { origin: { not: "legacy" } } }, // legacy = old template quiz kept only for attempt history
       },
@@ -176,6 +179,7 @@ export async function getArticlesByDateAction(dateKey: string, allEnglish: boole
       ...a,
       // Link-out model: the publisher's full text is never sent to the browser
       content: "",
+      aiSummary: aiSummaryOf(a.aiFacts),
       createdAtIso: a.createdAt instanceof Date ? a.createdAt.toISOString() : new Date(a.createdAt).toISOString(),
       keyTakeaways: safeParseJson(a.keyTakeaways, []),
       factTable: safeParseJson((a as any).factTable, []),
@@ -213,6 +217,7 @@ export async function getPublishedArticles(limit: number = 150) {
       take: limit,
       include: {
         category: true,
+        aiFacts: AI_FACTS_SELECT,
         // No vocabulary: feed cards never show it (the story page loads its own)
         quizQuestions: { where: { origin: { not: "legacy" } } }, // legacy = old template quiz kept only for attempt history
       },
@@ -225,6 +230,7 @@ export async function getPublishedArticles(limit: number = 150) {
       ...a,
       // Link-out model: the publisher's full text is never sent to the browser
       content: "",
+      aiSummary: aiSummaryOf(a.aiFacts),
       createdAtIso: a.createdAt instanceof Date ? a.createdAt.toISOString() : new Date(a.createdAt).toISOString(),
       keyTakeaways: safeParseJson(a.keyTakeaways, []),
       factTable: safeParseJson((a as any).factTable, []),
@@ -259,6 +265,7 @@ export async function getArticleBySlug(rawSlug: string) {
       include: {
         category: true,
         vocabulary: true,
+        aiFacts: AI_FACTS_SELECT,
         quizQuestions: { where: { origin: { not: "legacy" } } }, // legacy = old template quiz kept only for attempt history
       },
     });
@@ -269,6 +276,7 @@ export async function getArticleBySlug(rawSlug: string) {
         include: {
           category: true,
           vocabulary: true,
+          aiFacts: AI_FACTS_SELECT,
           quizQuestions: { where: { origin: { not: "legacy" } } }, // legacy = old template quiz kept only for attempt history
         },
       });
@@ -282,6 +290,8 @@ export async function getArticleBySlug(rawSlug: string) {
       ...article,
       // Link-out model: readers open the full story on the publisher's site
       content: "",
+      aiSummary: aiSummaryOf(article.aiFacts),
+      factCard: factCardOf(article.aiFacts),
       keyTakeaways: safeParseJson(article.keyTakeaways, []),
       factTable: safeParseJson((article as any).factTable, []),
       examTagsList: article.examTags ? article.examTags.split(",").map((t) => t.trim()) : [],
