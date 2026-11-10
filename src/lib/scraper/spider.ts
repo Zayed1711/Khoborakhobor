@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { evaluateExamRelevance } from "@/lib/scraper/examFilter";
 import { keepDailyBest, recentlySkippedUrls } from "@/lib/scraper/daily-cap";
+import { aiMode, runAiFacts, type PendingStory } from "@/lib/study/ai-facts-store";
 import { dhakaDay } from "@/lib/study/key-notes";
 import { extractPassage, passageToJson } from "@/lib/study/passage";
 import { extractVocabularyTableRows } from "@/lib/vocabulary-table-engine";
@@ -937,6 +938,8 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
   const skippedUrls = dryRun ? new Set<string>() : await recentlySkippedUrls();
   // Days (Bangladesh time) this run saved stories for; each is trimmed to its best 30 at the end
   const touchedDays = new Set<string>();
+  // Stories saved in this run, with their text held in memory (it is not stored) for the AI summary
+  const aiPending: PendingStory[] = [];
 
   const categories = await prisma.category.findMany();
   const catMap = new Map(categories.map((c) => [c.slug, c.id]));
@@ -1188,6 +1191,8 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
           }
 
 
+          if (aiMode() !== "off") aiPending.push({ id: savedArticle.id, title, body: bodyText });
+
           results.saved++;
           countFromThisSource++;
           touchedDays.add(dhakaDay(articlePublishedDate));
@@ -1210,6 +1215,12 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
     } catch (err) {
       console.error("[SPIDER] Daily best-30 trim failed:", err);
     }
+  }
+
+  // AI summary + fact card, only for stories that survived the daily cut (AI_FACTS in .env)
+  if (!dryRun && aiPending.length) {
+    const ai = await runAiFacts(aiPending, { pauseMs: 1500 });
+    if (ai.done || ai.skippedCap) console.log(`[AI FACTS] ${ai.ok} ok, ${ai.failed} kept old summary, ${ai.skippedCap} over the daily cap`);
   }
 
   const durationMs = Date.now() - startTime;

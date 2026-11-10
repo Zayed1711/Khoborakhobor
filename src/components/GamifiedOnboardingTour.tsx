@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { 
   Sparkles, History, Globe, HelpCircle, 
@@ -58,7 +58,7 @@ const TOUR_STEPS: TourStep[] = [
     badge: "ফিচার ৪: স্মার্ট রিডিং",
     title: "অভিধান ও স্টাডি হাব নোটবুক",
     description:
-      "নিবন্ধ পড়ার সময় যেকোনো কঠিন শব্দে ডাবল-ক্লিক করলেই দেখতে পাবেন অ্যাকাডেমিক অভিধান। পরীক্ষার জন্য প্রয়োজনীয় উপাত্ত এক ক্লিকে স্টাডি হাব নোটবুকে সংরক্ষণ করতে পারবেন।",
+      "খবর খুললে ডানপাশে “অভিধান” ট্যাব পাবেন: কোনো শব্দ সিলেক্ট করে ট্যাবে চাপলেই তার অর্থ দেখাবে। পরীক্ষার জন্য প্রয়োজনীয় অংশ সিলেক্ট করে স্টাডি নোটবুকে সংরক্ষণ করতে পারবেন।",
     icon: BookOpen,
     position: "bottom",
   },
@@ -109,33 +109,45 @@ export default function GamifiedOnboardingTour() {
   }, []);
 
   // Track target element bounding rect on step change
-  const updateTargetPosition = useCallback(() => {
-    const step = TOUR_STEPS[currentStep];
-    if (step && step.targetId) {
-      const el = document.getElementById(step.targetId);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        setTimeout(() => {
-          const rect = el.getBoundingClientRect();
-          setTargetRect(rect);
-        }, 300);
-        return;
-      }
-    }
-    setTargetRect(null);
+  // A part taller than this share of the screen is highlighted from its top only,
+  // so the guidance card still fits beside it
+  const TALL = 0.45;
+  const cardRef = useRef<HTMLDivElement>(null);
+  const targetEl = useCallback(() => {
+    const id = TOUR_STEPS[currentStep]?.targetId;
+    const el = id ? document.getElementById(id) : null;
+    return el && el.getClientRects().length > 0 && el.getBoundingClientRect().width > 0 ? el : null;
   }, [currentStep]);
 
+  const measureTarget = useCallback(() => {
+    const el = targetEl();
+    if (!el) return setTargetRect(null);
+    const r = el.getBoundingClientRect();
+    // Leave room below the highlight for the guidance card (taller on phones)
+    const cardH = cardRef.current?.offsetHeight || 390;
+    const max = Math.max(120, Math.min(window.innerHeight * TALL, window.innerHeight - 90 - 40 - cardH));
+    setTargetRect(r.height > max ? new DOMRect(r.left, r.top, r.width, max) : r);
+  }, [targetEl]);
+
+  // On a step change: scroll the part into view once (instantly), then measure.
+  // Scrolling and resizing only re-measure, so the page never fights the reader's scroll.
   useEffect(() => {
-    if (isOpen) {
-      updateTargetPosition();
-      window.addEventListener("resize", updateTargetPosition);
-      window.addEventListener("scroll", updateTargetPosition);
-      return () => {
-        window.removeEventListener("resize", updateTargetPosition);
-        window.removeEventListener("scroll", updateTargetPosition);
-      };
+    if (!isOpen) return;
+    const el = targetEl();
+    if (el) {
+      const tall = el.getBoundingClientRect().height > window.innerHeight * TALL;
+      if (tall) window.scrollTo({ top: window.scrollY + el.getBoundingClientRect().top - 90, behavior: "auto" });
+      else el.scrollIntoView({ behavior: "auto", block: "center" });
     }
-  }, [isOpen, currentStep, updateTargetPosition]);
+    const t = setTimeout(measureTarget, 50);
+    window.addEventListener("resize", measureTarget);
+    window.addEventListener("scroll", measureTarget);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("resize", measureTarget);
+      window.removeEventListener("scroll", measureTarget);
+    };
+  }, [isOpen, currentStep, targetEl, measureTarget]);
 
   const handleNext = () => {
     if (currentStep < TOUR_STEPS.length - 1) {
@@ -158,6 +170,26 @@ export default function GamifiedOnboardingTour() {
     }
   };
 
+  // Place the guidance card beside the highlighted part (below if it fits, else above),
+  // never on top of it
+  useLayoutEffect(() => {
+    const card = cardRef.current;
+    if (!card) return;
+    if (!targetRect || !TOUR_STEPS[currentStep]?.targetId) {
+      card.style.top = "";
+      return;
+    }
+    const h = card.offsetHeight;
+    const gap = 16;
+    const below = window.innerHeight - targetRect.bottom - gap;
+    const above = targetRect.top - gap;
+    const top =
+      below >= h + 8 ? targetRect.bottom + gap
+      : above >= h + 8 ? targetRect.top - gap - h
+      : below >= above ? Math.max(8, window.innerHeight - h - 8) : 8;
+    card.style.top = `${top}px`;
+  }, [targetRect, currentStep]);
+
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -172,10 +204,11 @@ export default function GamifiedOnboardingTour() {
   const isCenterModal = step.position === "center" || !targetRect;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-      {/* 1. Translucent Backdrop */}
+    <div data-tour-root className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      {/* 1. Backdrop: no blur, so the highlighted part stays sharp. With a highlighted
+          part, the dimming comes only from the spotlight's shadow (which leaves the part clear). */}
       <div
-        className="fixed inset-0 bg-black/65 backdrop-blur-md transition-opacity duration-300"
+        className={`fixed inset-0 transition-opacity duration-300 ${targetRect ? "bg-transparent" : "bg-black/55"}`}
         onClick={completeTour}
       />
 
@@ -186,7 +219,7 @@ export default function GamifiedOnboardingTour() {
           style={{
             top: Math.max(8, targetRect.top - 6),
             left: Math.max(8, targetRect.left - 6),
-            width: targetRect.width + 12,
+            width: Math.min(targetRect.width + 12, window.innerWidth - Math.max(8, targetRect.left - 6) - 8),
             height: targetRect.height + 12,
           }}
         />
@@ -194,9 +227,11 @@ export default function GamifiedOnboardingTour() {
 
       {/* 3. Floating Guidance Dialogue Card */}
       <div
-        className={`relative z-50 w-full max-w-md bg-white border border-[#ded8cb] rounded-2xl shadow-2xl p-5 sm:p-6 space-y-4 animate-fade-in text-[#1c1d21] ${
-          isCenterModal ? "my-auto" : "mt-auto sm:my-auto"
+        ref={cardRef}
+        className={`z-50 max-w-md bg-white border border-[#ded8cb] rounded-2xl shadow-2xl p-5 sm:p-6 space-y-4 animate-fade-in text-[#1c1d21] ${
+          isCenterModal ? "relative my-auto w-full" : "fixed left-1/2 -translate-x-1/2 w-[calc(100%-2rem)]"
         }`}
+        style={!isCenterModal ? { top: -9999 } : undefined}
       >
         {/* Top Header Bar */}
         <div className="flex items-center justify-between pb-3 border-b border-[#f4efe4]">
