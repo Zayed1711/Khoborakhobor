@@ -33,7 +33,7 @@ loadEnvFile();
 
 const BASE_URL = process.env.SITE_URL || "http://localhost:3000";
 const CRON_SECRET = process.env.CRON_SECRET || "";
-const INTERVAL_MINUTES = parseInt(process.env.CRON_INTERVAL_MINUTES || "360", 10); // Default: every 6 hours (360 mins)
+const INTERVAL_MINUTES = parseInt(process.env.CRON_INTERVAL_MINUTES || "480", 10); // Default: every 8 hours (480 mins), 3 crawls a day
 const INITIAL_STARTUP_DELAY_SECONDS = parseInt(process.env.CRON_INITIAL_DELAY || "15", 10);
 
 console.log("==================================================");
