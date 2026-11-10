@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { checkFacts, generateFacts, numbersIn, nameFound, wordsOf, storyLang, trimBody } from "@/lib/study/ai-facts";
+import { checkFacts, generateFacts, numbersIn, nameFound, wordsOf, storyLang, trimBody, DEFAULT_MODELS } from "@/lib/study/ai-facts";
 
 const BN_TITLE = "পোশাকশ্রমিকদের মজুরি বাড়াতে নতুন মজুরি বোর্ড গঠন";
 const BN_BODY =
@@ -158,6 +158,36 @@ describe("generateFacts cascade", () => {
     });
     expect(noKey.calls).toBe(1);
     expect(noKey.status).toBe("failed");
+  });
+
+  it("after a copied summary, tells the next model to rewrite in its own words", async () => {
+    const copied = { ...goodBn, summary: BN_BODY.split("। ").slice(0, 4).join("। ") + "।" };
+    const users: string[] = [];
+    const out = await generateFacts(long, {
+      busyWaitMs: 0,
+      models: ["lite-a", "lite-b"],
+      call: async (o) => {
+        users.push(o.user);
+        return { ok: true, text: JSON.stringify(o.model === "lite-a" ? copied : goodBn), tokensIn: 1, tokensOut: 1 };
+      },
+    });
+    expect(out.status).toBe("ok");
+    expect(users[0]).not.toMatch(/own words/);
+    expect(users[1]).toMatch(/own words/);
+  });
+
+  it("marks a story for a later try only when Google never answered", async () => {
+    const busy = await generateFacts(long, { busyWaitMs: 0, models: ["a", "b"], call: async () => ({ ok: false, error: "HTTP 503", retryable: true }) });
+    expect(busy.retryLater).toBe(true);
+    const bad = await generateFacts(long, { busyWaitMs: 0, models: ["a", "b"], call: ok({ ...goodBn, summary: "ছোট।" }) });
+    expect(bad.retryLater).toBe(false);
+    const noKey = await generateFacts(long, { models: ["a"], call: async () => ({ ok: false, error: "GEMINI_API_KEY is not set", retryable: false }) });
+    expect(noKey.retryLater).toBe(false);
+  });
+
+  it("uses only the cheap lite models by default", () => {
+    expect(DEFAULT_MODELS.every((m) => m.includes("lite"))).toBe(true);
+    expect(new Set(DEFAULT_MODELS).size).toBe(DEFAULT_MODELS.length);
   });
 
   it("skips stories with too little text without calling the AI", async () => {

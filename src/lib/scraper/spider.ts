@@ -1219,7 +1219,7 @@ export async function runNewsSpiderWithDateFilter(options?: SpiderOptions) {
 
   // AI summary + fact card, only for stories that survived the daily cut (AI_FACTS in .env)
   if (!dryRun && aiPending.length) {
-    const ai = await runAiFacts(aiPending, { pauseMs: 1500 });
+    const ai = await runAiFacts(aiPending, { pauseMs: 3000 });
     if (ai.done || ai.skippedCap) console.log(`[AI FACTS] ${ai.ok} ok, ${ai.failed} kept old summary, ${ai.skippedCap} over the daily cap`);
   }
 

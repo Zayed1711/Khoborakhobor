@@ -38,7 +38,7 @@ export type PendingStory = { id: string; title: string; body: string };
  * Make facts for each story that still exists and has none yet, one at a time,
  * stopping at the daily cap. Never throws: a failure only means the story keeps its old summary.
  */
-export async function runAiFacts(stories: PendingStory[], opts: { pauseMs?: number } = {}) {
+export async function runAiFacts(stories: PendingStory[], opts: { pauseMs?: number; secondPassWaitMs?: number } = {}) {
   const result = { done: 0, ok: 0, failed: 0, skippedCap: 0 };
   if (aiMode() === "off" || !geminiReady() || !stories.length) return result;
   try {
@@ -52,16 +52,50 @@ export async function runAiFacts(stories: PendingStory[], opts: { pauseMs?: numb
     let used = await callsToday();
     const cap = dailyCap();
 
-    for (const s of stories) {
-      if (!aliveSet.has(s.id) || doneSet.has(s.id)) continue;
-      // A story needs at most 3 calls (cheap model, one "busy" retry, then a stronger model)
+    const pause = () => (opts.pauseMs ? new Promise((r) => setTimeout(r, opts.pauseMs)) : Promise.resolve());
+    // A story needs at most 3 calls (first lite model, one "busy" retry, the second lite model)
+    const attempt = async (s: PendingStory) => {
       const left = cap - used;
-      if (left <= 0) {
+      if (left <= 0) return null;
+      const out = await generateFacts({ title: s.title, body: s.body }, { maxCalls: Math.min(3, left) });
+      used += out.calls;
+      return out;
+    };
+
+    const todo = stories.filter((s) => aliveSet.has(s.id) && !doneSet.has(s.id));
+    const results = new Map<string, Awaited<ReturnType<typeof generateFacts>>>();
+    const busy: PendingStory[] = [];
+    for (const s of todo) {
+      const out = await attempt(s);
+      if (!out) {
         result.skippedCap++;
         continue;
       }
-      const out = await generateFacts({ title: s.title, body: s.body }, { maxCalls: Math.min(3, left) });
-      used += out.calls;
+      if (out.retryLater) busy.push(s);
+      results.set(s.id, out);
+      await pause();
+    }
+    // Second pass: stories that failed only because Google was busy get one more try after a minute
+    if (busy.length) {
+      await new Promise((r) => setTimeout(r, opts.secondPassWaitMs ?? 60_000));
+      for (const s of busy) {
+        const again = await attempt(s);
+        if (!again) break;
+        const first = results.get(s.id)!;
+        results.set(s.id, {
+          ...again,
+          calls: first.calls + again.calls,
+          tokensIn: first.tokensIn + again.tokensIn,
+          tokensOut: first.tokensOut + again.tokensOut,
+          problems: [...first.problems, "second pass:", ...again.problems],
+        });
+        await pause();
+      }
+    }
+
+    for (const s of todo) {
+      const out = results.get(s.id);
+      if (!out) continue;
       const f = out.facts;
       await prisma.articleFacts.create({
         data: {
@@ -85,7 +119,6 @@ export async function runAiFacts(stories: PendingStory[], opts: { pauseMs?: numb
       result.done++;
       if (out.status === "ok") result.ok++;
       else result.failed++;
-      if (opts.pauseMs) await new Promise((r) => setTimeout(r, opts.pauseMs));
     }
   } catch (err) {
     console.error("[AI FACTS] run failed:", (err as Error)?.message || err);

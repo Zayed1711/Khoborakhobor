@@ -40,7 +40,12 @@ export type StoryFacts = {
 };
 export type Lang = "bn" | "en";
 
-export const DEFAULT_MODELS = ["gemini-3.5-flash-lite", "gemini-3.5-flash"];
+// Only the cheapest "lite" models, two of them so each has its own free limit and a busy
+// one can hand over to the other. (The bigger Flash model has a much lower free limit.)
+export const DEFAULT_MODELS = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite"];
+// A summary may share at most this many words in a row with the article. Bengali news has
+// long names and fixed phrases, so a shorter run rejected honest rewrites.
+export const COPY_RUN = 12;
 const MAX_INPUT_WORDS = 1200;
 const MAX_OUTPUT_TOKENS = 700;
 
@@ -137,7 +142,7 @@ export function checkFacts(raw: unknown, article: { title: string; body: string 
   const badNums = numbersIn(summary).filter((n) => !sourceNums.has(n));
   if (badNums.length) problems.push(`summary has numbers not in the article: ${badNums.join(", ")}`);
   const sw = wordsOf(summary);
-  const RUN = 8;
+  const RUN = COPY_RUN;
   for (let i = 0; i + RUN <= sw.length; i++) {
     if (sourceJoined.includes(` ${sw.slice(i, i + RUN).join(" ")} `)) {
       problems.push("summary copies the article word for word");
@@ -245,6 +250,8 @@ export type FactsOutcome = {
   calls: number;
   tokensIn: number;
   tokensOut: number;
+  /** Failed only because Google was busy or over its limit: worth one more try later */
+  retryLater?: boolean;
 };
 
 type Caller = (opts: Parameters<typeof callGeminiJson>[0]) => Promise<GeminiResult>;
@@ -271,11 +278,15 @@ export async function generateFacts(
   }
   const user = `Title: ${article.title}\n\nArticle:\n${body}`;
 
+  // After a copied summary, the next model is told to rewrite in its own words
+  let hint = "";
+  let answered = false;
+
   let busyRetried = false;
   for (const model of models) {
     if (out.calls >= maxCalls) break;
     out.calls++;
-    const ask = () => call({ model, system: systemPrompt(lang), user, schema: RESPONSE_SCHEMA, maxOutputTokens: MAX_OUTPUT_TOKENS });
+    const ask = () => call({ model, system: systemPrompt(lang), user: user + hint, schema: RESPONSE_SCHEMA, maxOutputTokens: MAX_OUTPUT_TOKENS });
     let res = await ask();
     // Free tier "busy" (503/429): wait and try the same model once more, once per story
     if (!res.ok && res.retryable && !busyRetried && out.calls < maxCalls) {
@@ -290,6 +301,7 @@ export async function generateFacts(
       if (!res.retryable) break;
       continue;
     }
+    answered = true;
     out.tokensIn += res.tokensIn;
     out.tokensOut += res.tokensOut;
     let parsed: unknown;
@@ -305,6 +317,12 @@ export async function generateFacts(
       return { ...out, status: "ok", model, facts: checked.facts, problems: [...out.problems, ...checked.problems] };
     }
     out.problems.push(...checked.problems.map((p) => `${model}: ${p}`));
+    if (checked.problems.some((p) => p.includes("copies"))) {
+      hint =
+        "\n\nIMPORTANT: an earlier answer copied sentences from the article. Write every sentence of the summary completely in your own words; keep names and numbers as written.";
+    }
   }
+  // No model answered at all (all busy, over the limit or timed out): try this story again later
+  out.retryLater = !answered && out.calls > 0 && !out.problems.some((p) => /not set|HTTP 40[0-4]/.test(p));
   return out;
 }
