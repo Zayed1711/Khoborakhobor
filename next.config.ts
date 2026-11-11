@@ -39,6 +39,19 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["@prisma/client", "prisma", "web-push"],
   // Do not advertise the framework ("X-Powered-By: Next.js")
   poweredByHeader: false,
+  // The site answered on both kkhobor.com and www.kkhobor.com. A login (cookie) on one does
+  // not count on the other, so people were asked to log in again. Everything now lives on
+  // www. Temporary (307) on purpose: it keeps form posts intact and can be undone.
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "kkhobor.com" }],
+        destination: "https://www.kkhobor.com/:path*",
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },

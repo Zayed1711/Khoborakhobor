@@ -16,7 +16,7 @@ export const metadata: Metadata = { title: "আমি | খবরাখবর", 
 export default async function MePage() {
   const session = await getCurrentSession();
   const student = session.student;
-  if (!student) redirect("/login?redirect=/me");
+  if (!student) redirect("/login");
 
   const [today, me, goalDays, words] = await Promise.all([
     getTodayProgressAction(),

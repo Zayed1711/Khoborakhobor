@@ -1,7 +1,7 @@
 "use client";
 import { FEATURES } from "@/lib/features";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useCallback, useSyncExternalStore, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import KhoborLogo from "@/components/KhoborLogo";
@@ -12,6 +12,7 @@ import {
   studentSignupAction, 
   googleInstantLoginAction,
   requestMagicLinkAction,
+  getCurrentSession,
   verifyMagicLinkAction,
   requestPhoneOtpAction,
   verifyPhoneOtpAction
@@ -30,6 +31,29 @@ function AuthForm() {
     rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") && !rawRedirect.includes(":")
       ? rawRedirect
       : "/";
+
+  // false until the page's code has loaded in the browser. Until then the buttons stay
+  // disabled: a tap that early used to reload the page with an empty form.
+  const ready = useSyncExternalStore(() => () => {}, () => true, () => false);
+  // Logged in and on the way out: keep the button busy instead of showing the form again
+  const [leaving, setLeaving] = useState(false);
+  const leave = useCallback(() => {
+    setLeaving(true);
+    window.location.replace(redirectUrl);
+  }, [redirectUrl]);
+
+  // Someone already logged in never needs this page: send them on
+  useEffect(() => {
+    let alive = true;
+    getCurrentSession()
+      .then((s) => {
+        if (alive && s?.student) leave();
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [leave]);
 
   const [authCategory, setAuthCategory] = useState<"quick" | "password">("password");
   const [quickMethod, setQuickMethod] = useState<"phone" | "magic">("phone");
@@ -82,14 +106,14 @@ function AuthForm() {
       setError("");
       verifyMagicLinkAction(token).then((res) => {
         if (res.success) {
-          window.location.assign(redirectUrl);
+          leave();
         } else {
           setError(res.error || "ম্যাজিক লিংকের মেয়াদ শেষ বা ভুল।");
           setLoading(false);
         }
       });
     }
-  }, [searchParams, redirectUrl]);
+  }, [searchParams, leave]);
 
   const handleGoogleSignIn = () => {
     setError("গুগল সরাসরি ওয়ান-ক্লিক সাইন-ইন সেবা দ্রুত সংহত হচ্ছে। অনুগ্রহ করে নিচের ফর্মে আপনার জিমেইল ও পাসওয়ার্ড দিয়ে সরাসরি লগইন বা নিবন্ধন করুন।");
@@ -130,7 +154,7 @@ function AuthForm() {
     try {
       const res = await verifyPhoneOtpAction(phoneInput, otpCode);
       if (res.success) {
-        window.location.assign(redirectUrl);
+        leave();
       } else {
         setError(res.error || "ওটিপি যাচাই ব্যর্থ হয়েছে।");
       }
@@ -181,7 +205,7 @@ function AuthForm() {
         setVerifyEmail(res.email);
         if (res.error) setError(res.error);
       } else if (res.success) {
-        window.location.assign(redirectUrl);
+        leave();
       } else {
         setError(res.error || "লগইন ব্যর্থ হয়েছে। তথ্য পুনরায় যাচাই করুন।");
       }
@@ -227,7 +251,7 @@ function AuthForm() {
         setVerifyEmail(res.email);
         if (res.error) setError(res.error);
       } else if (res.success) {
-        window.location.assign(redirectUrl);
+        leave();
       } else {
         setError(res.error || "নিবন্ধন সম্পন্ন করা সম্ভব হয়নি।");
       }
@@ -295,7 +319,7 @@ function AuthForm() {
         <button
           type="button"
           onClick={handleGoogleSignIn}
-          disabled={loading}
+          disabled={loading || leaving || !ready}
           className="w-full py-2.5 px-4 bg-white hover:bg-[#faf7f2] border border-[#d9d2c5] text-[#1c1d21] text-xs font-bold rounded-xl transition shadow-2xs flex items-center justify-center gap-2.5 disabled:opacity-50 active:scale-[0.99] cursor-pointer"
         >
           <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
@@ -431,7 +455,7 @@ function AuthForm() {
 
                     <button
                       type="submit"
-                      disabled={loading}
+                      disabled={loading || leaving || !ready}
                       className="w-full py-2.5 px-4 bg-[#842323] hover:bg-[#6e1c1c] text-white text-xs font-bold rounded-xl transition shadow-2xs disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
                     >
                       <span>{loading ? "ওটিপি তৈরি হচ্ছে..." : "ওটিপি কোড পাঠান"}</span>
@@ -481,7 +505,7 @@ function AuthForm() {
 
                     <button
                       type="submit"
-                      disabled={loading}
+                      disabled={loading || leaving || !ready}
                       className="w-full py-2.5 px-4 bg-[#842323] hover:bg-[#6e1c1c] text-white text-xs font-bold rounded-xl transition shadow-2xs disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
                     >
                       <span>{loading ? "যাচাই করা হচ্ছে..." : "যাচাই করুন ও প্রবেশ করুন"}</span>
@@ -519,7 +543,7 @@ function AuthForm() {
 
                     <button
                       type="submit"
-                      disabled={loading}
+                      disabled={loading || leaving || !ready}
                       className="w-full py-2.5 px-4 bg-[#842323] hover:bg-[#6e1c1c] text-white text-xs font-bold rounded-xl transition shadow-2xs disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
                     >
                       <span>{loading ? "ম্যাজিক লিংক তৈরি হচ্ছে..." : "ম্যাজিক লিংক তৈরি করুন"}</span>
@@ -553,7 +577,7 @@ function AuthForm() {
           <VerifyEmailPanel
             email={verifyEmail}
             onDone={() => {
-              window.location.assign(redirectUrl);
+              leave();
             }}
             onBack={() => setVerifyEmail(null)}
           />
@@ -562,7 +586,7 @@ function AuthForm() {
           <ForgotPasswordPanel
             initialEmail={loginEmail}
             onDone={() => {
-              window.location.assign(redirectUrl);
+              leave();
             }}
             onBack={() => setForgotOpen(false)}
           />
@@ -598,7 +622,7 @@ function AuthForm() {
 
             {/* B.1 Password Login Form */}
             {mode === "login" && (
-              <form onSubmit={handleLoginSubmit} className="space-y-4">
+              <form onSubmit={handleLoginSubmit} method="post" className="space-y-4">
                 <div>
                   <label htmlFor="loginEmail" className="block text-xs font-semibold text-[#343a46] mb-1.5 flex items-center gap-1.5">
                     <Mail className="w-3.5 h-3.5 text-[#842323]" />
@@ -658,10 +682,10 @@ function AuthForm() {
 
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || leaving || !ready}
                   className="w-full py-2.5 px-4 bg-[#842323] hover:bg-[#6e1c1c] text-white text-xs font-bold rounded-xl transition shadow-2xs disabled:opacity-50 flex items-center justify-center gap-2 mt-2 cursor-pointer"
                 >
-                  <span>{loading ? "যাচাই করা হচ্ছে..." : "প্রবেশ করুন"}</span>
+                  <span>{leaving ? "প্রবেশ করা হচ্ছে…" : loading ? "যাচাই করা হচ্ছে..." : "প্রবেশ করুন"}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </form>
@@ -669,7 +693,7 @@ function AuthForm() {
 
             {/* B.2 Password Signup Form */}
             {mode === "signup" && (
-              <form onSubmit={handleSignupSubmit} className="space-y-4">
+              <form onSubmit={handleSignupSubmit} method="post" className="space-y-4">
                 <div>
                   <label htmlFor="fullName" className="block text-xs font-semibold text-[#343a46] mb-1.5 flex items-center gap-1.5">
                     <User className="w-3.5 h-3.5 text-[#842323]" />
@@ -756,10 +780,10 @@ function AuthForm() {
 
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || leaving || !ready}
                   className="w-full py-2.5 px-4 bg-[#842323] hover:bg-[#6e1c1c] text-white text-xs font-bold rounded-xl transition shadow-2xs disabled:opacity-50 flex items-center justify-center gap-2 mt-2 cursor-pointer"
                 >
-                  <span>{loading ? "নিবন্ধন সম্পন্ন হচ্ছে..." : "অ্যাকাউন্ট তৈরি করুন"}</span>
+                  <span>{leaving ? "প্রবেশ করা হচ্ছে…" : loading ? "নিবন্ধন সম্পন্ন হচ্ছে..." : "অ্যাকাউন্ট তৈরি করুন"}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </form>
