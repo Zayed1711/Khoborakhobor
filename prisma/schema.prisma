@@ -436,3 +436,21 @@ model ArticleFacts {
 
   @@index([createdAt])
 }
+
+// One row per phone/browser that allowed notifications (web push). studentId is empty
+// until the user logs in on that device. reminderHour is Bangladesh time, 0-23.
+model PushDevice {
+  id           String    @id @default(cuid())
+  endpoint     String    @unique
+  p256dh       String
+  auth         String
+  studentId    String?
+  reminderHour Int       @default(20)
+  enabled      Boolean   @default(true)
+  lastSentAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([studentId])
+  @@index([enabled, reminderHour])
+}

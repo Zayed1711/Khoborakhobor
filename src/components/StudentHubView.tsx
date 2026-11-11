@@ -9,6 +9,7 @@ import {
   deleteStudyNoteAction,
 } from "@/actions/student";
 import { logoutAction } from "@/actions/auth";
+import { clearOfflinePages } from "@/lib/pwa-client";
 import { useRouter } from "next/navigation";
 import { useAppMode } from "@/context/LanguageContext";
 import { getBanglaPronunciation } from "@/lib/phonetics/en-to-bn";
@@ -257,6 +258,7 @@ export default function StudentHubView({
 
   const handleLogout = async () => {
     await logoutAction();
+    clearOfflinePages();
     router.push("/login");
     router.refresh();
   };

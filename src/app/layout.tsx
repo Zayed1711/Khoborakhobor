@@ -6,6 +6,7 @@ import { LanguageProvider } from "@/context/LanguageContext";
 import PomodoroWidget from "@/components/PomodoroWidget";
 import DictionaryHost from "@/components/DictionaryHost";
 import StaleVersionReload from "@/components/StaleVersionReload";
+import PwaRegister from "@/components/PwaRegister";
 import { EarlyBirdPopup } from "@/components/EarlyBird";
 import AuthGateHost from "@/components/AuthGateHost";
 import GamifiedOnboardingTour from "@/components/GamifiedOnboardingTour";
@@ -92,6 +93,7 @@ export default function RootLayout({
           <PomodoroWidget />
           <DictionaryHost />
           <StaleVersionReload />
+          <PwaRegister />
           <EarlyBirdPopup />
           <AuthGateHost />
           <GamifiedOnboardingTour />

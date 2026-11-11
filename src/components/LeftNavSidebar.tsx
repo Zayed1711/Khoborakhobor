@@ -7,6 +7,7 @@ import {
   Home, Zap, Bookmark, Layers, Award, UserCheck, 
   Shield, LogOut, Flame, Sparkles, ShieldCheck, Compass, CalendarClock } from "lucide-react";
 import { logoutAction, UserSession } from "@/actions/auth";
+import { clearOfflinePages } from "@/lib/pwa-client";
 import { useAppMode } from "@/context/LanguageContext";
 
 interface LeftNavSidebarProps {
@@ -20,6 +21,7 @@ export default function LeftNavSidebar({ session }: LeftNavSidebarProps) {
 
   const handleLogout = async () => {
     await logoutAction();
+    clearOfflinePages();
     router.push("/login");
     router.refresh();
   };

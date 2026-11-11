@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#842323">
+<title>ইন্টারনেট নেই | খবরাখবর</title>
+<style>
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#fbf9f5;color:#1f2328;font-family:"Nirmala UI","Noto Sans Bengali",system-ui,sans-serif;text-align:center;padding:24px;box-sizing:border-box}
+  img{width:84px;height:84px;border-radius:20px}
+  h1{font-size:1.35rem;margin:18px 0 8px}
+  p{margin:0 0 20px;color:#5b5f66;line-height:1.7}
+  button{background:#842323;color:#fff;border:0;border-radius:10px;padding:12px 26px;font:inherit;font-weight:700}
+</style>
+</head>
+<body>
+  <main>
+    <img src="/icon.png" alt="">
+    <h1>ইন্টারনেট সংযোগ নেই</h1>
+    <p>এই পাতাটি আগে খোলা হয়নি, তাই অফলাইনে দেখানো যাচ্ছে না।<br>আগে পড়া খবরগুলো অফলাইনেও খুলবে।</p>
+    <button onclick="location.reload()">আবার চেষ্টা করুন</button>
+  </main>
+  <script>addEventListener("online",function(){location.reload()})</script>
+</body>
+</html>
