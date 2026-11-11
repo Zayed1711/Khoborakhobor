@@ -24,14 +24,14 @@ export default function MobileBottomNav() {
         { label: "Exam", href: "/exam", icon: Award },
         { label: "Today", href: "#today", icon: Home },
         { label: "Notebook", href: "/saved", icon: Bookmark },
-        { label: "Profile", href: "/login", icon: UserCheck },
+        { label: "Me", href: "/me", icon: UserCheck },
       ]
     : [
         { label: "হোম", href: "/", icon: Home },
         { label: "পরীক্ষা", href: "/exam", icon: Award },
         { label: "আজ", href: "#today", icon: Home },
         { label: "নোটবুক", href: "/saved", icon: Bookmark },
-        { label: "প্রোফাইল", href: "/login", icon: UserCheck },
+        { label: "আমি", href: "/me", icon: UserCheck },
       ];
 
   const activeColor = isEnglishMode ? "text-[#1e40af] font-bold" : "text-[#842323] font-bold";
