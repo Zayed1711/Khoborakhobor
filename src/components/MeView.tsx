@@ -302,10 +302,15 @@ export default function MeView({
               ? en ? "The app is installed on this device." : "এই ডিভাইসে অ্যাপ ইনস্টল করা আছে।"
               : installable
               ? en ? "Add খবরাখবর to your home screen." : "খবরাখবর হোম স্ক্রিনে যোগ করুন।"
-              : en ? "Open your browser menu and choose “Add to Home screen”." : "ব্রাউজারের মেনু থেকে “Add to Home screen” বেছে নিন।"}
+              : en ? "Get the app for reminders and offline reading." : "রিমাইন্ডার ও অফলাইনে পড়ার জন্য অ্যাপ নামান।"}
           </p>
           {installed ? (
             <Check className="w-5 h-5 text-emerald-600 shrink-0" strokeWidth={3} />
+          ) : !installable ? (
+            <Link href="/app" className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-bold text-white shrink-0" style={{ background: accent }}>
+              <Download className="w-4 h-4" />
+              {en ? "Get app" : "অ্যাপ নামান"}
+            </Link>
           ) : (
             installable && (
               <button type="button" onClick={install} className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-bold text-white shrink-0" style={{ background: accent }}>

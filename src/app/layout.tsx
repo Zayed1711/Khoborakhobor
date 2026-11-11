@@ -8,6 +8,7 @@ import DictionaryHost from "@/components/DictionaryHost";
 import StaleVersionReload from "@/components/StaleVersionReload";
 import PwaRegister from "@/components/PwaRegister";
 import TodayMissionSheet from "@/components/TodayMissionSheet";
+import AppInstallBanner from "@/components/AppInstallBanner";
 import { EarlyBirdPopup } from "@/components/EarlyBird";
 import AuthGateHost from "@/components/AuthGateHost";
 import GamifiedOnboardingTour from "@/components/GamifiedOnboardingTour";
@@ -96,6 +97,7 @@ export default function RootLayout({
           <StaleVersionReload />
           <PwaRegister />
           <TodayMissionSheet />
+          <AppInstallBanner />
           <EarlyBirdPopup />
           <AuthGateHost />
           <GamifiedOnboardingTour />

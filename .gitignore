@@ -58,3 +58,10 @@ __pycache__/
 
 # uploaded exam images (local)
 /data/uploads/
+
+# Android APK build output (the project is re-created from android/twa-manifest.json)
+/android/*
+!/android/twa-manifest.json
+!/android/README.md
+*.keystore
+*.jks
