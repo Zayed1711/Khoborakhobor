@@ -26,6 +26,15 @@ DB = "/var/www/kkhobor-data/kkhobor.db"
 BACKUPS = "/var/backups/kkhobor"
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Server output has Bengali text and box-drawing characters. On Windows, when the output is
+# piped (not a console), Python's default encoding cannot print them and the deploy would
+# crash halfway, after the server commands already ran. Never let printing fail.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 
 def setting(name, default=None):
     if os.environ.get(name):
