@@ -12,6 +12,7 @@ import {
 import SearchModal from "./SearchModal";
 import ThemeSwitcher from "./ThemeSwitcher";
 import TodayRing from "./TodayRing";
+import { InstallAppButton } from "./InstallAppButton";
 import { openTodayPanel, useTodayProgress } from "@/lib/today-client";
 import KhoborLogo from "./KhoborLogo";
 import { getCurrentSession, UserSession } from "@/actions/auth";
@@ -218,23 +219,37 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session, activ
                 <span>Pro</span>
               </Link>
             ) : isLoggedIn ? (
-              <Link
-                href="/saved"
-                className="w-9 h-9 rounded-lg bg-[#faf8f4] border border-[#ded8cb] text-[#842323] flex items-center justify-center"
-                title="আমার প্রোফাইল"
-                aria-label="আমার প্রোফাইল"
-              >
-                <UserCheck className="w-4 h-4" />
-              </Link>
+              // Until the app is installed this slot is the install button; the profile is
+              // one tap away in the bottom nav ("আমি"), so nothing is lost and nothing grows
+              <InstallAppButton
+                variant="icon"
+                fallback={
+                  <Link
+                    href="/saved"
+                    className="w-9 h-9 rounded-lg bg-[#faf8f4] border border-[#ded8cb] text-[#842323] flex items-center justify-center"
+                    title="আমার প্রোফাইল"
+                    aria-label="আমার প্রোফাইল"
+                  >
+                    <UserCheck className="w-4 h-4" />
+                  </Link>
+                }
+              />
             ) : (
-              <Link
-                href="/login"
-                className="w-9 h-9 rounded-lg bg-[#faf8f4] border border-[#ded8cb] text-[#842323] flex items-center justify-center"
-                title="লগইন বা সাইন আপ"
-                aria-label="লগইন বা সাইন আপ"
-              >
-                <UserCheck className="w-4 h-4" />
-              </Link>
+              // Until the app is installed this slot is the install button; the profile is
+              // one tap away in the bottom nav ("আমি"), so nothing is lost and nothing grows
+              <InstallAppButton
+                variant="icon"
+                fallback={
+                  <Link
+                    href="/login"
+                    className="w-9 h-9 rounded-lg bg-[#faf8f4] border border-[#ded8cb] text-[#842323] flex items-center justify-center"
+                    title="লগইন বা সাইন আপ"
+                    aria-label="লগইন বা সাইন আপ"
+                  >
+                    <UserCheck className="w-4 h-4" />
+                  </Link>
+                }
+              />
             )}
 
             {/* Instant Search Button */}
@@ -447,6 +462,7 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session, activ
 
           {/* Right Column: Founding Pro Badge & Profile / Login */}
           <div className="shrink-0 flex items-center gap-2.5 justify-end">
+            <InstallAppButton variant="pill" />
             {/* Today's goal ring (phones have it in the bottom nav) */}
             <button
               type="button"

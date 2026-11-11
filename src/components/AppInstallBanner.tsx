@@ -1,22 +1,23 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
 import { useAppMode } from "@/context/LanguageContext";
 import { isInstalledApp } from "@/lib/pwa-client";
+import { useInstallApp } from "@/lib/use-install-app";
 
 // "The app is available" bar on phones, just above the bottom nav.
 // Kept out of the way on purpose:
 //  - phones only, never inside the installed app
-//  - waits 25 seconds, and only shows when no popup (tour, early-bird, login) is open,
+//  - waits 5 seconds, and only shows when no popup (tour, early-bird, login) is open,
 //    so a visit never gets two things at once
 //  - closing it hides it for 7 days; it stops for good after 3 closes
-//  - not on the exam, login, admin or download pages
+//  - not on the exam, login, admin or download pages, nor on the home page, which has
+//    its own install card at the top of the feed
 const KEY = "kk_app_banner";
-const DELAY_MS = 25_000;
+const DELAY_MS = 5_000;
 const QUIET_DAYS = 7;
 const MAX_DISMISSALS = 3;
 const HIDDEN_ON = /^\/(app|login|signup|admin|exam|desk)(\/|$)/;
@@ -39,6 +40,7 @@ export default function AppInstallBanner() {
   const { isEnglishMode: en } = useAppMode();
   const pathname = usePathname() || "/";
   const [show, setShow] = useState(false);
+  const { state, install } = useInstallApp();
 
   useEffect(() => {
     if (isInstalledApp()) return;
@@ -72,7 +74,7 @@ export default function AppInstallBanner() {
     }
   };
 
-  if (!show || HIDDEN_ON.test(pathname)) return null;
+  if (!show || pathname === "/" || HIDDEN_ON.test(pathname) || (state !== "ready" && state !== "manual")) return null;
 
   return (
     <div
@@ -85,9 +87,16 @@ export default function AppInstallBanner() {
         <p className="text-sm font-bold text-[#17191d] leading-tight truncate">{en ? "Get the KhoboraKhobor app" : "খবরাখবর অ্যাপ নামান"}</p>
         <p className="text-xs text-[#717887] leading-tight truncate">{en ? "Free · reminders · offline reading" : "ফ্রি · রিমাইন্ডার · অফলাইনে পড়া"}</p>
       </div>
-      <Link href="/app" onClick={() => setShow(false)} className="shrink-0 rounded-lg bg-[#842323] px-3.5 py-2 text-sm font-bold text-white">
-        {en ? "Get" : "নামান"}
-      </Link>
+      <button
+        type="button"
+        onClick={() => {
+          setShow(false);
+          void install();
+        }}
+        className="shrink-0 rounded-lg bg-[#842323] px-3.5 py-2 text-sm font-bold text-white"
+      >
+        {en ? "Install" : "ইনস্টল"}
+      </button>
       <button type="button" onClick={dismiss} aria-label={en ? "Close" : "বন্ধ করুন"} className="shrink-0 p-1.5 text-[#8a8f99]">
         <X className="w-4 h-4" />
       </button>

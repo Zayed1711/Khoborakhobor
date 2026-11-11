@@ -3,6 +3,7 @@ import Footer from "@/components/Footer";
 import LeftNavSidebar from "@/components/LeftNavSidebar";
 import RightStudyRail from "@/components/RightStudyRail";
 import SocialFeedStream from "@/components/SocialFeedStream";
+import { AppInstallCard } from "@/components/InstallAppButton";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import { getDateArchiveStatsAction } from "@/actions/articles";
 import { getCurrentSession } from "@/actions/auth";
@@ -84,6 +85,7 @@ export default async function Home() {
         <div className="flex-1 max-w-2xl min-w-0 w-full">
           <ExamBanner summary={examSummary} />
           <EarlyBirdBanner className="mb-3" />
+          <AppInstallCard className="mb-3" />
           <SocialFeedStream
             articles={feedCards}
             capsuleArticles={capsuleArticles}
