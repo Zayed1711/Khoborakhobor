@@ -451,6 +451,9 @@ model PushDevice {
   reminderHour Int       @default(20)
   enabled      Boolean   @default(true)
   lastSentAt   DateTime?
+  // Bangladesh date of the last reminder and the kinds sent that day ("main,rescue")
+  sentDay      String?
+  sentKinds    String    @default("")
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 

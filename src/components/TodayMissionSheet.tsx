@@ -45,7 +45,10 @@ export default function TodayMissionSheet() {
     };
     window.addEventListener("kk-open-today", onOpen);
     window.addEventListener("kk-goal-done", onDone);
+    // A reminder notification opens the site with "?open=today"
+    const fromLink = new URLSearchParams(window.location.search).get("open") === "today" ? setTimeout(onOpen, 300) : undefined;
     return () => {
+      clearTimeout(fromLink);
       window.removeEventListener("kk-open-today", onOpen);
       window.removeEventListener("kk-goal-done", onDone);
     };

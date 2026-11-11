@@ -107,3 +107,32 @@ setTimeout(() => {
 
 // Recurring scheduled interval
 setInterval(triggerCron, INTERVAL_MINUTES * 60 * 1000);
+
+// ---- Reminder notifications: every 15 minutes ----
+// The endpoint decides who is due (each reader's own hour, at most 2 a day), so calling
+// it often is safe. Kept apart from the crawler so a long crawl never delays reminders.
+const REMINDER_MINUTES = parseInt(process.env.REMINDER_INTERVAL_MINUTES || "15", 10);
+function triggerReminders() {
+  const options = CRON_SECRET ? { headers: { Authorization: `Bearer ${CRON_SECRET}` } } : {};
+  const req = http
+    .get(`${BASE_URL}/api/cron/reminders`, options, (res) => {
+      let data = "";
+      res.on("data", (chunk) => (data += chunk));
+      res.on("end", () => {
+        try {
+          const json = JSON.parse(data);
+          if (json.sent || json.failed || json.gone) {
+            console.log(`[REMINDERS ${new Date().toISOString()}] sent=${json.sent} failed=${json.failed} gone=${json.gone}`);
+          } else if (!json.success) {
+            console.error("[REMINDERS] failed:", json.error || data.slice(0, 200));
+          }
+        } catch (e) {
+          console.error("[REMINDERS] unexpected reply:", data.slice(0, 200));
+        }
+      });
+    })
+    .on("error", (err) => console.error(`[REMINDERS] ${err.message}`));
+  req.setTimeout(120000, () => req.destroy());
+}
+setTimeout(triggerReminders, (INITIAL_STARTUP_DELAY_SECONDS + 30) * 1000);
+setInterval(triggerReminders, REMINDER_MINUTES * 60 * 1000);
