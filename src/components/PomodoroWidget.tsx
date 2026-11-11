@@ -57,6 +57,13 @@ export default function PomodoroWidget() {
     };
   }, [isActive, isBreak, customMinutes]);
 
+  // The mission panel's "Study timer" button opens the timer
+  useEffect(() => {
+    const onOpen = () => setIsMinimized(false);
+    window.addEventListener("kk-open-pomodoro", onOpen);
+    return () => window.removeEventListener("kk-open-pomodoro", onOpen);
+  }, []);
+
   const toggleTimer = () => setIsActive(!isActive);
 
   const resetTimer = () => {
@@ -76,7 +83,12 @@ export default function PomodoroWidget() {
     : ((customMinutes * 60 - secondsLeft) / (customMinutes * 60)) * 100;
 
   return (
-    <div id="tutorial-pomodoro-widget" className="fixed bottom-16 lg:bottom-5 right-4 sm:right-5 z-40 print:hidden">
+    // Phones: nothing floats over the story while the timer is idle (it is in the "Today" panel).
+    // A running timer or break still shows its small pill above the nav.
+    <div
+      id="tutorial-pomodoro-widget"
+      className={`fixed bottom-20 md:bottom-16 lg:bottom-5 right-4 sm:right-5 z-40 print:hidden ${isMinimized && !isActive && !isBreak ? "hidden md:block" : ""}`}
+    >
       {/* Minimized Floating Pill */}
       {isMinimized ? (
         <button

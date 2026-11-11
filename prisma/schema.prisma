@@ -26,6 +26,8 @@ model Student {
   targetTrack  String   @default("BCS_GOVT") // BCS_GOVT, ADMISSION, GENERAL_KNOWLEDGE, RESEARCH
   institution  String? // University / College name
   streakDays   Int      @default(1)
+  // Day (Bangladesh date) the weekly streak freeze was last used
+  streakFreezeDay String?
   lastActive   DateTime @default(now())
 
   // Activity counters for marketing & conversion analytics
@@ -41,6 +43,7 @@ model Student {
   readHistory   ArticleRead[]
   writings      WritingSubmission[]
   examAttempts  ExamAttempt[]
+  dailyProgress DailyProgress[]
   telemetry     StudyTelemetry?
 
   createdAt DateTime @default(now())
@@ -453,4 +456,25 @@ model PushDevice {
 
   @@index([studentId])
   @@index([enabled, reminderHour])
+}
+
+// One row per student per day (Bangladesh date): what they did today. Fills the "Today"
+// ring, gives XP and keeps the streak (src/lib/study/daily-goal.ts).
+model DailyProgress {
+  id          String   @id @default(cuid())
+  studentId   String
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  day         String // "2026-11-11", Bangladesh time
+  stories     Int      @default(0)
+  mcqs        Int      @default(0)
+  mcqsCorrect Int      @default(0)
+  words       Int      @default(0)
+  lookups     Int      @default(0)
+  xp          Int      @default(0)
+  goalDone    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([studentId, day])
+  @@index([day])
 }

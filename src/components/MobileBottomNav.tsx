@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Home, Zap, Award, Bookmark, UserCheck } from "lucide-react";
+import { Home, Award, Bookmark, UserCheck } from "lucide-react";
+import TodayRing from "@/components/TodayRing";
+import { openTodayPanel, useTodayProgress } from "@/lib/today-client";
 import { useAppMode } from "@/context/LanguageContext";
 
 export default function MobileBottomNav() {
@@ -19,15 +21,15 @@ export default function MobileBottomNav() {
   const navItems = isEnglishMode
     ? [
         { label: "Home", href: "/", icon: Home },
-        { label: "Capsule", href: "/capsule", icon: Zap },
         { label: "Exam", href: "/exam", icon: Award },
+        { label: "Today", href: "#today", icon: Home },
         { label: "Notebook", href: "/saved", icon: Bookmark },
         { label: "Profile", href: "/login", icon: UserCheck },
       ]
     : [
         { label: "হোম", href: "/", icon: Home },
-        { label: "ক্যাপসুল", href: "/capsule", icon: Zap },
         { label: "পরীক্ষা", href: "/exam", icon: Award },
+        { label: "আজ", href: "#today", icon: Home },
         { label: "নোটবুক", href: "/saved", icon: Bookmark },
         { label: "প্রোফাইল", href: "/login", icon: UserCheck },
       ];
@@ -35,6 +37,7 @@ export default function MobileBottomNav() {
   const activeColor = isEnglishMode ? "text-[#1e40af] font-bold" : "text-[#842323] font-bold";
   const iconActiveColor = isEnglishMode ? "text-[#1e40af]" : "text-[#842323]";
   const activeBg = isEnglishMode ? "bg-blue-50/80" : "bg-[#f5ebeb]/80";
+  const today = useTodayProgress();
 
   return (
     <nav 
@@ -44,6 +47,24 @@ export default function MobileBottomNav() {
       <div className="flex items-center justify-around max-w-md mx-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
+          // Middle tab: the Today ring. It opens the mission panel instead of a page.
+          if (item.href === "#today") {
+            return (
+              <button
+                key={item.label}
+                id="tutorial-today-ring"
+                type="button"
+                onClick={openTodayPanel}
+                aria-label={isEnglishMode ? `Today's mission, ${today?.percent ?? 0}% done` : `আজকের মিশন, ${today?.percent ?? 0}% সম্পন্ন`}
+                className="relative -mt-5 flex flex-col items-center justify-end min-w-[58px]"
+              >
+                <span className={`flex items-center justify-center rounded-full bg-white p-1 shadow-[0_-2px_10px_rgba(0,0,0,0.10)] border border-[#ded8cb] ${today?.loggedIn && !today.activeToday ? "animate-[pulse_2.4s_ease-in-out_infinite]" : ""}`}>
+                  <TodayRing percent={today?.percent ?? 0} done={!!today?.done} size={46} stroke={4.5} accent={isEnglishMode ? "#1e40af" : "#842323"} />
+                </span>
+                <span className={`text-xs tracking-tight mt-0.5 font-semibold ${isEnglishMode ? "text-[#1e40af]" : "text-[#842323]"}`}>{item.label}</span>
+              </button>
+            );
+          }
           // "/saved?tab=analytics" (quiz recall) and "/saved" (notebook) share one page,
           // so the tab decides which of the two is lit
           const [path, query] = item.href.split("?");

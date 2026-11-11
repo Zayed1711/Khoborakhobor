@@ -1,5 +1,6 @@
 "use client";
 
+import { notifyProgress } from "@/lib/today-client";
 import { useState } from "react";
 import { VocabularyTableRow } from "@/lib/vocabulary-table-engine";
 import { Student } from "@/types";
@@ -78,6 +79,7 @@ export default function VocabularyTable({
         `${row.banglaMeaning} | ${row.englishDefinition}`,
         row.freshExampleEn
       );
+      notifyProgress();
       setSavedWordIds((prev) => ({ ...prev, [row.id]: true }));
       if (onSaveFeedback) {
         onSaveFeedback(`"${row.word}" আপনার ওয়ার্ড ব্যাংকে সংরক্ষিত হয়েছে!`);
@@ -107,6 +109,7 @@ export default function VocabularyTable({
           `${row.banglaMeaning} | ${row.englishDefinition}`,
           row.freshExampleEn
         );
+        notifyProgress();
       }
       const allSaved: Record<string, boolean> = {};
       rows.forEach((r) => { allSaved[r.id] = true; });

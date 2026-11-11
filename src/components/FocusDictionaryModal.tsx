@@ -1,5 +1,6 @@
 "use client";
 
+import { notifyProgress } from "@/lib/today-client";
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { lookupConceptDictionary, DictionaryEntry } from "@/lib/dictionary-engine";
@@ -60,7 +61,7 @@ export default function FocusDictionaryModal({
       const res = await lookupConceptDictionary(q);
       setEntry(res);
       if (res && student) {
-        trackWordLookupAction(q).catch(() => {});
+        trackWordLookupAction(q).then(notifyProgress).catch(() => {});
       }
     } catch (err) {
       console.error(err);
@@ -105,6 +106,7 @@ export default function FocusDictionaryModal({
         entry.banglaMeaning || entry.definition,
         entry.simplifiedMeaning || entry.realLifeExample
       );
+      notifyProgress();
       setSaved(true);
       if (onSaveFeedback) {
         onSaveFeedback(`"${entry.term}" আপনার ওয়ার্ড ব্যাংকে যুক্ত হয়েছে!`);

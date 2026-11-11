@@ -1,5 +1,6 @@
 "use client";
 
+import { notifyProgress } from "@/lib/today-client";
 import { useState } from "react";
 import { QuizQuestion } from "@/types";
 import { submitQuizAnswerAction } from "@/actions/student";
@@ -58,6 +59,7 @@ export default function MicroQuiz({ questions, studentId, isEnglishMode = false,
     setSubmitting(true);
     try {
       const res = await submitQuizAnswerAction(studentId, q.id, chosen);
+      notifyProgress();
       setResults((prev) => ({
         ...prev,
         [q.id]: {

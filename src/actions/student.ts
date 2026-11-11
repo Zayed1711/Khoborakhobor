@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { requireAdmin, requireStudent, canReadStudent, getSessionStudent, toPublicStudent } from "@/lib/guards";
 import { writeSession } from "@/lib/session";
+import { recordProgress } from "@/lib/study/progress";
 
 function safeParseJson<T>(value: any, fallback: T): T {
   if (!value) return fallback;
@@ -61,6 +62,7 @@ export async function saveWordToBankAction(claimedStudentId: string, termId: str
       mastered: false,
     },
   });
+  await recordProgress(studentId, "word");
 
   revalidatePath("/saved");
   return { saved: true };
@@ -151,6 +153,7 @@ export async function submitQuizAnswerAction(
         isCorrect,
       },
     });
+    await recordProgress(studentId, "mcq", { correct: isCorrect });
 
     try {
       await prisma.student.update({
@@ -383,6 +386,7 @@ export async function saveCustomDictionaryTermAction(
         mastered: false,
       },
     });
+    await recordProgress(studentId, "word");
   }
 
   revalidatePath("/saved");
@@ -608,6 +612,7 @@ export async function trackArticleReadAction(articleSlug: string) {
         data: { articlesRead: { increment: 1 } },
       });
       await syncTelemetryIncrement(student.id, "articlesReadCount");
+      await recordProgress(student.id, "story");
       return { tracked: true, isNew: true };
     }
   } catch {
@@ -627,6 +632,7 @@ export async function trackWordLookupAction(word: string) {
       data: { wordsLookedUp: { increment: 1 } },
     });
     await syncTelemetryIncrement(student.id, "dictionaryLookupsCount");
+    await recordProgress(student.id, "lookup");
     return { tracked: true };
   } catch {
     return { tracked: false };

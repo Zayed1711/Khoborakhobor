@@ -198,21 +198,14 @@ export async function studentLoginAction(emailOrInput: string, passwordInput?: s
     return { success: false as const, needsVerification: true as const, email, error: sent ? "" : EMAIL_SEND_ERROR };
   }
 
-  // Update streak if active on a new day
   const now = new Date();
-  const lastActive = new Date(student.lastActive);
-  const diffHours = (now.getTime() - lastActive.getTime()) / (1000 * 60 * 60);
-
-  let newStreak = student.streakDays;
-  if (diffHours >= 20 && diffHours <= 48) {
-    newStreak += 1;
-  }
+  // The streak moves with the day's first activity (src/lib/study/progress.ts), not with login
+  const newStreak = student.streakDays;
 
   await prisma.student.update({
     where: { id: student.id },
     data: {
       lastActive: now,
-      streakDays: newStreak,
     },
   });
 

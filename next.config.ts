@@ -36,7 +36,7 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/**": ["./prisma/dev.db", "./prisma/schema.prisma", "./dev.db"],
   },
-  serverExternalPackages: ["@prisma/client", "prisma"],
+  serverExternalPackages: ["@prisma/client", "prisma", "web-push"],
   // Do not advertise the framework ("X-Powered-By: Next.js")
   poweredByHeader: false,
   async headers() {

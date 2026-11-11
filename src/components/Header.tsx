@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import SearchModal from "./SearchModal";
 import ThemeSwitcher from "./ThemeSwitcher";
+import TodayRing from "./TodayRing";
+import { openTodayPanel, useTodayProgress } from "@/lib/today-client";
 import KhoborLogo from "./KhoborLogo";
 import { getCurrentSession, UserSession } from "@/actions/auth";
 import { useAppMode } from "@/context/LanguageContext";
@@ -79,6 +81,8 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session, activ
   const [isMobileCategoryOpen, setIsMobileCategoryOpen] = useState(false);
   
   const { mode, setMode, isEnglishMode, lockedMode } = useAppMode();
+  
+  const today = useTodayProgress();
   // Sections belong to job/BCS mode: switching to English on a section page opens the English feed
   useEffect(() => {
     if (isEnglishMode && pathname.startsWith("/category/")) router.replace("/");
@@ -443,6 +447,17 @@ export default function Header({ categories = DEFAULT_CATEGORIES, session, activ
 
           {/* Right Column: Founding Pro Badge & Profile / Login */}
           <div className="shrink-0 flex items-center gap-2.5 justify-end">
+            {/* Today's goal ring (phones have it in the bottom nav) */}
+            <button
+              type="button"
+              onClick={openTodayPanel}
+              title={isEnglishMode ? "Today's mission" : "আজকের মিশন"}
+              aria-label={isEnglishMode ? "Today's mission" : "আজকের মিশন"}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#ded8cb] bg-white pl-1 pr-2.5 py-1 text-xs font-bold text-[#17191d] hover:bg-[#faf8f4] transition shrink-0"
+            >
+              <TodayRing percent={today?.percent ?? 0} done={!!today?.done} size={28} stroke={3.5} accent={isEnglishMode ? "#1e40af" : "#842323"} />
+              <span className="tabular-nums">{today?.percent ?? 0}%</span>
+            </button>
             {/* Founding Pro trial pill: hidden until there is a real paid plan (lib/features.ts) */}
             {FEATURES.trialPromo && (
             <Link

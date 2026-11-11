@@ -1,5 +1,6 @@
 "use client";
 
+import { notifyProgress } from "@/lib/today-client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink, Quote, Share2, BookOpen } from "lucide-react";
@@ -110,8 +111,28 @@ export default function ArticleStudyView({ article, relatedArticles, initialNote
   }, [isEnglish, lockMode, unlockMode]);
   const sourceLabel = article.sourceName || "মূল পত্রিকা";
 
+  // A story counts as read once the reader stayed 30 seconds or scrolled most of the way,
+  // so opening and closing stories does not fill the daily goal
   useEffect(() => {
-    if (student) trackArticleReadAction(article.slug).catch(() => {});
+    if (!student) return;
+    let sent = false;
+    const send = () => {
+      if (sent) return;
+      sent = true;
+      stop();
+      trackArticleReadAction(article.slug).then(notifyProgress).catch(() => {});
+    };
+    const onScroll = () => {
+      const h = document.documentElement;
+      if (h.scrollHeight > window.innerHeight * 1.5 && (h.scrollTop + window.innerHeight) / h.scrollHeight > 0.6) send();
+    };
+    const timer = setTimeout(send, 30_000);
+    const stop = () => {
+      clearTimeout(timer);
+      window.removeEventListener("scroll", onScroll);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return stop;
   }, [student, article.slug]);
 
   return (
