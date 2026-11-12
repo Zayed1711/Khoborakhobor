@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Loader2, MailCheck, KeyRound, ArrowLeft } from "lucide-react";
+import { rememberPending } from "@/lib/pending-auth";
 import { requestPasswordResetAction, resendVerificationCodeAction, resetPasswordAction, verifyEmailCodeAction } from "@/actions/auth";
 
 const bn = (n: number) => n.toLocaleString("bn-BD");
@@ -90,8 +91,19 @@ export function VerifyEmailPanel({ email, onDone, onBack }: { email: string; onD
 }
 
 /** "Forgot password": email → code → new password. */
-export function ForgotPasswordPanel({ initialEmail = "", onDone, onBack }: { initialEmail?: string; onDone: () => void; onBack: () => void }) {
-  const [step, setStep] = useState<"email" | "code">("email");
+export function ForgotPasswordPanel({
+  initialEmail = "",
+  initialStep = "email",
+  onDone,
+  onBack,
+}: {
+  initialEmail?: string;
+  /** "code" when the page reloaded while the reader was fetching the code from their mail */
+  initialStep?: "email" | "code";
+  onDone: () => void;
+  onBack: () => void;
+}) {
+  const [step, setStep] = useState<"email" | "code">(initialStep);
   const [email, setEmail] = useState(initialEmail);
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
@@ -110,6 +122,7 @@ export function ForgotPasswordPanel({ initialEmail = "", onDone, onBack }: { ini
     if (r.success) {
       setNote(r.message);
       setStep("code");
+      rememberPending("reset", email.trim().toLowerCase());
       cooldown.restart();
     } else setError(r.error);
   };
@@ -130,7 +143,7 @@ export function ForgotPasswordPanel({ initialEmail = "", onDone, onBack }: { ini
       <div className="text-center space-y-1.5">
         <KeyRound className="w-10 h-10 text-[#842323] mx-auto" />
         <h2 className="text-lg font-bold text-[#17191d]">পাসওয়ার্ড ভুলে গেছেন?</h2>
-        <p className="text-sm text-[#525a68]">{step === "email" ? "আপনার অ্যাকাউন্টের ইমেইল লিখুন; আমরা একটি ৬ সংখ্যার কোড পাঠাব।" : note}</p>
+        <p className="text-sm text-[#525a68]">{step === "email" ? "আপনার অ্যাকাউন্টের ইমেইল লিখুন; আমরা একটি ৬ সংখ্যার কোড পাঠাব।" : note || "আপনার ইমেইলে পাঠানো ৬ সংখ্যার কোড ও নতুন পাসওয়ার্ড লিখুন।"}</p>
       </div>
       {step === "email" ? (
         <form onSubmit={request} className="space-y-3">

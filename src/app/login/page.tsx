@@ -7,6 +7,7 @@ import Link from "next/link";
 import KhoborLogo from "@/components/KhoborLogo";
 import FacebookButton from "@/components/FacebookButton";
 import { VerifyEmailPanel, ForgotPasswordPanel } from "@/components/auth/EmailCodePanel";
+import { clearPending, readPending, rememberPending } from "@/lib/pending-auth";
 import { 
   studentLoginAction, 
   studentSignupAction, 
@@ -80,6 +81,29 @@ function AuthForm() {
   // Email code steps: the address waiting for its sign-up code, and "forgot password"
   const [verifyEmail, setVerifyEmail] = useState<string | null>(null);
   const [forgotOpen, setForgotOpen] = useState(false);
+  // A password reset that was waiting for its code when the page reloaded
+  const [resetEmail, setResetEmail] = useState<string | null>(null);
+
+  // Phones reload this page when the reader leaves it to open their mail app. Bring the
+  // code screen back instead of starting over (kept 30 minutes; src/lib/pending-auth.ts).
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const verify = readPending("verify");
+      const reset = verify ? null : readPending("reset");
+      if (verify) {
+        setAuthCategory("password");
+        setVerifyEmail(verify);
+      } else if (reset) {
+        setAuthCategory("password");
+        setResetEmail(reset);
+        setForgotOpen(true);
+      }
+    }, 0);
+    return () => clearTimeout(t);
+  }, []);
+  useEffect(() => {
+    if (verifyEmail) rememberPending("verify", verifyEmail);
+  }, [verifyEmail]);
   const [loginPassword, setLoginPassword] = useState("");
 
   // Signup form state
@@ -577,18 +601,28 @@ function AuthForm() {
           <VerifyEmailPanel
             email={verifyEmail}
             onDone={() => {
+              clearPending("verify");
               leave();
             }}
-            onBack={() => setVerifyEmail(null)}
+            onBack={() => {
+              clearPending("verify");
+              setVerifyEmail(null);
+            }}
           />
         )}
         {authCategory === "password" && !verifyEmail && forgotOpen && (
           <ForgotPasswordPanel
-            initialEmail={loginEmail}
+            initialEmail={resetEmail || loginEmail}
+            initialStep={resetEmail ? "code" : "email"}
             onDone={() => {
+              clearPending("reset");
               leave();
             }}
-            onBack={() => setForgotOpen(false)}
+            onBack={() => {
+              clearPending("reset");
+              setResetEmail(null);
+              setForgotOpen(false);
+            }}
           />
         )}
 

@@ -40,8 +40,7 @@ import {
   Award,
   UserCheck,
   Volume2,
-  PenLine,
-} from "lucide-react";
+  PenLine, Crown } from "lucide-react";
 import { WritingCard } from "@/components/WritingTask";
 import type { WritingView } from "@/actions/writing";
 import NotesPrintSheet from "@/components/NotesPrintSheet";
@@ -359,36 +358,37 @@ export default function StudentHubView({
       {/* ======================================================== */}
       {/* FOUNDING PRO PROGRESS & CONVERSION CARD (Marketing Asset) */}
       {/* ======================================================== */}
-      <div className="bg-linear-to-br from-[#ffffff] via-[#fffdf9] to-[#fbf7ee] border-2 border-[#e6c989] rounded-2xl p-5 sm:p-6 shadow-xs space-y-4 no-print relative overflow-hidden">
+      <div className="bg-linear-to-br from-[#ffffff] via-[#fffcf5] to-[#fbf3df] border border-[#e6c989] ring-1 ring-amber-200/60 rounded-2xl p-4 sm:p-6 shadow-[0_6px_24px_rgba(132,35,35,0.08)] space-y-4 no-print relative overflow-hidden">
         {/* Subtle background decoration */}
         <div className="absolute top-0 right-0 w-48 h-48 bg-linear-to-bl from-amber-100/40 to-transparent rounded-full -mr-16 -mt-16 pointer-events-none"></div>
 
-        {/* Header with trial expiry countdown */}
-        <div className="flex flex-wrap items-center justify-between gap-3 relative z-10">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-[#842323] to-[#591414] text-white flex items-center justify-center shadow-xs">
-              <Sparkles className="w-5 h-5 text-amber-300" />
+        {/* Header: badge, title and days left. The badge is its own short line, so its text
+            can never wrap and spill out of the pill (it did on phones, next to a long title). */}
+        <div className="flex items-center justify-between gap-3 relative z-10">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-11 h-11 rounded-2xl bg-linear-to-br from-[#9a2a2a] to-[#4a1010] flex items-center justify-center shadow-md ring-1 ring-amber-300/60 shrink-0">
+              <Crown className="w-5 h-5 text-amber-300" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm sm:text-base font-bold text-[#1c1d21] font-serif">
-                  আপনার ফাউন্ডিং প্রো অগ্রগতি ও বিশ্লেষণ (Founding Pro Progress)
-                </h3>
-                <span className="text-xs uppercase tracking-wider font-extrabold bg-amber-400 text-neutral-950 px-2 py-0.5 rounded-full shadow-2xs">
-                  Active Pro Trial
-                </span>
-              </div>
-              <p className="text-xs text-[#717887]">
-                বিনামূল্যে প্রো ট্রায়াল সক্রিয় রয়েছে <strong className="text-[#842323]">২ ডিসেম্বর ২০২৬</strong> পর্যন্ত
+            <div className="min-w-0">
+              <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-linear-to-r from-amber-300 via-yellow-200 to-amber-400 px-2.5 py-0.5 text-xs font-extrabold uppercase tracking-wide text-[#5a3a00] ring-1 ring-amber-500/40 shadow-2xs">
+                <Sparkles className="w-3 h-3" />
+                Founding Pro
+              </span>
+              <h3 className="mt-1.5 text-base sm:text-lg font-bold text-[#1c1d21] font-serif leading-snug">
+                {isEnglishMode ? "Your progress & insights" : "আপনার অগ্রগতি ও বিশ্লেষণ"}
+              </h3>
+              <p className="text-xs text-[#717887] leading-snug">
+                {isEnglishMode ? "Free Pro access until " : "ফ্রি প্রো সুবিধা চলবে "}
+                <strong className="text-[#842323] whitespace-nowrap">{isEnglishMode ? "2 December 2026" : "২ ডিসেম্বর ২০২৬ পর্যন্ত"}</strong>
               </p>
             </div>
           </div>
 
-          <div className="bg-white/90 backdrop-blur-xs border border-amber-300 px-3.5 py-1.5 rounded-xl text-right shadow-2xs">
-            <span className="text-xs text-[#717887] block font-medium">ট্রায়াল অবশিষ্ট</span>
-            <span className="text-sm font-extrabold text-[#842323] font-mono">
-              {activityStats?.trialDaysRemaining ?? 29} দিন
+          <div className="shrink-0 rounded-2xl bg-linear-to-br from-[#9a2a2a] to-[#4a1010] px-3.5 py-2 text-center shadow-md ring-1 ring-amber-300/60">
+            <span className="block text-2xl font-black leading-none text-amber-300 tabular-nums">
+              {activityStats?.trialDaysRemaining ?? 29}
             </span>
+            <span className="mt-1 block text-xs font-semibold text-white/85 whitespace-nowrap">{isEnglishMode ? "days left" : "দিন বাকি"}</span>
           </div>
         </div>
 
