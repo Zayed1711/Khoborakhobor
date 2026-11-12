@@ -147,19 +147,21 @@ export default function ProAuthGateModal({
           {/* Quick Sign In Link (Preserves current URL redirect) */}
           <Link
             href={`/login?redirect=${redirectTarget}`}
+            onClick={onClose}
             className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#842323] hover:bg-[#6e1c1c] text-white font-bold text-sm shadow-md transition active:scale-98"
           >
             <UserCheck className="w-4 h-4 text-[#fcd8d8]" />
-            <span>গুগল বা ইমেইল দিয়ে বিনামূল্যে লগইন করুন</span>
+            <span>আগে থেকেই অ্যাকাউন্ট আছে? লগইন করুন</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
 
           {/* New Account Link */}
           <Link
             href={`/login?tab=signup&redirect=${redirectTarget}`}
+            onClick={onClose}
             className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#ffffff] hover:bg-[#fbf9f5] text-[#2d333f] font-semibold text-xs border border-[#ded8cb] transition"
           >
-            <span>নতুন অ্যাকাউন্ট তৈরি করুন (Sign Up)</span>
+            <span>নতুন অ্যাকাউন্ট তৈরি করুন — ফ্রি</span>
           </Link>
         </div>
 
